@@ -82,9 +82,9 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
   pointer-events:none;
 }
 .hero-logo-wrap{flex-shrink:0;position:relative;z-index:1}
-.hero-logo-img{width:130px;height:130px;object-fit:contain;display:none;border-radius:var(--radius-lg);border:1px solid var(--border2)}
+.hero-logo-img{width:auto;height:160px;object-fit:contain;display:none;border-radius:var(--radius-lg);border:1px solid var(--border2)}
 .hero-logo-placeholder{
-  width:130px;height:130px;
+  width:160px;height:160px;
   border-radius:var(--radius-lg);
   border:1px dashed var(--gold-border);
   display:flex;align-items:center;justify-content:center;
@@ -320,7 +320,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 @media(max-width:640px){
   .nav{padding:0 1rem}
   .hero{padding:2.5rem 1rem 2rem;gap:1.5rem;flex-direction:column}
-  .hero-logo-img,.hero-logo-placeholder{width:100px;height:100px}
+  .hero-logo-img,.hero-logo-placeholder{width:120px;height:120px}
   .hero-title{font-size:56px}
   .toolbar,.cat-count,.grid,.ornament{padding-left:1rem;padding-right:1rem}
   .grid{grid-template-columns:1fr}
@@ -415,20 +415,6 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     </div>
     <div class="modal-body">
 
-      <!-- LOGO -->
-      <div style="margin-bottom:1.5rem">
-        <div class="form-label">Site logo</div>
-        <div class="logo-field">
-          <img class="logo-preview" id="logo-preview-img" src="" alt="">
-          <div class="logo-field-inputs">
-            <input class="form-input" type="text" id="logo-url-input" placeholder="https://yoursite.com/logo.png" oninput="previewLogo()" style="margin-bottom:6px">
-            <div style="font-size:11px;color:var(--text3);font-style:italic">Paste your logo URL — appears in the nav and hero.</div>
-          </div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="saveLogo()">Save logo</button>
-      </div>
-      <div style="border-top:1px solid var(--border);margin-bottom:1.5rem"></div>
-
       <!-- ADD/EDIT FORM -->
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.5rem" id="cat-form-wrap">
         <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:1rem;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase" id="form-mode-label">Add New Category</div>
@@ -479,6 +465,25 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 
       <div class="form-label">Your categories</div>
       <div class="admin-list" id="admin-list"></div>
+
+      <!-- LOGO — bottom of admin -->
+      <div style="border-top:1px solid var(--border);margin-top:1.5rem;padding-top:1.5rem">
+        <div class="form-label" style="margin-bottom:10px">Site logo</div>
+        <div class="logo-field">
+          <img class="logo-preview" id="logo-preview-img" src="" alt="">
+          <div class="logo-field-inputs">
+            <input class="form-input" type="text" id="logo-url-input" placeholder="https://yoursite.com/logo.png" oninput="previewLogo()" style="margin-bottom:8px">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-style:italic">Paste a URL above — or upload a file from your device below.</div>
+            <label style="display:inline-flex;align-items:center;gap:8px;background:var(--surface3);border:1px solid var(--border2);border-radius:var(--radius);padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .15s">
+              <span>📁</span> Choose file
+              <input type="file" id="logo-file-input" accept="image/*" onchange="handleLogoFile(event)" style="display:none">
+            </label>
+            <div id="logo-file-name" style="font-size:11px;color:var(--text3);margin-top:5px;font-style:italic"></div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveLogo()">Save logo</button>
+      </div>
+
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeAdmin()">Done</button>
@@ -560,6 +565,21 @@ function applyLogo(url){
     ph.style.display='flex';
   }
 }
+function handleLogoFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  document.getElementById('logo-file-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    document.getElementById('logo-url-input').value = dataUrl;
+    const img = document.getElementById('logo-preview-img');
+    img.src = dataUrl; img.classList.add('show');
+    applyLogo(dataUrl);
+  };
+  reader.readAsDataURL(file);
+}
+
 function saveLogo(){
   if(!db)return;
   db.ref('landing/settings/logoUrl').set(document.getElementById('logo-url-input').value.trim());
