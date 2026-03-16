@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Music Bingo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;
+  --surface:#141414;
+  --surface2:#1e1e1e;
+  --surface3:#282828;
+  --border:rgba(255,255,255,.08);
+  --border2:rgba(255,255,255,.15);
+  --text:#f0ede8;
+  --text2:#a0a09a;
+  --text3:#555;
+  --accent:#e8c84a;
+  --accent-dim:rgba(232,200,74,.12);
+  --accent-border:rgba(232,200,74,.3);
+  --red:#e84a4a;
+  --radius:8px;
+  --radius-lg:14px;
+  --font:'DM Sans',sans-serif;
+  --display:'Bebas Neue',sans-serif;
+}
+html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var(--text)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* NAV */
+.nav{
+  position:sticky;top:0;z-index:200;
+  background:rgba(10,10,10,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:0 2rem;
+  display:flex;align-items:center;justify-content:space-between;
+  height:60px;
+}
+.nav-logo{
+  font-family:var(--display);
+  font-size:26px;
+  letter-spacing:.06em;
+  color:var(--text);
+  line-height:1;
+}
+.nav-logo span{color:var(--accent)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-btn{
+  background:none;border:.5px solid var(--border2);
+  border-radius:var(--radius);padding:7px 14px;
+  font-size:12px;font-weight:500;color:var(--text2);
+  font-family:var(--font);cursor:pointer;transition:all .15s;
+}
+.nav-btn:hover{background:var(--surface2);color:var(--text)}
+.nav-btn.accent{background:var(--accent-dim);border-color:var(--accent-border);color:var(--accent)}
+.nav-btn.accent:hover{background:var(--accent);color:#000}
+
+/* HERO */
+.hero{
+  padding:4rem 2rem 2.5rem;
+  max-width:1100px;margin:0 auto;
+}
+.hero-eyebrow{
+  font-size:11px;font-weight:500;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:10px;
+}
+.hero-title{
+  font-family:var(--display);
+  font-size:clamp(48px,8vw,96px);
+  line-height:.95;
+  letter-spacing:.03em;
+  color:var(--text);
+  margin-bottom:16px;
+}
+.hero-title span{color:var(--accent)}
+.hero-sub{font-size:15px;color:var(--text2);max-width:480px;line-height:1.6}
+
+/* TOOLBAR */
+.toolbar{
+  max-width:1100px;margin:0 auto;
+  padding:1.5rem 2rem 1rem;
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+}
+.search-box{
+  flex:1;min-width:200px;position:relative;
+}
+.search-box input{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:10px 14px 10px 38px;
+  font-size:14px;font-family:var(--font);color:var(--text);
+  transition:border-color .15s;
+}
+.search-box input:focus{outline:none;border-color:var(--border2)}
+.search-box input::placeholder{color:var(--text3)}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
+.filter-pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:99px;padding:6px 14px;font-size:12px;font-weight:500;
+  color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap;
+  font-family:var(--font);
+}
+.pill:hover{border-color:var(--border2);color:var(--text)}
+.pill.active{background:var(--accent-dim);border-color:var(--accent-border);color:var(--accent)}
+
+/* CATEGORY COUNT */
+.cat-count{
+  max-width:1100px;margin:0 auto;
+  padding:0 2rem .75rem;
+  font-size:12px;color:var(--text3);
+}
+
+/* GRID */
+.grid{
+  max-width:1100px;margin:0 auto;
+  padding:0 2rem 4rem;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:16px;
+}
+.cat-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  cursor:pointer;
+  transition:border-color .2s,transform .15s,box-shadow .2s;
+  text-decoration:none;
+  display:block;
+  position:relative;
+}
+.cat-card:hover{
+  border-color:var(--accent-border);
+  transform:translateY(-2px);
+  box-shadow:0 8px 32px rgba(232,200,74,.08);
+}
+.cat-card.coming-soon{opacity:.5;cursor:default;pointer-events:none}
+.cat-banner{
+  width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;
+  background:var(--surface2);
+}
+.cat-banner-placeholder{
+  width:100%;aspect-ratio:1554/319;
+  background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;
+}
+.cat-banner-placeholder span{font-family:var(--display);font-size:28px;letter-spacing:.06em;color:var(--text3)}
+.cat-body{padding:12px 16px 14px}
+.cat-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+.cat-meta{display:flex;align-items:center;gap:8px}
+.cat-genre{font-size:11px;color:var(--text3);background:var(--surface2);border-radius:99px;padding:2px 9px;border:1px solid var(--border)}
+.cat-coming{font-size:11px;color:var(--text3)}
+.cat-arrow{
+  position:absolute;top:12px;right:12px;
+  background:rgba(10,10,10,.7);
+  border-radius:50%;width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:var(--text2);
+  opacity:0;transition:opacity .15s;
+}
+.cat-card:hover .cat-arrow{opacity:1}
+
+/* EMPTY */
+.empty{
+  grid-column:1/-1;text-align:center;
+  padding:4rem 1rem;color:var(--text3);font-size:14px;
+}
+.empty-icon{font-size:36px;margin-bottom:12px;display:block}
+
+/* ── ADMIN PANEL ── */
+.overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);
+  z-index:500;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.overlay.show{display:flex}
+.modal{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--radius-lg);width:min(620px,95vw);
+  max-height:90vh;display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.modal-header{
+  padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.modal-title{font-size:16px;font-weight:600;color:var(--text)}
+.modal-close{
+  background:none;border:none;color:var(--text2);font-size:20px;
+  cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px;
+}
+.modal-close:hover{background:var(--surface2);color:var(--text)}
+.modal-body{padding:1.5rem;overflow-y:auto;flex:1}
+.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+
+/* FORMS */
+.form-group{margin-bottom:1.25rem}
+.form-label{font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:6px}
+.form-input{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:10px 13px;font-size:14px;
+  font-family:var(--font);color:var(--text);transition:border-color .15s;
+}
+.form-input:focus{outline:none;border-color:var(--accent-border)}
+.form-input::placeholder{color:var(--text3)}
+.form-row{display:flex;gap:12px}
+.form-row .form-group{flex:1;margin-bottom:0}
+.form-hint{font-size:11px;color:var(--text3);margin-top:4px}
+.banner-preview{
+  width:100%;aspect-ratio:1554/319;object-fit:cover;
+  border-radius:var(--radius);background:var(--surface2);
+  display:block;margin-top:8px;border:1px solid var(--border);
+}
+
+/* BUTTONS */
+.btn{
+  border-radius:var(--radius);padding:9px 18px;
+  font-size:13px;font-family:var(--font);font-weight:500;
+  cursor:pointer;transition:all .15s;white-space:nowrap;border:none;
+}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover{opacity:.88}
+.btn-ghost{background:none;border:1px solid var(--border2);color:var(--text2)}
+.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-danger{background:none;border:1px solid rgba(232,74,74,.3);color:var(--red)}
+.btn-danger:hover{background:rgba(232,74,74,.1)}
+.btn-sm{padding:5px 12px;font-size:12px}
+
+/* ADMIN LIST */
+.admin-list{display:flex;flex-direction:column;gap:8px;margin-bottom:1.5rem}
+.admin-item{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:10px 12px;
+  display:flex;align-items:center;gap:12px;
+}
+.admin-item-thumb{
+  width:72px;height:15px;object-fit:cover;border-radius:3px;
+  background:var(--surface3);flex-shrink:0;
+  aspect-ratio:1554/319;height:auto;
+}
+.admin-item-info{flex:1;min-width:0}
+.admin-item-title{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-item-meta{font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-item-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* PASSWORD SCREEN */
+.password-screen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:2rem;
+}
+.password-box{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--radius-lg);padding:2.5rem;
+  width:min(400px,100%);text-align:center;
+}
+.password-box h2{font-family:var(--display);font-size:32px;letter-spacing:.05em;margin-bottom:6px}
+.password-box p{font-size:13px;color:var(--text2);margin-bottom:1.5rem}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(70px);
+  background:var(--text);color:var(--bg);
+  font-size:13px;font-weight:500;padding:9px 20px;
+  border-radius:99px;transition:transform .22s;
+  pointer-events:none;z-index:9999;white-space:nowrap;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+@media(max-width:600px){
+  .nav{padding:0 1rem}
+  .hero{padding:2.5rem 1rem 1.5rem}
+  .hero-title{font-size:52px}
+  .toolbar,.cat-count,.grid{padding-left:1rem;padding-right:1rem}
+  .grid{grid-template-columns:1fr}
+  .form-row{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo" id="site-logo">MUSIC<span>BINGO</span></div>
+  <div class="nav-right">
+    <button class="nav-btn" onclick="openAdmin()">Admin ⚙</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Choose your playlist</div>
+  <div class="hero-title" id="hero-title">MUSIC<br><span>BINGO</span></div>
+  <div class="hero-sub">Click any category below to open the host tool for that playlist.</div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search-input" placeholder="Search categories…" oninput="renderGrid()">
+  </div>
+  <div class="filter-pills" id="filter-pills"></div>
+</div>
+
+<div class="cat-count" id="cat-count"></div>
+
+<!-- GRID -->
+<div class="grid" id="cat-grid"></div>
+
+<!-- ── ADMIN OVERLAY ── -->
+<div class="overlay" id="admin-overlay">
+  <!-- PASSWORD GATE -->
+  <div id="pw-screen" class="password-box">
+    <h2>ADMIN</h2>
+    <p>Enter your password to manage bingo categories.</p>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input class="form-input" type="password" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkPW()" style="flex:1">
+      <button class="btn btn-primary" onclick="checkPW()">Enter</button>
+    </div>
+    <div id="pw-error" style="font-size:12px;color:var(--red);min-height:18px"></div>
+    <button class="btn btn-ghost btn-sm" onclick="closeAdmin()" style="margin-top:12px;width:100%">Cancel</button>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div class="modal" id="admin-panel" style="display:none">
+    <div class="modal-header">
+      <div class="modal-title">Manage categories</div>
+      <button class="modal-close" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- EXISTING CATEGORIES -->
+      <div class="section-header" style="font-size:11px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Your categories</div>
+      <div class="admin-list" id="admin-list"></div>
+
+      <!-- ADD / EDIT FORM -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem" id="cat-form-wrap">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:1rem" id="form-mode-label">Add new category</div>
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+          <label class="form-label">Category title</label>
+          <input class="form-input" type="text" id="f-title" placeholder="e.g. 90s Hip Hop">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Genre tag</label>
+            <input class="form-input" type="text" id="f-genre" placeholder="e.g. Hip Hop">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select class="form-input" id="f-status">
+              <option value="live">Live</option>
+              <option value="coming">Coming soon</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Banner image URL</label>
+          <input class="form-input" type="text" id="f-image" placeholder="https://yoursite.com/banner.jpg" oninput="previewBanner()">
+          <div class="form-hint">Use your Wix published image URL (1554×319px)</div>
+          <img class="banner-preview" id="banner-preview-img" src="" alt="" style="display:none">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Netlify host tool URL</label>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <div style="flex:1">
+              <input class="form-input" type="text" id="f-url" placeholder="https://your-bingo-app.netlify.app">
+              <div class="form-hint">The Netlify URL for this category's bingo app</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="testLink()" style="margin-top:1px;white-space:nowrap">Test link ↗</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:.5rem">
+          <button class="btn btn-primary" onclick="saveCategory()">Save category</button>
+          <button class="btn btn-ghost btn-sm" onclick="resetForm()" id="cancel-edit-btn" style="display:none">Cancel edit</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeAdmin()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT CONFIRM OVERLAY -->
+<div class="overlay" id="delete-confirm-overlay">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <div class="modal-title">Delete category?</div>
+      <button class="modal-close" onclick="cancelDelete()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--text2)">This will permanently remove <strong id="delete-name"></strong> from the landing page. The Netlify app itself won't be affected.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cancelDelete()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const ADMIN_PASSWORD = "Belladonnakaraoke100!";
+const SITE_TITLE = "Music Bingo"; // Change this to your brand name
+const FIREBASE_CONFIG = {
+  apiKey:"AIzaSyCu6aBUE8qJCCf5FRMipqQD-tGSPE78D3Y",
+  authDomain:"bellamusicbingo.firebaseapp.com",
+  databaseURL:"https://bellamusicbingo-default-rtdb.firebaseio.com",
+  projectId:"bellamusicbingo",
+  storageBucket:"bellamusicbingo.firebasestorage.app",
+  messagingSenderId:"657495697029",
+  appId:"1:657495697029:web:3fe565cbe05455b7982bec"
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let categories = []; // [{id, title, genre, image, url, status}]
+let activeFilter = 'all';
+let adminUnlocked = false;
+let deleteTargetId = null;
+let db = null;
+
+// ── FIREBASE ──────────────────────────────────────────────────────────────────
+function initFirebase() {
+  const s1 = document.createElement('script');
+  s1.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js';
+  s1.onload = () => {
+    const s2 = document.createElement('script');
+    s2.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js';
+    s2.onload = () => {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.database();
+      // Listen for live updates
+      db.ref('landing/categories').on('value', snap => {
+        const data = snap.val() || {};
+        categories = Object.entries(data).map(([id, v]) => ({ id, ...v }));
+        categories.sort((a, b) => (a.order || 0) - (b.order || 0));
+        renderGrid();
+        buildFilterPills();
+        if (adminUnlocked) renderAdminList();
+      });
+    };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s1);
+}
+
+function saveToFirebase(cat) {
+  if (!db) return;
+  const { id, ...data } = cat;
+  db.ref(`landing/categories/${id}`).set(data);
+}
+
+function deleteFromFirebase(id) {
+  if (!db) return;
+  db.ref(`landing/categories/${id}`).remove();
+}
+
+// ── RENDER GRID ───────────────────────────────────────────────────────────────
+function renderGrid() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const grid = document.getElementById('cat-grid');
+
+  let filtered = categories.filter(c => {
+    const matchSearch = !q || c.title.toLowerCase().includes(q) || (c.genre || '').toLowerCase().includes(q);
+    const matchFilter = activeFilter === 'all' || (c.genre || '').toLowerCase() === activeFilter.toLowerCase();
+    return matchSearch && matchFilter;
+  });
+
+  document.getElementById('cat-count').textContent =
+    filtered.length === 0 ? '' :
+    filtered.length === 1 ? '1 category' :
+    `${filtered.length} categories`;
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty"><span class="empty-icon">🎵</span>${categories.length === 0 ? 'No categories yet — open Admin to add your first one.' : 'No categories match your search.'}</div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(c => {
+    const isLive = c.status !== 'coming';
+    const imgHTML = c.image
+      ? `<img class="cat-banner" src="${c.image}" alt="${c.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      + `<div class="cat-banner-placeholder" style="display:none"><span>${c.title}</span></div>`
+      : `<div class="cat-banner-placeholder"><span>${c.title}</span></div>`;
+
+    const clickHandler = isLive && c.url
+      ? `onclick="window.open('${c.url.replace(/'/g,"\\'")}','_blank');return false;"`
+      : '';
+
+    return `<a class="cat-card${!isLive ? ' coming-soon' : ''}" href="#" ${clickHandler}>
+      ${imgHTML}
+      <div class="cat-body">
+        <div class="cat-title">${c.title}</div>
+        <div class="cat-meta">
+          ${c.genre ? `<span class="cat-genre">${c.genre}</span>` : ''}
+          ${!isLive ? `<span class="cat-coming">Coming soon</span>` : ''}
+        </div>
+      </div>
+      ${isLive ? `<div class="cat-arrow">↗</div>` : ''}
+    </a>`;
+  }).join('');
+}
+
+function buildFilterPills() {
+  const genres = ['All', ...new Set(categories.map(c => c.genre).filter(Boolean).sort())];
+  const pills = document.getElementById('filter-pills');
+  pills.innerHTML = genres.map(g => {
+    const val = g === 'All' ? 'all' : g;
+    return `<button class="pill${activeFilter === val ? ' active' : ''}" onclick="setFilter('${val}')">${g}</button>`;
+  }).join('');
+}
+
+function setFilter(val) {
+  activeFilter = val;
+  buildFilterPills();
+  renderGrid();
+}
+
+// ── ADMIN ─────────────────────────────────────────────────────────────────────
+function openAdmin() {
+  document.getElementById('admin-overlay').classList.add('show');
+  if (!adminUnlocked) {
+    document.getElementById('pw-screen').style.display = '';
+    document.getElementById('admin-panel').style.display = 'none';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-error').textContent = '';
+    setTimeout(() => document.getElementById('pw-input').focus(), 100);
+  } else {
+    document.getElementById('pw-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = '';
+    renderAdminList();
+  }
+}
+
+function closeAdmin() {
+  document.getElementById('admin-overlay').classList.remove('show');
+  resetForm();
+}
+
+function checkPW() {
+  const val = document.getElementById('pw-input').value;
+  if (val === ADMIN_PASSWORD) {
+    adminUnlocked = true;
+    document.getElementById('pw-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = '';
+    renderAdminList();
+  } else {
+    document.getElementById('pw-error').textContent = 'Incorrect password.';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+
+function renderAdminList() {
+  const list = document.getElementById('admin-list');
+  if (!categories.length) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0">No categories yet. Add one below.</div>';
+    return;
+  }
+  list.innerHTML = categories.map(c => `
+    <div class="admin-item">
+      ${c.image
+        ? `<img class="admin-item-thumb" src="${c.image}" alt="${c.title}" onerror="this.style.background='var(--surface3)'">`
+        : `<div class="admin-item-thumb" style="background:var(--surface3);border-radius:3px"></div>`
+      }
+      <div class="admin-item-info">
+        <div class="admin-item-title">${c.title}</div>
+        <div class="admin-item-meta">${c.genre || 'No genre'} · ${c.status === 'coming' ? 'Coming soon' : 'Live'} · ${c.url ? c.url.replace('https://','') : 'No URL'}</div>
+      </div>
+      <div class="admin-item-actions">
+        <button class="btn btn-sm" style="background:var(--accent-dim);border:1px solid var(--accent-border);color:var(--accent);border-radius:var(--radius)" onclick="editCategory('${c.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="promptDelete('${c.id}','${c.title.replace(/'/g,"\\'")}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function resetForm() {
+  document.getElementById('edit-id').value = '';
+  document.getElementById('f-title').value = '';
+  document.getElementById('f-genre').value = '';
+  document.getElementById('f-image').value = '';
+  document.getElementById('f-url').value = '';
+  document.getElementById('f-status').value = 'live';
+  document.getElementById('banner-preview-img').style.display = 'none';
+  document.getElementById('form-mode-label').textContent = 'Add new category';
+  document.getElementById('cancel-edit-btn').style.display = 'none';
+}
+
+function editCategory(id) {
+  const c = categories.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('edit-id').value = id;
+  document.getElementById('f-title').value = c.title || '';
+  document.getElementById('f-genre').value = c.genre || '';
+  document.getElementById('f-image').value = c.image || '';
+  document.getElementById('f-url').value = c.url || '';
+  document.getElementById('f-status').value = c.status || 'live';
+  document.getElementById('form-mode-label').textContent = `Editing: ${c.title}`;
+  document.getElementById('cancel-edit-btn').style.display = '';
+  previewBanner();
+  document.getElementById('cat-form-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function saveCategory() {
+  const title = document.getElementById('f-title').value.trim();
+  if (!title) { showToast('Title is required'); return; }
+
+  // Sanitize URL — ensure https:// prefix, strip trailing slashes/spaces
+  let rawUrl = document.getElementById('f-url').value.trim();
+  if (rawUrl && !rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+    rawUrl = 'https://' + rawUrl;
+  }
+  rawUrl = rawUrl.replace(/\/+$/, ''); // strip trailing slashes
+
+  const editId = document.getElementById('edit-id').value;
+  const id = editId || 'cat_' + Date.now();
+  const order = editId
+    ? (categories.find(c => c.id === editId)?.order ?? categories.length)
+    : categories.length;
+
+  const cat = {
+    id,
+    title,
+    genre: document.getElementById('f-genre').value.trim(),
+    image: document.getElementById('f-image').value.trim(),
+    url: rawUrl,
+    status: document.getElementById('f-status').value,
+    order,
+  };
+
+  saveToFirebase(cat);
+  resetForm();
+  showToast(editId ? 'Category updated!' : 'Category added!');
+}
+
+function testLink() {
+  let url = document.getElementById('f-url').value.trim();
+  if (!url) { showToast('Enter a URL first'); return; }
+  if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+  window.open(url, '_blank');
+}
+
+function previewBanner() {
+  const url = document.getElementById('f-image').value.trim();
+  const img = document.getElementById('banner-preview-img');
+  if (url) {
+    img.src = url;
+    img.style.display = 'block';
+    img.onerror = () => { img.style.display = 'none'; };
+  } else {
+    img.style.display = 'none';
+  }
+}
+
+function promptDelete(id, title) {
+  deleteTargetId = id;
+  document.getElementById('delete-name').textContent = `"${title}"`;
+  document.getElementById('delete-confirm-overlay').classList.add('show');
+}
+
+function cancelDelete() {
+  deleteTargetId = null;
+  document.getElementById('delete-confirm-overlay').classList.remove('show');
+}
+
+function confirmDelete() {
+  if (!deleteTargetId) return;
+  deleteFromFirebase(deleteTargetId);
+  deleteTargetId = null;
+  document.getElementById('delete-confirm-overlay').classList.remove('show');
+  showToast('Category removed');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeAdmin();
+    cancelDelete();
+  }
+});
+
+// Close overlay on background click
+document.getElementById('admin-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('admin-overlay')) closeAdmin();
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+initFirebase();
+</script>
+</body>
+</html>
