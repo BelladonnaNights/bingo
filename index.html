@@ -71,7 +71,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
   position:relative;
   padding:4rem 2rem 3rem;
   max-width:1100px;margin:0 auto;
-  display:flex;align-items:center;gap:3rem;flex-wrap:wrap;
+  display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;
   overflow:hidden;
 }
 .hero::before{
@@ -82,9 +82,9 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
   pointer-events:none;
 }
 .hero-logo-wrap{flex-shrink:0;position:relative;z-index:1}
-.hero-logo-img{width:auto;height:160px;object-fit:contain;display:none;border-radius:var(--radius-lg);border:1px solid var(--border2)}
+.hero-logo-img{width:auto;height:190px;object-fit:contain;display:none;border-radius:0;border:none}
 .hero-logo-placeholder{
-  width:160px;height:160px;
+  width:190px;height:190px;
   border-radius:var(--radius-lg);
   border:1px dashed var(--gold-border);
   display:flex;align-items:center;justify-content:center;
@@ -448,14 +448,10 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
           <img class="banner-preview" id="banner-preview-img" src="" alt="" style="display:none">
         </div>
         <div class="form-group">
-          <label class="form-label">GitHub host tool URL</label>
-          <div style="display:flex;gap:8px;align-items:flex-start">
-            <div style="flex:1">
-              <input class="form-input" type="text" id="f-url" placeholder="https://belladonnanights.github.io/bingo/filename.html">
-              <div class="form-hint">The GitHub Pages URL for this category's bingo app</div>
-            </div>
-            <button class="btn btn-ghost btn-sm" onclick="testLink()" style="margin-top:1px">Test ↗</button>
-          </div>
+          <label class="form-label">Song list</label>
+          <textarea class="form-input" id="f-songs" placeholder="California Love – 2Pac&#10;Changes – 2Pac&#10;Dear Mama – 2Pac&#10;..." style="height:160px;resize:vertical;font-size:13px;line-height:1.7;font-family:var(--mono,'DM Mono',monospace)" oninput="updateSongCount()"></textarea>
+          <div class="form-hint">One song per line — format: Song Name – Artist. Need at least 25 songs.</div>
+          <div id="f-songs-count" style="font-size:11px;color:var(--gold);margin-top:4px;font-style:italic"></div>
         </div>
         <div style="display:flex;gap:8px;margin-top:.5rem">
           <button class="btn btn-primary" onclick="saveCategory()">Save Category</button>
@@ -511,7 +507,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 <div class="toast" id="toast"></div>
 
 <script>
-const ADMIN_PASSWORD="Belladonnakaraoke100!";
+const ADMIN_PASSWORD="BDAhnna44";
 const FIREBASE_CONFIG={
   apiKey:"AIzaSyCu6aBUE8qJCCf5FRMipqQD-tGSPE78D3Y",
   authDomain:"bellamusicbingo.firebaseapp.com",
@@ -652,7 +648,8 @@ function renderGrid(){
     const imgHTML=c.image
       ?`<img class="cat-banner" src="${c.image}" alt="${c.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="cat-banner-placeholder" style="display:none"><span>${c.title}</span></div>`
       :`<div class="cat-banner-placeholder"><span>${c.title}</span></div>`;
-    const click=isLive&&c.url?`onclick="window.open('${c.url.replace(/'/g,"\\'")}','_blank');return false;"`:'';
+    const appUrl=`app.html?id=${c.id}`;
+    const click=isLive?`onclick="window.open('${appUrl}','_blank');return false;"`:''  
     const genreHTML=genres.length
       ?`<div class="cat-genre-wrap">${genres.map(g=>`<span class="cat-genre">${g}</span>`).join('')}</div>`:'';
     return`<a class="cat-card${!isLive?' coming-soon':''}" href="#" ${click}>
@@ -721,7 +718,7 @@ function renderAdminList(){
       ${c.image?`<img class="admin-item-thumb" src="${c.image}" alt="${c.title}" onerror="this.style.background='var(--surface3)'">`:`<div class="admin-item-thumb"></div>`}
       <div class="admin-item-info">
         <div class="admin-item-title">${c.title}</div>
-        <div class="admin-item-meta">${genres.join(', ')||'No genre'} · ${c.status==='coming'?'Coming soon':'Live'} · ${c.url?c.url.replace('https://',''):'No URL'}</div>
+        <div class="admin-item-meta">${genres.join(', ')||'No genre'} \u00b7 ${c.status==='coming'?'Coming soon':'Live'} \u00b7 ${c.songs?(c.songs.split('\\n').filter(l=>l.trim()).length+' songs'):'No songs yet'}</div>
       </div>
       <div class="admin-item-actions">
         <button class="btn-accent" onclick="editCategory('${c.id}')">Edit</button>
@@ -731,9 +728,18 @@ function renderAdminList(){
   }).join('');
 }
 
+function updateSongCount(){
+  const lines=document.getElementById('f-songs').value.trim().split('\n').filter(l=>l.trim());
+  const el=document.getElementById('f-songs-count');
+  if(!lines.length){el.textContent='';return;}
+  el.textContent=`${lines.length} song${lines.length===1?'':'s'} detected${lines.length<25?' — need at least 25':''}`;
+  el.style.color=lines.length<25?'#e05050':'var(--gold)';
+}
 function resetForm(){
-  ['edit-id','f-title','f-image','f-url'].forEach(id=>document.getElementById(id).value='');
+  ['edit-id','f-title','f-image'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-genre-input').value='';
+  document.getElementById('f-songs').value='';
+  document.getElementById('f-songs-count').textContent='';
   document.getElementById('f-status').value='live';
   document.getElementById('banner-preview-img').style.display='none';
   document.getElementById('form-mode-label').textContent='Add New Category';
@@ -741,28 +747,26 @@ function resetForm(){
   currentGenreTags=[];
   renderGenreTags();
 }
-
 function editCategory(id){
   const c=categories.find(x=>x.id===id);if(!c)return;
   document.getElementById('edit-id').value=id;
   document.getElementById('f-title').value=c.title||'';
   document.getElementById('f-image').value=c.image||'';
-  document.getElementById('f-url').value=c.url||'';
+  document.getElementById('f-songs').value=c.songs||'';
   document.getElementById('f-status').value=c.status||'live';
   currentGenreTags=getGenresFromCategory(c);
-  renderGenreTags();
+  renderGenreTags();updateSongCount();
   document.getElementById('form-mode-label').textContent=`Editing: ${c.title}`;
   document.getElementById('cancel-edit-btn').style.display='';
   previewBanner();
   document.getElementById('cat-form-wrap').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
-
 function saveCategory(){
   const title=document.getElementById('f-title').value.trim();
   if(!title){showToast('Title required');return;}
-  let url=document.getElementById('f-url').value.trim();
-  if(url&&!url.startsWith('http'))url='https://'+url;
-  url=url.replace(/\/+$/,'');
+  const songs=document.getElementById('f-songs').value.trim();
+  const songCount=songs.split('\n').filter(l=>l.trim()).length;
+  if(songCount<25){showToast(`Need at least 25 songs (have ${songCount})`);return;}
   const editId=document.getElementById('edit-id').value;
   const id=editId||'cat_'+Date.now();
   const order=editId?(categories.find(c=>c.id===editId)?.order??categories.length):categories.length;
@@ -770,7 +774,8 @@ function saveCategory(){
     id,title,
     genres:currentGenreTags.length?currentGenreTags:[],
     image:document.getElementById('f-image').value.trim(),
-    url,status:document.getElementById('f-status').value,order
+    songs,
+    status:document.getElementById('f-status').value,order
   });
   resetForm();showToast(editId?'Updated!':'Category added!');
 }
@@ -779,12 +784,6 @@ function previewBanner(){
   const img=document.getElementById('banner-preview-img');
   if(url){img.src=url;img.style.display='block';img.onerror=()=>{img.style.display='none'};}
   else img.style.display='none';
-}
-function testLink(){
-  let url=document.getElementById('f-url').value.trim();
-  if(!url){showToast('Enter a URL first');return;}
-  if(!url.startsWith('http'))url='https://'+url;
-  window.open(url,'_blank');
 }
 function promptDelete(id,title){
   deleteTargetId=id;
