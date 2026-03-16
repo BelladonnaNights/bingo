@@ -109,7 +109,9 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
 .cell-text{line-height:1.25;text-align:center;pointer-events:none;overflow-wrap:break-word;word-break:normal;hyphens:none;white-space:normal}
 .cell-title{display:block}
 .cell-artist{display:block;opacity:.6;margin-top:1px}
-.bingo-status{text-align:center;padding:8px;font-size:13px;color:var(--text2)}
+.song-ts{display:inline-block;font-size:10px;font-weight:500;color:var(--bg);background:var(--text2);border-radius:4px;padding:1px 5px;margin-left:4px;font-family:var(--mono);letter-spacing:.02em;vertical-align:middle;opacity:.75}
+.song-card.played .song-ts{background:var(--green-sub);color:#fff;opacity:1}
+.feed-ts{display:inline-block;font-size:10px;font-weight:500;color:var(--bg);background:var(--text2);border-radius:4px;padding:1px 5px;margin-left:4px;font-family:var(--mono);vertical-align:middle}
 .cards-preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:1rem}
 .no-results{grid-column:1/-1;text-align:center;padding:2rem;color:var(--text3);font-size:13px}
 
@@ -408,14 +410,21 @@ const FIREBASE_CONFIG = {
 // ── PARSE ─────────────────────────────────────────────────────────────────────
 function parseSongs(lines){
   return lines.map((line,i)=>{
-    const idx=line.search(/\s[\u2013\u2014\-]\s/);
-    const title=idx!==-1?line.slice(0,idx).trim():line.trim();
-    const artist=idx!==-1?line.slice(idx).replace(/^\s*[\u2013\u2014\-]\s*/,'').trim():'';
-    return{id:i,title,artist,played:false};
+    // Extract optional timestamp like [0:32] or [1:05] from end of string
+    const tsMatch = line.match(/\[(\d+:\d{2})\]\s*$/);
+    const ts = tsMatch ? tsMatch[1] : '';
+    const clean = tsMatch ? line.slice(0, tsMatch.index).trim() : line.trim();
+    const idx = clean.search(/\s[\u2013\u2014\-]\s/);
+    const title = idx !== -1 ? clean.slice(0,idx).trim() : clean.trim();
+    const artist = idx !== -1 ? clean.slice(idx).replace(/^\s*[\u2013\u2014\-]\s*/,'').trim() : '';
+    return{id:i,title,artist,ts,played:false};
   });
 }
 function fmtLabel(s){
-  return s.artist?`${s.title} <span class="artist-part">\u2013 ${s.artist}</span>`:s.title;
+  const tsHTML = s.ts ? ` <span class="song-ts">${s.ts}</span>` : '';
+  return s.artist
+    ? `${s.title} <span class="artist-part">\u2013 ${s.artist}</span>${tsHTML}`
+    : `${s.title}${tsHTML}`;
 }
 function fmtPlain(s){return s.artist?`${s.title} \u2013 ${s.artist}`:s.title;}
 
@@ -486,7 +495,8 @@ function renderHostFeed(){
   document.getElementById('host-feed-title').textContent=`Played order (${hostPlayedOrder.length})`;
   list.innerHTML=[...hostPlayedOrder].reverse().map((id,i)=>{
     const s=allSongs.find(x=>x.id===id),n=hostPlayedOrder.length-i;
-    return`<li class="feed-item"><span class="feed-num">#${n}</span><div class="feed-label">${fmtLabel(s)}</div><button class="feed-undo" onclick="hostToggle(${id})">undo</button></li>`;
+    const tsHTML=s.ts?` <span class="feed-ts">${s.ts}</span>`:'';
+    return`<li class="feed-item"><span class="feed-num">#${n}</span><div class="feed-label">${fmtLabel(s)}${tsHTML}</div><button class="feed-undo" onclick="hostToggle(${id})">undo</button></li>`;
   }).join('');
 }
 function hostReset(){
