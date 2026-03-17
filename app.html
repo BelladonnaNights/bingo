@@ -395,31 +395,40 @@ let db=null, sessionKey=null, categoryId=null;
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
 function bootstrap(){
-  // Get category ID from URL: ?id=cat_123
   const params=new URLSearchParams(window.location.search);
   categoryId=params.get('id');
-  if(!categoryId){showError();return;}
+  if(!categoryId){showError('No playlist ID found in the URL. Try clicking the playlist again from the main page.');return;}
 
-  // Load Firebase then fetch the category
+  // Timeout — if nothing loads in 8 seconds, show a helpful error
+  const timeout=setTimeout(()=>{
+    showError('Could not connect to the database. Check your internet connection and try refreshing.');
+  },8000);
+
   const s1=document.createElement('script');
   s1.src='https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js';
+  s1.onerror=()=>{clearTimeout(timeout);showError('Could not load required scripts. Check your internet connection.');};
   s1.onload=()=>{
     const s2=document.createElement('script');
     s2.src='https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js';
+    s2.onerror=()=>{clearTimeout(timeout);showError('Could not load required scripts. Check your internet connection.');};
     s2.onload=()=>{
-      firebase.initializeApp(FIREBASE_CONFIG);
-      db=firebase.database();
-      // Fetch category data
-      db.ref(`landing/categories/${categoryId}`).once('value',snap=>{
-        const data=snap.val();
-        if(!data){showError();return;}
-        loadCategory(data);
-      });
-      // Also load site logo for nav
-      db.ref('landing/settings/logoUrl').once('value',snap=>{
-        const url=snap.val()||'';
-        if(url){const logo=document.getElementById('nav-brand-logo');logo.src=url;logo.style.display='block';}
-      });
+      try{
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db=firebase.database();
+        db.ref(`landing/categories/${categoryId}`).once('value',snap=>{
+          clearTimeout(timeout);
+          const data=snap.val();
+          if(!data){showError(`Playlist not found (ID: ${categoryId}). It may have been removed or not saved correctly.`);return;}
+          loadCategory(data);
+        },(err)=>{
+          clearTimeout(timeout);
+          showError('Database error: '+err.message);
+        });
+        db.ref('landing/settings/logoUrl').once('value',snap=>{
+          const url=snap.val()||'';
+          if(url){const logo=document.getElementById('nav-brand-logo');logo.src=url;logo.style.display='block';}
+        });
+      }catch(e){clearTimeout(timeout);showError('Initialization error: '+e.message);}
     };
     document.head.appendChild(s2);
   };
@@ -433,7 +442,10 @@ function loadCategory(data){
   const spotifyUrl=data.spotifyUrl||'';
 
   SONGS_RAW=rawSongs.split('\n').map(s=>s.trim()).filter(Boolean);
-  if(SONGS_RAW.length<25){showError('Not enough songs in this playlist (need at least 25).');return;}
+  if(SONGS_RAW.length<25){
+    showError(`This playlist only has ${SONGS_RAW.length} song${SONGS_RAW.length===1?'':'s'}. At least 25 are needed. Go to the Admin panel on the landing page and add more songs to this category.`);
+    return;
+  }
   allSongs=parseSongs(SONGS_RAW);
   sessionKey=categoryId;
 
@@ -486,7 +498,7 @@ function showError(msg){
   document.getElementById('loading-screen').classList.add('hide');
   const err=document.getElementById('error-screen');
   err.classList.add('show');
-  if(msg)err.querySelector('.error-sub').textContent=msg;
+  if(msg) err.querySelector('.error-sub').textContent=msg;
 }
 
 // ── PARSE ─────────────────────────────────────────────────────────────────────
