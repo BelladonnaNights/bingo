@@ -726,6 +726,7 @@ body{background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',san
   win.document.close();
   win.onload=()=>setTimeout(()=>win.print(),300);
 }
+function hostCopyList(){
   navigator.clipboard.writeText(hostPlayedOrder.map((id,i)=>`${i+1}. ${fmtPlain(allSongs.find(x=>x.id===id))}`).join('\n')).then(()=>showToast('Copied!'));
 }
 function hostCopyTSV(){
