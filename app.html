@@ -712,10 +712,8 @@ function printCards(){
       const artistHTML=s.artist?`<span class="cell-artist" style="font-size:${Math.max(6,fontSize-2)}px">${s.artist}</span>`:'';
       return`<div class="bingo-cell"><div class="cell-text" style="font-size:${fontSize}px"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
     }).join('');
-    // QR codes in bottom-right corner of the card
-    const playerQrCorner=qrSrc?`<img src="${qrSrc}" style="width:32px;height:32px;display:block;border-radius:2px">`:'';
-    const spotifyQrCorner=SPOTIFY_QR_URL?`<img src="${SPOTIFY_QR_URL}" style="width:32px;height:32px;display:block;border-radius:2px" onerror="this.style.display='none'">`:'';
-    const qrCorner=(playerQrCorner||spotifyQrCorner)?`<div style="position:absolute;bottom:4px;right:4px;background:rgba(255,255,255,.9);border-radius:3px;padding:2px;display:flex;gap:2px;line-height:0">${playerQrCorner}${spotifyQrCorner}</div>`:'';
+    // Spotify QR only, top-left, ~40% of banner height (banner is 1554x319 ratio, card is 50% page width)
+    const qrCorner=SPOTIFY_QR_URL?`<div style="position:absolute;top:4px;left:4px;background:rgba(255,255,255,.88);border-radius:3px;padding:2px;line-height:0"><img src="${SPOTIFY_QR_URL}" style="width:52px;height:52px;display:block;border-radius:2px" onerror="this.style.display='none'"></div>`:'';
     return`<div class="card-page" style="position:relative">${imgHTML}<div class="bingo-grid">${cellsHTML}</div>${qrCorner}</div>`;
   }).join('');
 
