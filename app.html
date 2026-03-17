@@ -197,6 +197,9 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <img class="nav-brand-logo" id="nav-brand-logo" src="" alt="Logo" onerror="this.style.display='none'">
     <span class="nav-brand-text" id="nav-brand">Music Bingo</span>
   </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+    <button onclick="location.reload()" style="background:none;border:.5px solid var(--border2);border-radius:var(--radius);padding:5px 12px;font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--text3);cursor:pointer;transition:all .15s" title="Reload to get latest category data">↺ Reload</button>
+  </div>
   <div class="nav-tabs">
     <button class="nav-tab active" id="tab-host" onclick="showPage('host')">Host Tool</button>
     <button class="nav-tab" id="tab-cards" onclick="showPage('cards')">Card Generator</button>
