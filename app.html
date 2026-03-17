@@ -389,7 +389,7 @@ const FIREBASE_CONFIG={
 };
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let EVENT_TITLE='Music Bingo', EVENT_IMAGE='', SONGS_RAW=[];
+let EVENT_TITLE='Music Bingo', EVENT_IMAGE='', SONGS_RAW=[], SPOTIFY_QR_URL='';
 let allSongs=[], hostPlayedOrder=[];
 let db=null, sessionKey=null, categoryId=null;
 
@@ -440,8 +440,10 @@ function loadCategory(data){
   EVENT_IMAGE=data.image||'';
   const rawSongs=data.songs||'';
   const spotifyUrl=data.spotifyUrl||'';
+  const spotifyQrUrl=data.spotifyQrUrl||'';
 
   SONGS_RAW=rawSongs.split('\n').map(s=>s.trim()).filter(Boolean);
+  SPOTIFY_QR_URL=spotifyQrUrl;
   if(SONGS_RAW.length<25){
     showError(`This playlist only has ${SONGS_RAW.length} song${SONGS_RAW.length===1?'':'s'}. At least 25 are needed. Go to the Admin panel on the landing page and add more songs to this category.`);
     return;
@@ -640,15 +642,30 @@ function printHostSheet(){
   const qrSrc=getQRDataUrl();
   const playerURL=document.getElementById('qr-url-display').textContent||'';
   const bannerHTML=EVENT_IMAGE?`<img src="${EVENT_IMAGE}" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;border-radius:6px;margin-bottom:14px" onerror="this.style.display='none'">`: '';
-  const qrBlock=qrSrc?`
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;background:#f8f8f8;border:1px solid #ddd;border-radius:6px;padding:10px 14px">
-      <img src="${qrSrc}" style="width:72px;height:72px;border-radius:4px;flex-shrink:0">
-      <div>
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#666;margin-bottom:3px">Player QR Code</div>
-        <div style="font-size:10px;color:#999;word-break:break-all;font-family:monospace">${playerURL}</div>
-        <div style="font-size:11px;color:#555;margin-top:4px">Players scan to get their digital bingo card</div>
-      </div>
-    </div>`: '';
+
+  // Build QR block — player QR always shown if available, Spotify QR shown if set
+  let qrBlock='';
+  if(qrSrc||SPOTIFY_QR_URL){
+    const playerQrHTML=qrSrc?`
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <img src="${qrSrc}" style="width:72px;height:72px;border-radius:4px">
+        <div style="font-size:9px;color:#888;text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Player Cards</div>
+      </div>`:'';
+    const spotifyQrHTML=SPOTIFY_QR_URL?`
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <img src="${SPOTIFY_QR_URL}" style="width:72px;height:72px;border-radius:4px" onerror="this.style.display='none'">
+        <div style="font-size:9px;color:#1DB954;text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Spotify</div>
+      </div>`:'';
+    qrBlock=`
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;background:#f8f8f8;border:1px solid #ddd;border-radius:6px;padding:10px 14px">
+        <div style="display:flex;gap:12px">${playerQrHTML}${spotifyQrHTML}</div>
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#666;margin-bottom:3px">QR Codes</div>
+          ${qrSrc?`<div style="font-size:10px;color:#999;word-break:break-all;font-family:monospace;margin-bottom:3px">${playerURL}</div>`:''}
+          <div style="font-size:11px;color:#555">Players scan Player Cards QR to get their digital bingo card${SPOTIFY_QR_URL?' · Scan Spotify QR to open the playlist':''}</div>
+        </div>
+      </div>`;}
+
   const cellsHTML=allSongs.map((s,i)=>`
     <div style="border:.5px solid #ccc;border-radius:5px;padding:7px 9px;background:#fff;display:flex;align-items:flex-start;gap:6px">
       <span style="font-size:10px;color:#aaa;min-width:16px;margin-top:1px;flex-shrink:0">${i+1}.</span>
@@ -695,8 +712,10 @@ function printCards(){
       const artistHTML=s.artist?`<span class="cell-artist" style="font-size:${Math.max(6,fontSize-2)}px">${s.artist}</span>`:'';
       return`<div class="bingo-cell"><div class="cell-text" style="font-size:${fontSize}px"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
     }).join('');
-    // QR in bottom-right corner of the card
-    const qrCorner=qrSrc?`<div style="position:absolute;bottom:4px;right:4px;background:#fff;border-radius:3px;padding:2px;line-height:0;opacity:.85"><img src="${qrSrc}" style="width:36px;height:36px;display:block"></div>`:'';
+    // QR codes in bottom-right corner of the card
+    const playerQrCorner=qrSrc?`<img src="${qrSrc}" style="width:32px;height:32px;display:block;border-radius:2px">`:'';
+    const spotifyQrCorner=SPOTIFY_QR_URL?`<img src="${SPOTIFY_QR_URL}" style="width:32px;height:32px;display:block;border-radius:2px" onerror="this.style.display='none'">`:'';
+    const qrCorner=(playerQrCorner||spotifyQrCorner)?`<div style="position:absolute;bottom:4px;right:4px;background:rgba(255,255,255,.9);border-radius:3px;padding:2px;display:flex;gap:2px;line-height:0">${playerQrCorner}${spotifyQrCorner}</div>`:'';
     return`<div class="card-page" style="position:relative">${imgHTML}<div class="bingo-grid">${cellsHTML}</div>${qrCorner}</div>`;
   }).join('');
 
