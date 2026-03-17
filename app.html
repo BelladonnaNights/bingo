@@ -171,39 +171,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
   .cards-preview{grid-template-columns:1fr}
   .nav-brand-text{font-size:11px}
 }
-@media print{
-  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  /* Hide absolutely everything */
-  body>*{display:none!important}
-  /* Only show the cards preview inside page-cards */
-  #page-cards{display:block!important;padding:0!important;min-height:0!important}
-  #page-cards .cards-preview{display:block!important;margin:0!important;padding:0!important}
-  #page-cards>*:not(.cards-preview){display:none!important}
-  /* Each card: 50% width, top-left, one per page */
-  .bingo-card-wrap{
-    display:block!important;
-    width:50%!important;
-    margin:0!important;
-    padding:0!important;
-    page-break-after:always!important;
-    break-after:page!important;
-    page-break-inside:avoid!important;
-    break-inside:avoid!important;
-    border:1px solid #999!important;
-    border-radius:6px!important;
-    overflow:hidden!important;
-    position:relative!important;
-    top:0!important;left:0!important;
-  }
-  .bingo-card-banner{width:100%!important;display:block!important}
-  .bingo-grid{padding:3px!important;gap:2px!important;display:grid!important}
-  .bingo-cell{border:1px solid #ccc!important;border-radius:3px!important}
-  .bingo-cell.daubed::before{display:none!important}
-  .cell-text,.cell-title,.cell-artist,.free-word{font-size:7px!important}
-  .free-ray{height:5px!important;width:1px!important}
-  /* Hide the cards-card wrapper buttons/QR — show only cards-preview */
-  .cards-card,.qr-wrap,.btn-row,.section-label,.page-title,.page-sub,.nav,.back-link{display:none!important}
-}
+/* print handled by printCards() function — opens a dedicated clean window */
 </style>
 </head>
 <body>
@@ -283,8 +251,6 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
       </div>
       <div class="top-bar">
         <div class="search-wrap"><input type="text" id="host-search" placeholder="Search songs…" oninput="hostFilter()"></div>
-        <button class="btn btn-ghost" onclick="hostReset()">Reset session</button>
-        <button class="btn btn-ghost" id="reset-undo-btn" onclick="undoReset()" style="display:none;border-color:var(--gold-border);color:var(--gold)">↩ Undo reset</button>
       </div>
       <div class="song-grid" id="host-song-grid"></div>
       <div class="feed" id="host-feed" style="display:none">
@@ -293,6 +259,10 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
           <button class="btn btn-ghost btn-sm" onclick="hostCopyList()">Copy list</button>
         </div>
         <ul class="feed-list" id="host-feed-list"></ul>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:1.5rem;padding-top:1rem;border-top:.5px solid var(--border)">
+        <button class="btn btn-ghost btn-sm" onclick="hostReset()" style="color:var(--text3)">Reset session</button>
+        <button class="btn btn-ghost btn-sm" id="reset-undo-btn" onclick="undoReset()" style="display:none;border-color:var(--gold-border);color:var(--gold)">↩ Undo reset</button>
       </div>
     </div>
     <div id="hpanel-print" style="display:none">
@@ -324,7 +294,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     </div>
     <div id="cards-output" style="display:none">
       <div class="btn-row cards-card" style="margin-bottom:1rem">
-        <button class="btn btn-primary" onclick="window.print()">Print all cards</button>
+        <button class="btn btn-primary" onclick="printCards()">Print all cards</button>
         <button class="btn btn-ghost" onclick="generateCards()">Regenerate</button>
         <button class="btn btn-accent" onclick="showPage('player');document.body.classList.add('player-mode-host')">Preview player card ↗</button>
       </div>
@@ -578,26 +548,31 @@ function renderHostFeed(){
   }).join('');
 }
 
-// ── RESET / UNDO ──────────────────────────────────────────────────────────────
-let resetSnapshot=null; // saves state before reset so it can be undone
-
 function hostReset(){
   // Save full snapshot before wiping
   resetSnapshot={
     playedIds:allSongs.filter(s=>s.played).map(s=>s.id),
     playedOrder:[...hostPlayedOrder],
-    claimBannerHTML:document.getElementById('bingo-claim-banner').outerHTML,
     claimVisible:document.getElementById('bingo-claim-banner').classList.contains('show'),
-    activeBingoClaimKey
+    activeBingoClaimKey,
+    claimNameText:document.getElementById('bingo-claim-name').textContent,
+    claimVerifyHTML:document.getElementById('bingo-claim-verify').innerHTML,
+    claimVerifyVisible:document.getElementById('bingo-claim-verify').style.display!=='none',
   };
 
-  // Wipe session
+  // Wipe session state
   allSongs.forEach(s=>s.played=false);
   hostPlayedOrder=[];
   document.getElementById('host-search').value='';
   renderHostGrid();updateHostStats();
   document.getElementById('host-feed').style.display='none';
   document.getElementById('bingo-claim-banner').classList.remove('show');
+
+  // Clear Firebase players and claims
+  if(db&&sessionKey){
+    db.ref(`sessions/${sessionKey}/players`).remove();
+    db.ref(`sessions/${sessionKey}/bingoClaims`).remove();
+  }
 
   // Show undo button
   document.getElementById('reset-undo-btn').style.display='';
@@ -611,8 +586,11 @@ function undoReset(){
   hostPlayedOrder=resetSnapshot.playedOrder;
   renderHostGrid(document.getElementById('host-search').value.toLowerCase());
   updateHostStats();renderHostFeed();
-  // Restore claim banner visibility
+  // Restore claim banner
   if(resetSnapshot.claimVisible){
+    document.getElementById('bingo-claim-name').textContent=resetSnapshot.claimNameText;
+    document.getElementById('bingo-claim-verify').innerHTML=resetSnapshot.claimVerifyHTML;
+    document.getElementById('bingo-claim-verify').style.display=resetSnapshot.claimVerifyVisible?'':'none';
     document.getElementById('bingo-claim-banner').classList.add('show');
     activeBingoClaimKey=resetSnapshot.activeBingoClaimKey;
   }
@@ -665,6 +643,78 @@ function generateCards(){
   document.getElementById('qr-url-display').textContent=playerURL;
   generateQR(playerURL);
   showToast(`${count} cards generated!`);
+}
+
+function printCards(){
+  if(!generatedCards.length){showToast('Generate cards first!');return;}
+
+  // Build card HTML with font sizes already computed from the live grid
+  const liveGrids=document.querySelectorAll('#cards-preview .bingo-grid');
+  const cardsHTML=generatedCards.map((cells,idx)=>{
+    const imgHTML=EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block">`: '';
+    // Get computed font size from live rendered grid if available
+    let fontSize=9;
+    if(liveGrids[idx]){
+      const firstCell=liveGrids[idx].querySelector('.bingo-cell:not(.free) .cell-text');
+      if(firstCell) fontSize=parseFloat(firstCell.style.fontSize)||9;
+    }
+    const cellsHTML=cells.map(s=>{
+      if(s.free) return`<div class="bingo-cell free"><div class="free-space-inner"><div class="free-rays-top"><div class="free-ray" style="transform:rotate(-35deg)"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray" style="transform:rotate(35deg)"></div></div><div class="free-words"><span class="free-word">FREE</span><span class="free-word">SPACE</span></div><div class="free-rays-bottom"><div class="free-ray" style="transform:rotate(35deg)"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray" style="transform:rotate(-35deg)"></div></div></div></div>`;
+      const artistHTML=s.artist?`<span class="cell-artist" style="font-size:${Math.max(6,fontSize-2)}px">${s.artist}</span>`:'';
+      return`<div class="bingo-cell"><div class="cell-text" style="font-size:${fontSize}px"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
+    }).join('');
+    return`<div class="card-page">${imgHTML}<div class="bingo-grid">${cellsHTML}</div></div>`;
+  }).join('');
+
+  const printHTML=`<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<title>${EVENT_TITLE} — Bingo Cards</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.card-page{
+  width:50%;
+  page-break-after:always;
+  break-after:page;
+  border:1px solid #999;
+  border-radius:6px;
+  overflow:hidden;
+}
+.bingo-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:2px;
+  padding:3px;
+}
+.bingo-cell{
+  aspect-ratio:1;
+  display:flex;align-items:center;justify-content:center;
+  text-align:center;
+  border:1px solid #ccc;
+  border-radius:3px;
+  padding:3px;
+  font-weight:500;
+  background:#f8f8f8;
+  overflow:hidden;
+}
+.bingo-cell.free{background:#fff;border:1px solid #bbb}
+.cell-text{line-height:1.25;text-align:center;overflow-wrap:break-word;word-break:normal;white-space:normal}
+.cell-title{display:block}
+.cell-artist{display:block;opacity:.6}
+.free-space-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:1px}
+.free-rays-top,.free-rays-bottom{display:flex;gap:2px;align-items:center;justify-content:center}
+.free-ray{width:1px;height:5px;border-radius:1px;background:#000}
+.free-words{display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.free-word{font-size:7px;font-weight:900;letter-spacing:.01em;text-transform:uppercase;color:#000}
+</style>
+</head><body>${cardsHTML}</body></html>`;
+
+  const win=window.open('','_blank','width=900,height=700');
+  win.document.write(printHTML);
+  win.document.close();
+  win.onload=()=>{
+    setTimeout(()=>{win.print();},300);
+  };
 }
 
 // ── TEXT SIZER ────────────────────────────────────────────────────────────────
