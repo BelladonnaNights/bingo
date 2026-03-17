@@ -270,7 +270,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     </div>
     <div id="hpanel-print" style="display:none">
       <div class="btn-row" style="margin-bottom:1rem">
-        <button class="btn btn-primary" onclick="window.print()">Print / Save as PDF</button>
+        <button class="btn btn-primary" onclick="printHostSheet()">Print / Save as PDF</button>
         <button class="btn btn-ghost" onclick="hostCopyTSV()">Copy as TSV</button>
       </div>
       <div class="print-card card"><div class="print-grid" id="host-print-grid"></div></div>
@@ -349,6 +349,14 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
       </div>
       <div class="bingo-card-wrap" id="player-bingo-card"></div>
       <div class="bingo-status" id="player-status">Tap squares to daub as songs are called.</div>
+      <div id="spotify-link-wrap" style="display:none;text-align:center;margin-top:1.25rem;padding-bottom:1rem">
+        <a id="spotify-link" href="#" target="_blank" rel="noopener"
+          style="display:inline-flex;align-items:center;gap:8px;background:#1DB954;color:#fff;text-decoration:none;border-radius:99px;padding:10px 20px;font-size:13px;font-weight:600;font-family:var(--font);transition:opacity .15s"
+          onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+          See the Spotify playlist
+        </a>
+      </div>
     </div>
   </div>
 </div>
@@ -422,18 +430,13 @@ function loadCategory(data){
   EVENT_TITLE=data.title||'Music Bingo';
   EVENT_IMAGE=data.image||'';
   const rawSongs=data.songs||'';
+  const spotifyUrl=data.spotifyUrl||'';
 
-  // Parse songs from newline-separated string
   SONGS_RAW=rawSongs.split('\n').map(s=>s.trim()).filter(Boolean);
-
-  if(SONGS_RAW.length<25){
-    showError('Not enough songs in this playlist (need at least 25).');return;
-  }
-
+  if(SONGS_RAW.length<25){showError('Not enough songs in this playlist (need at least 25).');return;}
   allSongs=parseSongs(SONGS_RAW);
-  sessionKey=categoryId; // Use category ID as session key — unique per category
+  sessionKey=categoryId;
 
-  // Populate UI
   document.getElementById('nav-brand').textContent=EVENT_TITLE;
   document.getElementById('host-title').textContent=EVENT_TITLE+' \u2014 Host Tool';
   document.title=EVENT_TITLE+' — Music Bingo';
@@ -447,6 +450,14 @@ function loadCategory(data){
     const bw=document.getElementById('player-entry-banner-wrap');
     bw.style.display='';
     bw.innerHTML=`<img class="player-entry-banner" src="${EVENT_IMAGE}" alt="${EVENT_TITLE}" onerror="this.parentNode.style.display='none'">`;
+  }
+
+  // Spotify link on player card
+  if(spotifyUrl){
+    const wrap=document.getElementById('spotify-link-wrap');
+    const link=document.getElementById('spotify-link');
+    link.href=spotifyUrl;
+    wrap.style.display='';
   }
 
   // Show app, hide loading
@@ -605,7 +616,104 @@ function renderPrintGrid(){
   document.getElementById('host-print-grid').innerHTML=
     allSongs.map((s,i)=>`<div class="print-cell"><span class="cell-num">${i+1}.</span><div class="cell-label">${fmtLabel(s)}</div></div>`).join('');
 }
-function hostCopyList(){
+
+function getQRDataUrl(){
+  const c=document.getElementById('qr-container');
+  const canvas=c.querySelector('canvas'),img=c.querySelector('img');
+  if(canvas){const t=document.createElement('canvas');t.width=200;t.height=200;t.getContext('2d').drawImage(canvas,0,0,200,200);return t.toDataURL();}
+  return img?img.src:'';
+}
+
+function printHostSheet(){
+  const qrSrc=getQRDataUrl();
+  const playerURL=document.getElementById('qr-url-display').textContent||'';
+  const bannerHTML=EVENT_IMAGE?`<img src="${EVENT_IMAGE}" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;border-radius:6px;margin-bottom:14px" onerror="this.style.display='none'">`: '';
+  const qrBlock=qrSrc?`
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;background:#f8f8f8;border:1px solid #ddd;border-radius:6px;padding:10px 14px">
+      <img src="${qrSrc}" style="width:72px;height:72px;border-radius:4px;flex-shrink:0">
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#666;margin-bottom:3px">Player QR Code</div>
+        <div style="font-size:10px;color:#999;word-break:break-all;font-family:monospace">${playerURL}</div>
+        <div style="font-size:11px;color:#555;margin-top:4px">Players scan to get their digital bingo card</div>
+      </div>
+    </div>`: '';
+  const cellsHTML=allSongs.map((s,i)=>`
+    <div style="border:.5px solid #ccc;border-radius:5px;padding:7px 9px;background:#fff;display:flex;align-items:flex-start;gap:6px">
+      <span style="font-size:10px;color:#aaa;min-width:16px;margin-top:1px;flex-shrink:0">${i+1}.</span>
+      <div style="font-size:11px;font-weight:500;line-height:1.35">${fmtPlain(s)}</div>
+    </div>`).join('');
+
+  const printHTML=`<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<title>${EVENT_TITLE} — Host Sheet</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px;background:#fff;color:#1a1a1a}
+h1{font-size:18px;font-weight:700;margin-bottom:4px}
+.sub{font-size:12px;color:#888;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+</style>
+</head><body>
+${bannerHTML}
+${qrBlock}
+<h1>${EVENT_TITLE} — Song List</h1>
+<div class="sub">${allSongs.length} songs</div>
+<div class="grid">${cellsHTML}</div>
+</body></html>`;
+
+  const win=window.open('','_blank','width=900,height=700');
+  win.document.write(printHTML);
+  win.document.close();
+  win.onload=()=>setTimeout(()=>win.print(),300);
+}
+
+function printCards(){
+  if(!generatedCards.length){showToast('Generate cards first!');return;}
+  const qrSrc=getQRDataUrl();
+  const liveGrids=document.querySelectorAll('#cards-preview .bingo-grid');
+  const cardsHTML=generatedCards.map((cells,idx)=>{
+    const imgHTML=EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block">`: '';
+    let fontSize=9;
+    if(liveGrids[idx]){
+      const firstCell=liveGrids[idx].querySelector('.bingo-cell:not(.free) .cell-text');
+      if(firstCell) fontSize=parseFloat(firstCell.style.fontSize)||9;
+    }
+    const cellsHTML=cells.map(s=>{
+      if(s.free) return`<div class="bingo-cell free"><div class="free-space-inner"><div class="free-rays-top"><div class="free-ray" style="transform:rotate(-35deg)"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray" style="transform:rotate(35deg)"></div></div><div class="free-words"><span class="free-word">FREE</span><span class="free-word">SPACE</span></div><div class="free-rays-bottom"><div class="free-ray" style="transform:rotate(35deg)"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray" style="transform:rotate(-35deg)"></div></div></div></div>`;
+      const artistHTML=s.artist?`<span class="cell-artist" style="font-size:${Math.max(6,fontSize-2)}px">${s.artist}</span>`:'';
+      return`<div class="bingo-cell"><div class="cell-text" style="font-size:${fontSize}px"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
+    }).join('');
+    // QR in bottom-right corner of the card
+    const qrCorner=qrSrc?`<div style="position:absolute;bottom:4px;right:4px;background:#fff;border-radius:3px;padding:2px;line-height:0;opacity:.85"><img src="${qrSrc}" style="width:36px;height:36px;display:block"></div>`:'';
+    return`<div class="card-page" style="position:relative">${imgHTML}<div class="bingo-grid">${cellsHTML}</div>${qrCorner}</div>`;
+  }).join('');
+
+  const printHTML=`<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<title>${EVENT_TITLE} — Bingo Cards</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.card-page{width:50%;page-break-after:always;break-after:page;border:1px solid #999;border-radius:6px;overflow:hidden;position:relative}
+.bingo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:3px}
+.bingo-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid #ccc;border-radius:3px;padding:3px;font-weight:500;background:#f8f8f8;overflow:hidden}
+.bingo-cell.free{background:#fff;border:1px solid #bbb}
+.cell-text{line-height:1.25;text-align:center;overflow-wrap:break-word;word-break:normal;white-space:normal}
+.cell-title{display:block}
+.cell-artist{display:block;opacity:.6}
+.free-space-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:1px}
+.free-rays-top,.free-rays-bottom{display:flex;gap:2px;align-items:center;justify-content:center}
+.free-ray{width:1px;height:5px;border-radius:1px;background:#000}
+.free-words{display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.free-word{font-size:7px;font-weight:900;letter-spacing:.01em;text-transform:uppercase;color:#000}
+</style>
+</head><body>${cardsHTML}</body></html>`;
+
+  const win=window.open('','_blank','width=900,height=700');
+  win.document.write(printHTML);
+  win.document.close();
+  win.onload=()=>setTimeout(()=>win.print(),300);
+}
   navigator.clipboard.writeText(hostPlayedOrder.map((id,i)=>`${i+1}. ${fmtPlain(allSongs.find(x=>x.id===id))}`).join('\n')).then(()=>showToast('Copied!'));
 }
 function hostCopyTSV(){
