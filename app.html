@@ -727,7 +727,9 @@ function printCards(){
 html,body{background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;width:100%}
 .card-page{
   width:100%;
-  display:block;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
   position:relative;
   border:1px solid #999;
   border-radius:6px;
@@ -741,8 +743,9 @@ html,body{background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI
   page-break-after:auto;
   break-after:auto;
 }
-.bingo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:3px}
-.bingo-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid #ccc;border-radius:3px;padding:3px;font-weight:500;background:#f8f8f8;overflow:hidden}
+.bingo-card-banner{width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;flex-shrink:0}
+.bingo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:3px;flex:1}
+.bingo-cell{display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid #ccc;border-radius:3px;padding:3px;font-weight:500;background:#f8f8f8;overflow:hidden;min-height:0}
 .bingo-cell.free{background:#fff;border:1px solid #bbb}
 .cell-text{line-height:1.25;text-align:center;overflow-wrap:break-word;word-break:normal;white-space:normal}
 .cell-title{display:block}
