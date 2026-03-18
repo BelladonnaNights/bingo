@@ -699,69 +699,83 @@ ${qrBlock}
 
 function printCards(){
   if(!generatedCards.length){showToast('Generate cards first!');return;}
-  const qrSrc=getQRDataUrl();
   const liveGrids=document.querySelectorAll('#cards-preview .bingo-grid');
-  const cardsHTML=generatedCards.map((cells,idx)=>{
-    const imgHTML=EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block">`: '';
-    let fontSize=9;
-    if(liveGrids[idx]){
-      const firstCell=liveGrids[idx].querySelector('.bingo-cell:not(.free) .cell-text');
-      if(firstCell) fontSize=parseFloat(firstCell.style.fontSize)||9;
-    }
-    const cellsHTML=cells.map(s=>{
-      if(s.free) return`<div class="bingo-cell free"><div class="free-space-inner"><div class="free-rays-top"><div class="free-ray" style="transform:rotate(-35deg)"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray" style="transform:rotate(35deg)"></div></div><div class="free-words"><span class="free-word">FREE</span><span class="free-word">SPACE</span></div><div class="free-rays-bottom"><div class="free-ray" style="transform:rotate(35deg)"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray" style="transform:rotate(-35deg)"></div></div></div></div>`;
-      const artistHTML=s.artist?`<span class="cell-artist" style="font-size:${Math.max(6,fontSize-2)}px">${s.artist}</span>`:'';
-      return`<div class="bingo-cell"><div class="cell-text" style="font-size:${fontSize}px"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
-    }).join('');
-    // Spotify QR only, top-left, ~40% of banner height (banner is 1554x319 ratio, card is 50% page width)
-    const qrCorner=SPOTIFY_QR_URL?`<div style="position:absolute;top:4px;left:4px;background:rgba(255,255,255,.88);border-radius:3px;padding:2px;line-height:0"><img src="${SPOTIFY_QR_URL}" style="width:52px;height:52px;display:block;border-radius:2px" onerror="this.style.display='none'"></div>`:'';
-    return`<div class="card-page" style="position:relative">${imgHTML}<div class="bingo-grid">${cellsHTML}</div>${qrCorner}</div>`;
-  }).join('');
 
-  const printHTML=`<!DOCTYPE html>
+  const cardCSS=`
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .card-wrap{width:100%;position:relative;border:1px solid #999;border-radius:6px;overflow:hidden}
+    .bingo-card-banner{width:100%;aspect-ratio:1554/319;object-fit:cover;display:block}
+    .bingo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:3px}
+    .bingo-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid #ccc;border-radius:3px;padding:3px;font-weight:500;background:#f8f8f8;overflow:hidden}
+    .bingo-cell.free{background:#fff;border:1px solid #bbb}
+    .cell-text{line-height:1.25;text-align:center;overflow-wrap:break-word;word-break:normal;white-space:normal}
+    .cell-title{display:block}
+    .cell-artist{display:block;opacity:.6}
+    .free-space-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:1px}
+    .free-rays-top,.free-rays-bottom{display:flex;gap:2px;align-items:center;justify-content:center}
+    .free-ray{width:1px;height:5px;border-radius:1px;background:#000}
+    .free-words{display:flex;flex-direction:column;align-items:center;line-height:1.05}
+    .free-word{font-size:7px;font-weight:900;letter-spacing:.01em;text-transform:uppercase;color:#000}
+    .qr-corner{position:absolute;top:4px;left:4px;background:rgba(255,255,255,.88);border-radius:3px;padding:2px;line-height:0}
+    .qr-corner img{width:52px;height:52px;display:block;border-radius:2px}
+  `;
+
+  // Build each card as a full standalone page separated by @page breaks
+  const pages = generatedCards.map((cells, idx) => {
+    let fontSize = 9;
+    if(liveGrids[idx]){
+      const firstCell = liveGrids[idx].querySelector('.bingo-cell:not(.free) .cell-text');
+      if(firstCell) fontSize = parseFloat(firstCell.style.fontSize) || 9;
+    }
+    const imgHTML = EVENT_IMAGE
+      ? `<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" onerror="this.style.display='none'">`
+      : '';
+    const cellsHTML = cells.map(s => {
+      if(s.free) return `<div class="bingo-cell free"><div class="free-space-inner"><div class="free-rays-top"><div class="free-ray" style="transform:rotate(-35deg)"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray" style="transform:rotate(35deg)"></div></div><div class="free-words"><span class="free-word">FREE</span><span class="free-word">SPACE</span></div><div class="free-rays-bottom"><div class="free-ray" style="transform:rotate(35deg)"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray" style="transform:rotate(-35deg)"></div></div></div></div>`;
+      const artistHTML = s.artist ? `<span class="cell-artist" style="font-size:${Math.max(6,fontSize-2)}px">${s.artist}</span>` : '';
+      return `<div class="bingo-cell"><div class="cell-text" style="font-size:${fontSize}px"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
+    }).join('');
+    const qrCorner = SPOTIFY_QR_URL
+      ? `<div class="qr-corner"><img src="${SPOTIFY_QR_URL}" onerror="this.style.display='none'"></div>`
+      : '';
+    return `<div class="card-wrap">${imgHTML}<div class="bingo-grid">${cellsHTML}</div>${qrCorner}</div>`;
+  });
+
+  // Each card gets its own @page section — guarantees exactly 1 card per page at any scale
+  const printHTML = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <title>${EVENT_TITLE} — Bingo Cards</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-@page{size:letter portrait;margin:0.4in}
-html,body{background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;width:100%}
-.card-page{
-  width:100%;
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-  position:relative;
-  border:1px solid #999;
-  border-radius:6px;
-  overflow:hidden;
-  page-break-after:always;
-  break-after:page;
-  page-break-inside:avoid;
-  break-inside:avoid;
+${cardCSS}
+@media print {
+  @page { size: letter portrait; margin: 0.35in; }
+  .page-card {
+    page-break-after: always;
+    break-after: page;
+    page-break-before: always;
+    break-before: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    display: block;
+  }
+  .page-card:first-child {
+    page-break-before: auto;
+    break-before: auto;
+  }
+  .page-card:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
 }
-.card-page:last-child{
-  page-break-after:auto;
-  break-after:auto;
-}
-.bingo-card-banner{width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;flex-shrink:0}
-.bingo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:3px;flex:1}
-.bingo-cell{display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid #ccc;border-radius:3px;padding:3px;font-weight:500;background:#f8f8f8;overflow:hidden;min-height:0}
-.bingo-cell.free{background:#fff;border:1px solid #bbb}
-.cell-text{line-height:1.25;text-align:center;overflow-wrap:break-word;word-break:normal;white-space:normal}
-.cell-title{display:block}
-.cell-artist{display:block;opacity:.6}
-.free-space-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:1px}
-.free-rays-top,.free-rays-bottom{display:flex;gap:2px;align-items:center;justify-content:center}
-.free-ray{width:1px;height:5px;border-radius:1px;background:#000}
-.free-words{display:flex;flex-direction:column;align-items:center;line-height:1.05}
-.free-word{font-size:7px;font-weight:900;letter-spacing:.01em;text-transform:uppercase;color:#000}
 </style>
-</head><body>${cardsHTML}</body></html>`;
+</head><body>
+${pages.map(p => `<div class="page-card">${p}</div>`).join('\n')}
+</body></html>`;
 
-  const win=window.open('','_blank','width=900,height=700');
+  const win = window.open('', '_blank', 'width=900,height=700');
   win.document.write(printHTML);
   win.document.close();
-  win.onload=()=>setTimeout(()=>win.print(),300);
+  win.onload = () => setTimeout(() => win.print(), 400);
 }
 function hostCopyList(){
   navigator.clipboard.writeText(hostPlayedOrder.map((id,i)=>`${i+1}. ${fmtPlain(allSongs.find(x=>x.id===id))}`).join('\n')).then(()=>showToast('Copied!'));
