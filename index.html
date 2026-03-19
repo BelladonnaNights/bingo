@@ -8,273 +8,84 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0a0a0a;
-  --surface:#131313;
-  --surface2:#1c1c1c;
-  --surface3:#252525;
-  --border:rgba(255,255,255,.07);
-  --border2:rgba(255,255,255,.13);
-  --border3:rgba(255,255,255,.22);
-  --text:#f0ede8;
-  --text2:#b0a898;
-  --text3:#5a5248;
-  /* SHINY GOLD — three-stop gradient for richness */
-  --gold:#c9a84c;
-  --gold2:#e8c96a;
-  --gold3:#f5df90;
+  --bg:#0a0a0a;--surface:#131313;--surface2:#1c1c1c;--surface3:#252525;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);--border3:rgba(255,255,255,.22);
+  --text:#f0ede8;--text2:#b0a898;--text3:#5a5248;
+  --gold:#c9a84c;--gold2:#e8c96a;--gold3:#f5df90;
   --gold-shine:linear-gradient(135deg,#c9a84c 0%,#f5df90 45%,#c9a84c 70%,#e2b84a 100%);
-  --gold-dim:rgba(201,168,76,.10);
-  --gold-border:rgba(201,168,76,.28);
-  --gold-border2:rgba(201,168,76,.5);
+  --gold-dim:rgba(201,168,76,.10);--gold-border:rgba(201,168,76,.28);--gold-border2:rgba(201,168,76,.5);
   --radius:8px;--radius-lg:14px;
-  --font:'DM Sans',sans-serif;
-  --display:'Bebas Neue',sans-serif;
-  --serif:'EB Garamond',serif;
-  --cinzel:'Cinzel',serif;
+  --font:'DM Sans',sans-serif;--display:'Bebas Neue',sans-serif;
+  --serif:'EB Garamond',serif;--cinzel:'Cinzel',serif;
 }
 html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var(--text)}
 ::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(201,168,76,.25);border-radius:3px}
-
-/* NAV */
-.nav{
-  position:sticky;top:0;z-index:200;
-  background:rgba(10,10,10,.94);
-  backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--border);
-  padding:0 2rem;
-  display:flex;align-items:center;justify-content:space-between;
-  height:64px;
-}
+.nav{position:sticky;top:0;z-index:200;background:rgba(10,10,10,.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px}
 .nav-left{display:flex;align-items:center;gap:14px}
 .nav-logo-img{height:40px;width:auto;object-fit:contain;display:none}
 .nav-title{font-family:var(--display);font-size:22px;letter-spacing:.06em;color:var(--text);line-height:1}
 .nav-title span{background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-right{display:flex;align-items:center;gap:12px}
-.nav-btn{
-  background:none;
-  border:1px solid var(--gold-border);
-  border-radius:var(--radius);
-  padding:7px 16px;
-  font-size:11px;font-weight:500;
-  font-family:var(--cinzel);
-  letter-spacing:.1em;
-  text-transform:uppercase;
-  color:var(--gold);
-  cursor:pointer;transition:all .2s;
-}
+.nav-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;justify-content:center}
+.nav-btn{background:none;border:1px solid var(--gold-border);border-radius:var(--radius);padding:7px 16px;font-size:11px;font-weight:500;font-family:var(--cinzel);letter-spacing:.1em;text-transform:uppercase;color:var(--gold);cursor:pointer;transition:all .2s;white-space:nowrap}
 .nav-btn:hover{background:var(--gold);color:#000;border-color:var(--gold)}
-
-/* HERO */
-.hero{
-  position:relative;
-  padding:4rem 2rem 3rem;
-  max-width:1100px;margin:0 auto;
-  display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;
-  overflow:hidden;
-}
-.hero::before{
-  content:'';position:absolute;
-  top:-60px;left:50%;transform:translateX(-50%);
-  width:800px;height:360px;
-  background:radial-gradient(ellipse at 50% 0%,rgba(201,168,76,.06) 0%,transparent 68%);
-  pointer-events:none;
-}
+.nav-btn-sched{font-size:12px;padding:5px 14px;letter-spacing:.06em}
+.hero{position:relative;padding:4rem 2rem 3rem;max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:3rem;flex-wrap:wrap;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:800px;height:360px;background:radial-gradient(ellipse at 50% 0%,rgba(201,168,76,.06) 0%,transparent 68%);pointer-events:none}
 .hero-logo-wrap{flex-shrink:0;position:relative;z-index:1}
-.hero-logo-img{width:auto;height:190px;object-fit:contain;display:none;border-radius:0;border:none}
-.hero-logo-placeholder{
-  width:190px;height:190px;
-  border-radius:var(--radius-lg);
-  border:1px dashed var(--gold-border);
-  display:flex;align-items:center;justify-content:center;
-  flex-direction:column;gap:6px;
-  cursor:pointer;background:var(--surface);
-  transition:border-color .2s;
-}
+.hero-logo-img{width:130px;height:130px;object-fit:contain;display:none;border-radius:var(--radius-lg);border:1px solid var(--border2)}
+.hero-logo-placeholder{width:130px;height:130px;border-radius:var(--radius-lg);border:1px dashed var(--gold-border);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;cursor:pointer;background:var(--surface);transition:border-color .2s}
 .hero-logo-placeholder:hover{border-color:var(--gold-border2)}
 .hero-logo-placeholder span{font-size:11px;color:var(--text3);text-align:center;padding:0 10px;line-height:1.4}
 .hero-text{flex:1;min-width:240px;position:relative;z-index:1}
-.hero-eyebrow{
-  font-family:var(--serif);
-  font-style:italic;
-  font-size:14px;
-  color:var(--gold);
-  margin-bottom:8px;
-  letter-spacing:.04em;
-}
-.hero-title{
-  font-family:var(--display);
-  font-size:clamp(52px,8vw,100px);
-  line-height:.92;
-  letter-spacing:.03em;
-  color:var(--text);
-  margin-bottom:14px;
-}
-.hero-title span{
-  background:var(--gold-shine);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-  background-clip:text;
-}
-.hero-sub{
-  font-family:var(--serif);
-  font-style:italic;
-  font-size:17px;
-  color:var(--text2);
-  max-width:420px;
-  line-height:1.6;
-  letter-spacing:.02em;
-}
-
-/* ORNAMENT */
+.hero-eyebrow{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--gold);margin-bottom:8px;letter-spacing:.04em}
+.hero-title{font-family:var(--display);font-size:clamp(52px,8vw,100px);line-height:.92;letter-spacing:.03em;color:var(--text);margin-bottom:14px}
+.hero-title span{background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--text2);max-width:420px;line-height:1.6;letter-spacing:.02em}
 .ornament{display:flex;align-items:center;gap:10px;max-width:1100px;margin:0 auto;padding:0 2rem}
 .ornament-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.35),transparent)}
 .ornament-diamond{width:6px;height:6px;background:var(--gold);transform:rotate(45deg);flex-shrink:0;box-shadow:0 0 5px rgba(201,168,76,.45)}
-
-/* TOOLBAR */
 .toolbar{max-width:1100px;margin:0 auto;padding:1.75rem 2rem .75rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .search-box{flex:1;min-width:200px;position:relative}
-.search-box input{
-  width:100%;
-  background:var(--surface);
-  border:1px solid var(--gold-border);
-  border-radius:99px;
-  padding:11px 18px 11px 42px;
-  font-size:14px;
-  font-family:var(--serif);
-  font-style:italic;
-  color:var(--text);
-  transition:border-color .2s,box-shadow .2s;
-  letter-spacing:.02em;
-}
+.search-box input{width:100%;background:var(--surface);border:1px solid var(--gold-border);border-radius:99px;padding:11px 18px 11px 42px;font-size:14px;font-family:var(--serif);font-style:italic;color:var(--text);transition:border-color .2s,box-shadow .2s;letter-spacing:.02em}
 .search-box input:focus{outline:none;border-color:var(--gold-border2);box-shadow:0 0 0 3px rgba(201,168,76,.07)}
 .search-box input::placeholder{color:var(--text3);font-style:italic}
 .search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:15px;pointer-events:none;opacity:.7}
 .filter-pills{display:flex;gap:6px;flex-wrap:wrap}
-.pill{
-  background:transparent;
-  border:1px solid var(--border2);
-  border-radius:99px;padding:7px 16px;
-  font-size:11px;font-weight:500;
-  font-family:var(--cinzel);
-  letter-spacing:.08em;text-transform:uppercase;
-  color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap;
-}
+.pill{background:transparent;border:1px solid var(--border2);border-radius:99px;padding:7px 16px;font-size:11px;font-weight:500;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap}
 .pill:hover{border-color:var(--gold-border);color:var(--gold2)}
 .pill.active{background:var(--gold-dim);border-color:var(--gold-border2);color:var(--gold2)}
-.cat-count{
-  max-width:1100px;margin:0 auto;
-  padding:0 2rem .5rem;
-  font-family:var(--serif);font-style:italic;
-  font-size:13px;color:var(--text3);
-}
-
-/* GRID */
-.grid{
-  max-width:1100px;margin:0 auto;
-  padding:0 2rem 5rem;
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(310px,1fr));
-  gap:18px;
-}
-.cat-card{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  overflow:hidden;cursor:pointer;
-  transition:border-color .25s,transform .2s,box-shadow .25s;
-  text-decoration:none;display:block;position:relative;
-}
-.cat-card:hover{
-  border-color:var(--gold-border2);
-  transform:translateY(-3px);
-  box-shadow:0 10px 36px rgba(201,168,76,.1),0 2px 10px rgba(0,0,0,.5);
-}
+.cat-count{max-width:1100px;margin:0 auto;padding:0 2rem .5rem;font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text3)}
+.grid{max-width:1100px;margin:0 auto;padding:0 2rem 5rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:18px}
+.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;transition:border-color .25s,transform .2s,box-shadow .25s;text-decoration:none;display:block;position:relative}
+.cat-card:hover{border-color:var(--gold-border2);transform:translateY(-3px);box-shadow:0 10px 36px rgba(201,168,76,.1),0 2px 10px rgba(0,0,0,.5)}
 .cat-card.coming-soon{opacity:.45;cursor:default;pointer-events:none}
 .cat-banner{width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;background:var(--surface2)}
 .cat-banner-placeholder{width:100%;aspect-ratio:1554/319;background:var(--surface2);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border)}
 .cat-banner-placeholder span{font-family:var(--display);font-size:22px;letter-spacing:.1em;color:var(--text3)}
 .cat-body{padding:12px 16px 14px;border-top:1px solid var(--border)}
-.cat-title{
-  font-family:var(--cinzel);
-  font-size:13px;font-weight:600;
-  letter-spacing:.08em;text-transform:uppercase;
-  color:var(--text);margin-bottom:5px;
-}
+.cat-title{font-family:var(--cinzel);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text);margin-bottom:5px}
 .cat-meta{display:flex;align-items:center;gap:8px}
-.cat-genre{
-  font-size:10px;
-  background:var(--gold-dim);
-  border-radius:99px;padding:2px 10px;
-  border:1px solid var(--gold-border);
-  font-family:var(--cinzel);letter-spacing:.06em;
-  text-transform:uppercase;
-  background:var(--gold-shine);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;
-  -webkit-text-fill-color:transparent;
-  border-color:var(--gold-border);
-  background:var(--gold-dim);
-  color:var(--gold2);
-  -webkit-text-fill-color:var(--gold2);
-}
-.genre-tag{display:inline-flex;align-items:center;gap:5px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:99px;padding:3px 10px;font-size:11px;color:var(--gold2);font-family:var(--cinzel);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s}
-.genre-tag:hover{background:rgba(220,60,60,.1);border-color:rgba(220,60,60,.3);color:#e05050}
-.genre-tag:hover::after{content:' ✕'}
-.cat-genre-wrap{display:flex;flex-wrap:wrap;gap:4px}
 .cat-genre{font-size:10px;background:var(--gold-dim);border-radius:99px;padding:2px 10px;border:1px solid var(--gold-border);font-family:var(--cinzel);letter-spacing:.06em;text-transform:uppercase;color:var(--gold2)}
-.cat-arrow{
-  position:absolute;top:10px;right:10px;
-  background:rgba(10,10,10,.8);
-  border:1px solid var(--gold-border);
-  border-radius:50%;width:28px;height:28px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:12px;color:var(--gold2);
-  opacity:0;transition:opacity .2s;
-}
+.cat-coming{font-size:11px;color:var(--text3);font-family:var(--serif);font-style:italic}
+.cat-arrow{position:absolute;top:10px;right:10px;background:rgba(10,10,10,.8);border:1px solid var(--gold-border);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--gold2);opacity:0;transition:opacity .2s}
 .cat-card:hover .cat-arrow{opacity:1}
 .empty{grid-column:1/-1;text-align:center;padding:5rem 1rem}
 .empty-icon{font-size:36px;margin-bottom:14px;display:block;color:var(--text3)}
 .empty-text{font-family:var(--serif);font-style:italic;color:var(--text3);font-size:16px}
-
-/* FOOTER */
-.footer{
-  padding:3rem 2rem;
-  text-align:center;
-  border-top:1px solid var(--border);
-  background:var(--surface);
-}
-.footer-logo{
-  font-family:var(--cinzel);
-  font-size:14px;font-weight:600;
-  letter-spacing:.18em;text-transform:uppercase;
-  background:var(--gold-shine);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;
-  margin-bottom:6px;
-}
-.footer-tagline{
-  font-family:var(--serif);font-style:italic;
-  font-size:14px;color:var(--text2);
-  margin-bottom:1.25rem;
-}
+.footer{padding:3rem 2rem;text-align:center;border-top:1px solid var(--border);background:var(--surface)}
+.footer-logo{font-family:var(--cinzel);font-size:14px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+.footer-tagline{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);margin-bottom:1.25rem}
 .footer-links{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-bottom:1.25rem}
-.footer-links a{
-  font-family:var(--cinzel);font-size:10px;
-  letter-spacing:.12em;text-transform:uppercase;
-  color:var(--text3);text-decoration:none;transition:color .15s;
-}
+.footer-links a{font-family:var(--cinzel);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);text-decoration:none;transition:color .15s}
 .footer-links a:hover{color:var(--gold2)}
 .ornament-footer{display:flex;align-items:center;gap:8px;max-width:300px;margin:0 auto 16px}
 .ornament-footer .ornament-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.3),transparent)}
 .ornament-footer .ornament-diamond{width:5px;height:5px;background:var(--gold);transform:rotate(45deg);flex-shrink:0}
 .footer-copy{font-size:11px;color:var(--text3);letter-spacing:.03em}
-
-/* ADMIN */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
 .overlay.show{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);width:min(640px,95vw);max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);width:min(680px,95vw);max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
 .modal-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .modal-title{font-family:var(--cinzel);font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2)}
 .modal-close{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px}
@@ -314,13 +125,15 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 .logo-preview{width:56px;height:56px;object-fit:contain;border-radius:var(--radius);background:var(--surface3);flex-shrink:0;display:none}
 .logo-preview.show{display:block}
 .logo-field-inputs{flex:1}
+.sched-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.25rem}
+.sched-tab{padding:8px 16px;font-size:10px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;transition:all .15s}
+.sched-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--gold);color:#000;font-size:12px;font-weight:700;padding:9px 22px;border-radius:99px;transition:transform .22s;pointer-events:none;z-index:9999;white-space:nowrap;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase}
 .toast.show{transform:translateX(-50%) translateY(0)}
-
 @media(max-width:640px){
   .nav{padding:0 1rem}
   .hero{padding:2.5rem 1rem 2rem;gap:1.5rem;flex-direction:column}
-  .hero-logo-img,.hero-logo-placeholder{width:120px;height:120px}
+  .hero-logo-img,.hero-logo-placeholder{width:100px;height:100px}
   .hero-title{font-size:56px}
   .toolbar,.cat-count,.grid,.ornament{padding-left:1rem;padding-right:1rem}
   .grid{grid-template-columns:1fr}
@@ -330,16 +143,17 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 </head>
 <body>
 
-<!-- NAV -->
 <nav class="nav">
   <div class="nav-left">
     <img class="nav-logo-img" id="nav-logo-img" src="" alt="Logo" onerror="this.style.display='none'">
     <div class="nav-title">MUSIC<span>BINGO</span></div>
   </div>
-  <button class="nav-btn" onclick="openAdmin()">Admin ⚙</button>
+  <div class="nav-right">
+    <button class="nav-btn" onclick="openAdmin()">Admin ⚙</button>
+    <button class="nav-btn nav-btn-sched" onclick="openScheduleBtn()">Schedule</button>
+  </div>
 </nav>
 
-<!-- HERO -->
 <div class="hero">
   <div class="hero-logo-wrap">
     <img class="hero-logo-img" id="hero-logo-img" src="" alt="Belladonna Audio Alchemies" onerror="this.style.display='none'">
@@ -351,10 +165,10 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
   <div class="hero-text">
     <div class="hero-eyebrow">Belladonna Audio Alchemies presents</div>
     <div class="hero-title">MUSIC<br><span>BINGO</span></div>
+    <div class="hero-sub">Choose your playlist. Your host will take it from there.</div>
   </div>
 </div>
 
-<!-- ORNAMENT DIVIDER -->
 <div class="ornament" style="margin-bottom:.5rem">
   <div class="ornament-line"></div>
   <div class="ornament-diamond"></div>
@@ -363,7 +177,6 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
   <div class="ornament-line"></div>
 </div>
 
-<!-- TOOLBAR -->
 <div class="toolbar">
   <div class="search-box">
     <span class="search-icon">♪</span>
@@ -372,11 +185,8 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
   <div class="filter-pills" id="filter-pills"></div>
 </div>
 <div class="cat-count" id="cat-count"></div>
-
-<!-- GRID -->
 <div class="grid" id="cat-grid"></div>
 
-<!-- FOOTER -->
 <footer class="footer">
   <div class="footer-logo">Belladonna Audio Alchemies</div>
   <div class="footer-tagline">Live entertainment for bars, breweries &amp; events — Seattle–Tacoma</div>
@@ -407,15 +217,24 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <div id="pw-error" style="font-size:12px;color:#e05050;min-height:18px"></div>
     <button class="btn btn-ghost btn-sm" onclick="closeAdmin()" style="margin-top:12px;width:100%">Cancel</button>
   </div>
-
   <div class="modal" id="admin-panel" style="display:none">
     <div class="modal-header">
       <div class="modal-title">Manage Categories</div>
       <button class="modal-close" onclick="closeAdmin()">✕</button>
     </div>
     <div class="modal-body">
-
-      <!-- ADD/EDIT FORM -->
+      <div style="margin-bottom:1.5rem">
+        <div class="form-label">Site logo</div>
+        <div class="logo-field">
+          <img class="logo-preview" id="logo-preview-img" src="" alt="">
+          <div class="logo-field-inputs">
+            <input class="form-input" type="text" id="logo-url-input" placeholder="https://yoursite.com/logo.png" oninput="previewLogo()" style="margin-bottom:6px">
+            <div style="font-size:11px;color:var(--text3);font-style:italic">Paste your logo URL — appears in the nav and hero.</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveLogo()">Save logo</button>
+      </div>
+      <div style="border-top:1px solid var(--border);margin-bottom:1.5rem"></div>
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.5rem" id="cat-form-wrap">
         <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:1rem;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase" id="form-mode-label">Add New Category</div>
         <input type="hidden" id="edit-id">
@@ -423,33 +242,26 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
           <label class="form-label">Category title</label>
           <input class="form-input" type="text" id="f-title" placeholder="e.g. 90s Hip Hop">
         </div>
-        <div class="form-row">
-          <div class="form-group" style="flex:2">
-            <label class="form-label">Genre tags</label>
-            <div id="genre-tags-wrap" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;min-height:28px"></div>
-            <div style="display:flex;gap:6px">
-              <input class="form-input" type="text" id="f-genre-input" placeholder="e.g. Hip Hop — press Enter to add" onkeydown="if(event.key==='Enter'){event.preventDefault();addGenreTag()}" style="flex:1">
-              <button class="btn btn-ghost btn-sm" onclick="addGenreTag()" type="button">Add</button>
-            </div>
-            <div class="form-hint">Add as many genre tags as you like. Click a tag to remove it.</div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Status</label>
-            <select class="form-input" id="f-status">
-              <option value="live">Live</option>
-              <option value="coming">Coming soon</option>
-            </select>
-          </div>
+        <div class="form-group">
+          <label class="form-label">Genre tags <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(comma separated)</span></label>
+          <input class="form-input" type="text" id="f-genre" placeholder="e.g. Hip Hop, R&B">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-input" id="f-status">
+            <option value="live">Live</option>
+            <option value="coming">Coming soon</option>
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label">Spotify playlist URL <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
           <input class="form-input" type="text" id="f-spotify" placeholder="https://open.spotify.com/playlist/...">
-          <div class="form-hint">Players will see a "See the Spotify playlist" button on their card screen.</div>
+          <div class="form-hint">Players see a Spotify button on their card screen.</div>
         </div>
         <div class="form-group">
           <label class="form-label">Spotify QR code image URL <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
           <input class="form-input" type="text" id="f-spotify-qr" placeholder="https://yoursite.com/spotify-qr.png">
-          <div class="form-hint">Upload your Spotify QR image to Wix, paste the URL here. Appears on printed host sheets and player cards.</div>
+          <div class="form-hint">Appears on printed host sheets and player cards.</div>
         </div>
         <div class="form-group">
           <label class="form-label">Banner image URL</label>
@@ -459,37 +271,16 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
         </div>
         <div class="form-group">
           <label class="form-label">Song list</label>
-          <textarea class="form-input" id="f-songs" placeholder="California Love – 2Pac&#10;Changes – 2Pac&#10;Dear Mama – 2Pac&#10;..." style="height:160px;resize:vertical;font-size:13px;line-height:1.7;font-family:var(--mono,'DM Mono',monospace)" oninput="updateSongCount()"></textarea>
-          <div class="form-hint">One song per line — format: Song Name – Artist. Need at least 25 songs.</div>
-          <div id="f-songs-count" style="font-size:11px;color:var(--gold);margin-top:4px;font-style:italic"></div>
+          <textarea class="form-input" id="f-songs" rows="8" placeholder="Song Name – Artist&#10;Song Name – Artist&#10;(one per line, minimum 25)" style="resize:vertical;font-family:var(--mono,monospace);font-size:12px;line-height:1.5" oninput="updateSongCount()"></textarea>
+          <div id="song-count-label" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
         </div>
         <div style="display:flex;gap:8px;margin-top:.5rem">
           <button class="btn btn-primary" onclick="saveCategory()">Save Category</button>
           <button class="btn btn-ghost btn-sm" onclick="resetForm()" id="cancel-edit-btn" style="display:none">Cancel Edit</button>
         </div>
       </div>
-
       <div class="form-label">Your categories</div>
       <div class="admin-list" id="admin-list"></div>
-
-      <!-- LOGO — bottom of admin -->
-      <div style="border-top:1px solid var(--border);margin-top:1.5rem;padding-top:1.5rem">
-        <div class="form-label" style="margin-bottom:10px">Site logo</div>
-        <div class="logo-field">
-          <img class="logo-preview" id="logo-preview-img" src="" alt="">
-          <div class="logo-field-inputs">
-            <input class="form-input" type="text" id="logo-url-input" placeholder="https://yoursite.com/logo.png" oninput="previewLogo()" style="margin-bottom:8px">
-            <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-style:italic">Paste a URL above — or upload a file from your device below.</div>
-            <label style="display:inline-flex;align-items:center;gap:8px;background:var(--surface3);border:1px solid var(--border2);border-radius:var(--radius);padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .15s">
-              <span>📁</span> Choose file
-              <input type="file" id="logo-file-input" accept="image/*" onchange="handleLogoFile(event)" style="display:none">
-            </label>
-            <div id="logo-file-name" style="font-size:11px;color:var(--text3);margin-top:5px;font-style:italic"></div>
-          </div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="saveLogo()">Save logo</button>
-      </div>
-
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeAdmin()">Done</button>
@@ -505,7 +296,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
       <button class="modal-close" onclick="cancelDelete()">✕</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:14px;color:var(--text2);font-family:var(--serif);font-style:italic;line-height:1.6">This will permanently remove <strong id="delete-name" style="color:var(--gold2)"></strong> from the landing page. The GitHub file won't be affected.</p>
+      <p style="font-size:14px;color:var(--text2);font-family:var(--serif);font-style:italic;line-height:1.6">This will permanently remove <strong id="delete-name" style="color:var(--gold2)"></strong> from the landing page.</p>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="cancelDelete()">Cancel</button>
@@ -514,42 +305,145 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
   </div>
 </div>
 
+<!-- ADMIN SCHEDULE OVERLAY -->
+<div class="overlay" id="admin-sched-overlay">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:12px;flex:1">
+        <div class="modal-title">Schedule Manager</div>
+        <select class="form-input" id="sched-venue-filter" onchange="renderTimeline()" style="max-width:180px;font-size:12px;padding:5px 10px"></select>
+      </div>
+      <button class="modal-close" onclick="closeAdminSched()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="sched-tabs">
+        <button class="sched-tab active" id="stab-timeline" onclick="switchSchedTab('timeline')">Timeline</button>
+        <button class="sched-tab" id="stab-add" onclick="switchSchedTab('add')">Add Entry</button>
+        <button class="sched-tab" id="stab-venues" onclick="switchSchedTab('venues')">Venues</button>
+      </div>
+      <div id="spanel-timeline"><div id="sched-timeline-content"></div></div>
+      <div id="spanel-add" style="display:none">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem">
+          <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:1rem;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase" id="sched-form-label">Add Schedule Entry</div>
+          <input type="hidden" id="sched-edit-id">
+          <div class="form-row" style="margin-bottom:1rem">
+            <div class="form-group">
+              <label class="form-label">Date</label>
+              <input class="form-input" type="date" id="sched-date" onchange="updateRecentHint()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Venue</label>
+              <select class="form-input" id="sched-venue-select" onchange="updateRecentHint()">
+                <option value="">— select venue —</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label class="form-label">Categories for this night</label>
+            <div id="sched-cat-checks" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+            <input class="form-input" type="text" id="sched-notes" placeholder="e.g. Private event, double session…">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:.75rem">
+            <button class="btn btn-primary" onclick="saveSchedEntry()">Save Entry</button>
+            <button class="btn btn-ghost btn-sm" onclick="resetSchedForm()" id="sched-cancel-btn" style="display:none">Cancel Edit</button>
+          </div>
+        </div>
+        <div id="recent-hint-wrap" style="display:none">
+          <div class="form-label" style="margin-bottom:8px">Recent history at this venue</div>
+          <div id="recent-hint-list"></div>
+        </div>
+      </div>
+      <div id="spanel-venues" style="display:none">
+        <div style="display:flex;gap:8px;margin-bottom:1rem">
+          <input class="form-input" type="text" id="venue-name-input" placeholder="Venue name e.g. The Coaster" style="flex:1" onkeydown="if(event.key==='Enter')addVenue()">
+          <button class="btn btn-primary" onclick="addVenue()">Add Venue</button>
+        </div>
+        <div id="venue-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOST SCHEDULE OVERLAY (no password) -->
+<div class="overlay" id="host-sched-overlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Tonight's Schedule</div>
+      <button class="modal-close" onclick="document.getElementById('host-sched-overlay').classList.remove('show')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row" style="margin-bottom:1.25rem">
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" type="date" id="host-sched-date" onchange="renderHostSched()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your venue</label>
+          <select class="form-input" id="host-sched-venue" onchange="renderHostSched()">
+            <option value="">— select your venue —</option>
+          </select>
+        </div>
+      </div>
+      <div id="host-sched-results"></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-const ADMIN_PASSWORD="BDAhnna44";
-const FIREBASE_CONFIG={
-  apiKey:"AIzaSyCu6aBUE8qJCCf5FRMipqQD-tGSPE78D3Y",
-  authDomain:"bellamusicbingo.firebaseapp.com",
-  databaseURL:"https://bellamusicbingo-default-rtdb.firebaseio.com",
-  projectId:"bellamusicbingo",
-  storageBucket:"bellamusicbingo.firebasestorage.app",
-  messagingSenderId:"657495697029",
-  appId:"1:657495697029:web:3fe565cbe05455b7982bec"
+const ADMIN_PASSWORD = "BDAhnna44";
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCu6aBUE8qJCCf5FRMipqQD-tGSPE78D3Y",
+  authDomain: "bellamusicbingo.firebaseapp.com",
+  databaseURL: "https://bellamusicbingo-default-rtdb.firebaseio.com",
+  projectId: "bellamusicbingo",
+  storageBucket: "bellamusicbingo.firebasestorage.app",
+  messagingSenderId: "657495697029",
+  appId: "1:657495697029:web:3fe565cbe05455b7982bec"
 };
-let categories=[],activeFilter='all',adminUnlocked=false,deleteTargetId=null,db=null;
 
-function initFirebase(){
-  const s1=document.createElement('script');
-  s1.src='https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js';
-  s1.onload=()=>{
-    const s2=document.createElement('script');
-    s2.src='https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js';
-    s2.onload=()=>{
+let categories = [], venues = [], scheduleEntries = [];
+let activeFilter = 'all', adminUnlocked = false, deleteTargetId = null, db = null;
+
+// ── FIREBASE ──────────────────────────────────────────────────────────────────
+function initFirebase() {
+  var s1 = document.createElement('script');
+  s1.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js';
+  s1.onload = function() {
+    var s2 = document.createElement('script');
+    s2.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js';
+    s2.onload = function() {
       firebase.initializeApp(FIREBASE_CONFIG);
-      db=firebase.database();
-      db.ref('landing/categories').on('value',snap=>{
-        const data=snap.val()||{};
-        categories=Object.entries(data).map(([id,v])=>({id,...v}));
-        categories.sort((a,b)=>(a.order||0)-(b.order||0));
-        renderGrid();buildFilterPills();
-        if(adminUnlocked)renderAdminList();
+      db = firebase.database();
+      db.ref('landing/categories').on('value', function(snap) {
+        var data = snap.val() || {};
+        categories = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
+        categories.sort(function(a,b) { return (a.order||0)-(b.order||0); });
+        renderGrid(); buildFilterPills();
+        if (adminUnlocked) renderAdminList();
       });
-      db.ref('landing/settings/logoUrl').on('value',snap=>{
-        const url=snap.val()||'';
+      db.ref('landing/venues').on('value', function(snap) {
+        var data = snap.val() || {};
+        venues = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
+        venues.sort(function(a,b) { return a.name.localeCompare(b.name); });
+        populateVenueDropdowns();
+        renderVenueList();
+      });
+      db.ref('landing/schedule').on('value', function(snap) {
+        var data = snap.val() || {};
+        scheduleEntries = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
+        scheduleEntries.sort(function(a,b) { return a.date.localeCompare(b.date); });
+        renderTimeline();
+      });
+      db.ref('landing/settings/logoUrl').on('value', function(snap) {
+        var url = snap.val() || '';
         applyLogo(url);
-        document.getElementById('logo-url-input').value=url;
-        if(url){const pi=document.getElementById('logo-preview-img');pi.src=url;pi.classList.add('show');}
+        document.getElementById('logo-url-input').value = url;
+        if (url) { var pi = document.getElementById('logo-preview-img'); pi.src = url; pi.classList.add('show'); }
       });
     };
     document.head.appendChild(s2);
@@ -557,266 +451,412 @@ function initFirebase(){
   document.head.appendChild(s1);
 }
 
-function applyLogo(url){
-  const navImg=document.getElementById('nav-logo-img');
-  const heroImg=document.getElementById('hero-logo-img');
-  const ph=document.getElementById('hero-logo-placeholder');
-  if(url){
-    navImg.src=url;navImg.style.display='block';
-    heroImg.src=url;heroImg.style.display='block';
-    ph.style.display='none';
-  }else{
-    navImg.style.display='none';
-    heroImg.style.display='none';
-    ph.style.display='flex';
-  }
+// ── LOGO ──────────────────────────────────────────────────────────────────────
+function applyLogo(url) {
+  var ni = document.getElementById('nav-logo-img');
+  var hi = document.getElementById('hero-logo-img');
+  var ph = document.getElementById('hero-logo-placeholder');
+  if (url) { ni.src=url; ni.style.display='block'; hi.src=url; hi.style.display='block'; ph.style.display='none'; }
+  else { ni.style.display='none'; hi.style.display='none'; ph.style.display='flex'; }
 }
-function handleLogoFile(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  document.getElementById('logo-file-name').textContent = file.name;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const dataUrl = e.target.result;
-    document.getElementById('logo-url-input').value = dataUrl;
-    const img = document.getElementById('logo-preview-img');
-    img.src = dataUrl; img.classList.add('show');
-    applyLogo(dataUrl);
-  };
-  reader.readAsDataURL(file);
-}
-
-function saveLogo(){
-  if(!db)return;
+function saveLogo() {
+  if (!db) return;
   db.ref('landing/settings/logoUrl').set(document.getElementById('logo-url-input').value.trim());
   showToast('Logo saved!');
 }
-function previewLogo(){
-  const url=document.getElementById('logo-url-input').value.trim();
-  const img=document.getElementById('logo-preview-img');
-  if(url){img.src=url;img.classList.add('show');img.onerror=()=>img.classList.remove('show');}
+function previewLogo() {
+  var url = document.getElementById('logo-url-input').value.trim();
+  var img = document.getElementById('logo-preview-img');
+  if (url) { img.src=url; img.classList.add('show'); img.onerror=function(){img.classList.remove('show');}; }
   else img.classList.remove('show');
 }
-function saveToFirebase(cat){if(!db)return;const{id,...data}=cat;db.ref(`landing/categories/${id}`).set(data);}
-function deleteFromFirebase(id){if(!db)return;db.ref(`landing/categories/${id}`).remove();}
 
-// ── GENRE TAGS ────────────────────────────────────────────────────────────────
-let currentGenreTags = [];
-
-function addGenreTag() {
-  const input = document.getElementById('f-genre-input');
-  const val = input.value.trim();
-  if (!val) return;
-  // avoid duplicates (case-insensitive)
-  if (currentGenreTags.some(t => t.toLowerCase() === val.toLowerCase())) {
-    input.value = ''; return;
-  }
-  currentGenreTags.push(val);
-  input.value = '';
-  renderGenreTags();
+// ── FIREBASE HELPERS ──────────────────────────────────────────────────────────
+function saveToFirebase(cat) {
+  if (!db) return;
+  var id = cat.id; var data = Object.assign({}, cat); delete data.id;
+  db.ref('landing/categories/' + id).set(data);
 }
+function deleteFromFirebase(id) { if (db) db.ref('landing/categories/' + id).remove(); }
 
-function removeGenreTag(idx) {
-  currentGenreTags.splice(idx, 1);
-  renderGenreTags();
+// ── GRID ──────────────────────────────────────────────────────────────────────
+function getGenres(c) {
+  if (Array.isArray(c.genres) && c.genres.length) return c.genres;
+  if (c.genre) return c.genre.split(',').map(function(g){return g.trim();}).filter(Boolean);
+  return [];
 }
-
-function renderGenreTags() {
-  const wrap = document.getElementById('genre-tags-wrap');
-  if (!currentGenreTags.length) { wrap.innerHTML = ''; return; }
-  wrap.innerHTML = currentGenreTags.map((t, i) =>
-    `<span class="genre-tag" onclick="removeGenreTag(${i})" title="Click to remove">${t}</span>`
-  ).join('');
-}
-
-function getGenresFromCategory(c) {
-  // Support both old single string and new array
-  if (!c.genres && !c.genre) return [];
-  if (c.genres) return Array.isArray(c.genres) ? c.genres : [c.genres];
-  return [c.genre];
-}
-
-function renderGrid(){
-  const q=document.getElementById('search-input').value.toLowerCase();
-  const grid=document.getElementById('cat-grid');
-  let filtered=categories.filter(c=>{
-    const genres=getGenresFromCategory(c);
-    const genreStr=genres.join(' ').toLowerCase();
-    const ms=!q||c.title.toLowerCase().includes(q)||genreStr.includes(q);
-    const mf=activeFilter==='all'||genres.some(g=>g.toLowerCase()===activeFilter.toLowerCase());
-    return ms&&mf;
+function renderGrid() {
+  var q = document.getElementById('search-input').value.toLowerCase();
+  var grid = document.getElementById('cat-grid');
+  var filtered = categories.filter(function(c) {
+    var genres = getGenres(c);
+    var ms = !q || c.title.toLowerCase().includes(q) || genres.join(' ').toLowerCase().includes(q);
+    var mf = activeFilter === 'all' || genres.map(function(g){return g.toLowerCase();}).indexOf(activeFilter.toLowerCase()) !== -1;
+    return ms && mf;
   });
-  document.getElementById('cat-count').textContent=
-    filtered.length===0?'':filtered.length===1?'1 playlist':`${filtered.length} playlists`;
-  if(!filtered.length){
-    grid.innerHTML=`<div class="empty"><span class="empty-icon">♪</span><div class="empty-text">${categories.length===0?'No playlists yet — open Admin to add your first one.':'No playlists match your search.'}</div></div>`;
+  var countEl = document.getElementById('cat-count');
+  countEl.textContent = filtered.length === 0 ? '' : filtered.length === 1 ? '1 playlist' : filtered.length + ' playlists';
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty"><span class="empty-icon">♪</span><div class="empty-text">' + (categories.length === 0 ? 'No playlists yet — open Admin to add your first one.' : 'No playlists match your search.') + '</div></div>';
     return;
   }
-  grid.innerHTML=filtered.map(c=>{
-    const isLive=c.status!=='coming';
-    const genres=getGenresFromCategory(c);
-    const imgHTML=c.image
-      ?`<img class="cat-banner" src="${c.image}" alt="${c.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="cat-banner-placeholder" style="display:none"><span>${c.title}</span></div>`
-      :`<div class="cat-banner-placeholder"><span>${c.title}</span></div>`;
-    const appUrl=`app.html?id=${c.id}`;
-    const click=isLive?`onclick="window.open('${appUrl}','_blank');return false;"`:''  
-    const genreHTML=genres.length
-      ?`<div class="cat-genre-wrap">${genres.map(g=>`<span class="cat-genre">${g}</span>`).join('')}</div>`:'';
-    return`<a class="cat-card${!isLive?' coming-soon':''}" href="#" ${click}>
-      ${imgHTML}
-      <div class="cat-body">
-        <div class="cat-title">${c.title}</div>
-        <div class="cat-meta">
-          ${genreHTML}
-          ${!isLive?`<span class="cat-coming">Coming soon</span>`:''}
-        </div>
-      </div>
-      ${isLive?`<div class="cat-arrow">↗</div>`:''}
-    </a>`;
+  var html = '';
+  filtered.forEach(function(c) {
+    var isLive = c.status !== 'coming';
+    var genres = getGenres(c);
+    var appUrl = 'app.html?id=' + c.id;
+    var imgHTML = c.image
+      ? '<img class="cat-banner" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="cat-banner-placeholder" style="display:none"><span>' + c.title + '</span></div>'
+      : '<div class="cat-banner-placeholder"><span>' + c.title + '</span></div>';
+    var clickAttr = isLive ? 'onclick="window.open(\'' + appUrl + '\',\'_blank\');return false;"' : '';
+    var genreHTML = genres.length ? '<span class="cat-genre">' + genres[0] + '</span>' : '';
+    var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
+    var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
+    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="#" ' + clickAttr + '>' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
+  });
+  grid.innerHTML = html;
+}
+function buildFilterPills() {
+  var allGenres = [];
+  categories.forEach(function(c) { getGenres(c).forEach(function(g) { if (allGenres.indexOf(g) === -1) allGenres.push(g); }); });
+  allGenres.sort();
+  var pills = ['All'].concat(allGenres);
+  document.getElementById('filter-pills').innerHTML = pills.map(function(g) {
+    var val = g === 'All' ? 'all' : g;
+    return '<button class="pill' + (activeFilter === val ? ' active' : '') + '" onclick="setFilter(\'' + val + '\')">' + g + '</button>';
   }).join('');
 }
+function setFilter(val) { activeFilter = val; buildFilterPills(); renderGrid(); }
 
-function buildFilterPills(){
-  // Collect all unique genres across all categories
-  const allGenres = new Set();
-  categories.forEach(c => getGenresFromCategory(c).forEach(g => allGenres.add(g)));
-  const genres=['All',...[...allGenres].sort()];
-  document.getElementById('filter-pills').innerHTML=genres.map(g=>{
-    const val=g==='All'?'all':g;
-    return`<button class="pill${activeFilter===val?' active':''}" onclick="setFilter('${val}')">${g}</button>`;
-  }).join('');
-}
-
-function setFilter(val){activeFilter=val;buildFilterPills();renderGrid();}
-
-function openAdmin(){
+// ── ADMIN ─────────────────────────────────────────────────────────────────────
+function openAdmin() {
   document.getElementById('admin-overlay').classList.add('show');
-  if(!adminUnlocked){
-    document.getElementById('pw-screen').style.display='';
-    document.getElementById('admin-panel').style.display='none';
-    document.getElementById('pw-input').value='';
-    document.getElementById('pw-error').textContent='';
-    setTimeout(()=>document.getElementById('pw-input').focus(),100);
-  }else{
-    document.getElementById('pw-screen').style.display='none';
-    document.getElementById('admin-panel').style.display='';
+  if (!adminUnlocked) {
+    document.getElementById('pw-screen').style.display = '';
+    document.getElementById('admin-panel').style.display = 'none';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-error').textContent = '';
+    setTimeout(function(){document.getElementById('pw-input').focus();}, 100);
+  } else {
+    document.getElementById('pw-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = '';
     renderAdminList();
   }
 }
-
-function closeAdmin(){document.getElementById('admin-overlay').classList.remove('show');resetForm();}
-
-function checkPW(){
-  if(document.getElementById('pw-input').value===ADMIN_PASSWORD){
-    adminUnlocked=true;
-    document.getElementById('pw-screen').style.display='none';
-    document.getElementById('admin-panel').style.display='';
+function closeAdmin() { document.getElementById('admin-overlay').classList.remove('show'); resetForm(); }
+function checkPW() {
+  if (document.getElementById('pw-input').value === ADMIN_PASSWORD) {
+    adminUnlocked = true;
+    document.getElementById('pw-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = '';
     renderAdminList();
-  }else{
-    document.getElementById('pw-error').textContent='Incorrect password.';
-    document.getElementById('pw-input').value='';
+  } else {
+    document.getElementById('pw-error').textContent = 'Incorrect password.';
+    document.getElementById('pw-input').value = '';
     document.getElementById('pw-input').focus();
   }
 }
-
-function renderAdminList(){
-  const list=document.getElementById('admin-list');
-  if(!categories.length){list.innerHTML='<div style="font-size:13px;color:var(--text3);padding:8px 0;font-style:italic">No categories yet. Add one above.</div>';return;}
-  list.innerHTML=categories.map(c=>{
-    const genres=getGenresFromCategory(c);
-    return`<div class="admin-item">
-      ${c.image?`<img class="admin-item-thumb" src="${c.image}" alt="${c.title}" onerror="this.style.background='var(--surface3)'">`:`<div class="admin-item-thumb"></div>`}
-      <div class="admin-item-info">
-        <div class="admin-item-title">${c.title}</div>
-        <div class="admin-item-meta">${genres.join(', ')||'No genre'} \u00b7 ${c.status==='coming'?'Coming soon':'Live'} \u00b7 ${c.songs?(c.songs.split('\\n').filter(l=>l.trim()).length+' songs'):'No songs yet'}</div>
-      </div>
-      <div class="admin-item-actions">
-        <button class="btn-accent" onclick="editCategory('${c.id}')">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="promptDelete('${c.id}','${c.title.replace(/'/g,"\\'")}')">✕</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function updateSongCount(){
-  const lines=document.getElementById('f-songs').value.trim().split('\n').filter(l=>l.trim());
-  const el=document.getElementById('f-songs-count');
-  if(!lines.length){el.textContent='';return;}
-  el.textContent=`${lines.length} song${lines.length===1?'':'s'} detected${lines.length<25?' — need at least 25':''}`;
-  el.style.color=lines.length<25?'#e05050':'var(--gold)';
-}
-function resetForm(){
-  ['edit-id','f-title','f-image','f-spotify','f-spotify-qr'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('f-genre-input').value='';
-  document.getElementById('f-songs').value='';
-  document.getElementById('f-songs-count').textContent='';
-  document.getElementById('f-status').value='live';
-  document.getElementById('banner-preview-img').style.display='none';
-  document.getElementById('form-mode-label').textContent='Add New Category';
-  document.getElementById('cancel-edit-btn').style.display='none';
-  currentGenreTags=[];
-  renderGenreTags();
-}
-function editCategory(id){
-  const c=categories.find(x=>x.id===id);if(!c)return;
-  document.getElementById('edit-id').value=id;
-  document.getElementById('f-title').value=c.title||'';
-  document.getElementById('f-image').value=c.image||'';
-  document.getElementById('f-spotify').value=c.spotifyUrl||'';
-  document.getElementById('f-spotify-qr').value=c.spotifyQrUrl||'';
-  document.getElementById('f-songs').value=c.songs||'';
-  document.getElementById('f-status').value=c.status||'live';
-  currentGenreTags=getGenresFromCategory(c);
-  renderGenreTags();updateSongCount();
-  document.getElementById('form-mode-label').textContent=`Editing: ${c.title}`;
-  document.getElementById('cancel-edit-btn').style.display='';
-  previewBanner();
-  document.getElementById('cat-form-wrap').scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-function saveCategory(){
-  const title=document.getElementById('f-title').value.trim();
-  if(!title){showToast('Title required');return;}
-  const songs=document.getElementById('f-songs').value.trim();
-  const songCount=songs.split('\n').filter(l=>l.trim()).length;
-  if(songCount<25){showToast(`Need at least 25 songs (have ${songCount})`);return;}
-  const editId=document.getElementById('edit-id').value;
-  const id=editId||'cat_'+Date.now();
-  const order=editId?(categories.find(c=>c.id===editId)?.order??categories.length):categories.length;
-  saveToFirebase({
-    id,title,
-    genres:currentGenreTags.length?currentGenreTags:[],
-    image:document.getElementById('f-image').value.trim(),
-    spotifyUrl:document.getElementById('f-spotify').value.trim(),
-    spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(),
-    songs,
-    status:document.getElementById('f-status').value,order
+function renderAdminList() {
+  var list = document.getElementById('admin-list');
+  if (!categories.length) { list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0;font-style:italic">No categories yet. Add one above.</div>'; return; }
+  var html = '';
+  categories.forEach(function(c) {
+    var thumb = c.image ? '<img class="admin-item-thumb" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.background=\'var(--surface3)\'">' : '<div class="admin-item-thumb"></div>';
+    var genres = getGenres(c);
+    var meta = (genres.length ? genres.join(', ') : 'No genre') + ' · ' + (c.status === 'coming' ? 'Coming soon' : 'Live');
+    html += '<div class="admin-item">' + thumb + '<div class="admin-item-info"><div class="admin-item-title">' + c.title + '</div><div class="admin-item-meta">' + meta + '</div></div><div class="admin-item-actions"><button class="btn-accent" onclick="editCategory(\'' + c.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="promptDelete(\'' + c.id + '\',\'' + c.title.replace(/'/g, "\\'") + '\')">✕</button></div></div>';
   });
-  resetForm();showToast(editId?'Updated!':'Category added!');
+  list.innerHTML = html;
 }
-function previewBanner(){
-  const url=document.getElementById('f-image').value.trim();
-  const img=document.getElementById('banner-preview-img');
-  if(url){img.src=url;img.style.display='block';img.onerror=()=>{img.style.display='none'};}
-  else img.style.display='none';
+function updateSongCount() {
+  var lines = document.getElementById('f-songs').value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  var el = document.getElementById('song-count-label');
+  el.textContent = lines.length + ' song' + (lines.length === 1 ? '' : 's') + (lines.length < 25 ? ' — need at least 25' : '');
+  el.style.color = lines.length >= 25 ? '#4a9' : '#e05050';
 }
-function promptDelete(id,title){
-  deleteTargetId=id;
-  document.getElementById('delete-name').textContent=`"${title}"`;
+function resetForm() {
+  ['edit-id','f-title','f-genre','f-image','f-songs','f-spotify','f-spotify-qr'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('f-status').value = 'live';
+  document.getElementById('banner-preview-img').style.display = 'none';
+  document.getElementById('form-mode-label').textContent = 'Add New Category';
+  document.getElementById('cancel-edit-btn').style.display = 'none';
+  document.getElementById('song-count-label').textContent = '';
+}
+function editCategory(id) {
+  var c = categories.find(function(x){return x.id===id;});
+  if (!c) return;
+  document.getElementById('edit-id').value = id;
+  document.getElementById('f-title').value = c.title || '';
+  document.getElementById('f-genre').value = getGenres(c).join(', ');
+  document.getElementById('f-image').value = c.image || '';
+  document.getElementById('f-songs').value = c.songs || '';
+  document.getElementById('f-spotify').value = c.spotifyUrl || '';
+  document.getElementById('f-spotify-qr').value = c.spotifyQrUrl || '';
+  document.getElementById('f-status').value = c.status || 'live';
+  document.getElementById('form-mode-label').textContent = 'Editing: ' + c.title;
+  document.getElementById('cancel-edit-btn').style.display = '';
+  updateSongCount(); previewBanner();
+  document.getElementById('cat-form-wrap').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function saveCategory() {
+  var title = document.getElementById('f-title').value.trim();
+  if (!title) { showToast('Title required'); return; }
+  var songs = document.getElementById('f-songs').value.trim();
+  var songCount = songs.split('\n').map(function(s){return s.trim();}).filter(Boolean).length;
+  if (songCount < 25) { showToast('Need at least 25 songs (have ' + songCount + ')'); return; }
+  var genreRaw = document.getElementById('f-genre').value.trim();
+  var genres = genreRaw ? genreRaw.split(',').map(function(g){return g.trim();}).filter(Boolean) : [];
+  var editId = document.getElementById('edit-id').value;
+  var id = editId || 'cat_' + Date.now();
+  var order = editId ? (function(){ var c = categories.find(function(x){return x.id===editId;}); return c ? (c.order||0) : categories.length; })() : categories.length;
+  saveToFirebase({id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order});
+  resetForm(); showToast(editId ? 'Updated!' : 'Category added!');
+}
+function previewBanner() {
+  var url = document.getElementById('f-image').value.trim();
+  var img = document.getElementById('banner-preview-img');
+  if (url) { img.src=url; img.style.display='block'; img.onerror=function(){img.style.display='none';}; }
+  else img.style.display = 'none';
+}
+function promptDelete(id, title) {
+  deleteTargetId = id;
+  document.getElementById('delete-name').textContent = '"' + title + '"';
   document.getElementById('delete-confirm-overlay').classList.add('show');
 }
-function cancelDelete(){deleteTargetId=null;document.getElementById('delete-confirm-overlay').classList.remove('show');}
-function confirmDelete(){
-  if(!deleteTargetId)return;
-  deleteFromFirebase(deleteTargetId);deleteTargetId=null;
+function cancelDelete() { deleteTargetId = null; document.getElementById('delete-confirm-overlay').classList.remove('show'); }
+function confirmDelete() {
+  if (!deleteTargetId) return;
+  deleteFromFirebase(deleteTargetId); deleteTargetId = null;
   document.getElementById('delete-confirm-overlay').classList.remove('show');
   showToast('Removed');
 }
-function showToast(msg){
-  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2200);
+
+// ── SCHEDULE ──────────────────────────────────────────────────────────────────
+function openScheduleBtn() {
+  if (adminUnlocked) {
+    document.getElementById('admin-sched-overlay').classList.add('show');
+    renderTimeline(); renderSchedCatChecks();
+  } else {
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('host-sched-date').value = today;
+    document.getElementById('host-sched-overlay').classList.add('show');
+    renderHostSched();
+  }
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAdmin();cancelDelete();}});
-document.getElementById('admin-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('admin-overlay'))closeAdmin();});
+function closeAdminSched() { document.getElementById('admin-sched-overlay').classList.remove('show'); }
+
+function switchSchedTab(tab) {
+  ['timeline','add','venues'].forEach(function(t) {
+    document.getElementById('spanel-' + t).style.display = t === tab ? '' : 'none';
+    var btn = document.getElementById('stab-' + t);
+    if (btn) { btn.classList.toggle('active', t === tab); }
+  });
+  if (tab === 'add') renderSchedCatChecks();
+  if (tab === 'venues') renderVenueList();
+}
+
+function populateVenueDropdowns() {
+  var opts = '<option value="">— select venue —</option>';
+  venues.forEach(function(v) { opts += '<option value="' + v.id + '">' + v.name + '</option>'; });
+  var filterOpts = '<option value="all">All venues</option>';
+  venues.forEach(function(v) { filterOpts += '<option value="' + v.id + '">' + v.name + '</option>'; });
+  var selects = ['sched-venue-select', 'host-sched-venue'];
+  selects.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var cur = el.value;
+    el.innerHTML = opts;
+    if (cur) el.value = cur;
+  });
+  var filterEl = document.getElementById('sched-venue-filter');
+  if (filterEl) { var cur = filterEl.value; filterEl.innerHTML = filterOpts; if (cur) filterEl.value = cur; }
+}
+
+function addVenue() {
+  var name = document.getElementById('venue-name-input').value.trim();
+  if (!name || !db) return;
+  var id = 'venue_' + Date.now();
+  db.ref('landing/venues/' + id).set({id:id, name:name});
+  document.getElementById('venue-name-input').value = '';
+  showToast('Venue added!');
+}
+function deleteVenue(id) {
+  if (!db || !confirm('Remove this venue?')) return;
+  db.ref('landing/venues/' + id).remove();
+  showToast('Venue removed');
+}
+function renderVenueList() {
+  var list = document.getElementById('venue-list');
+  if (!list) return;
+  if (!venues.length) { list.innerHTML = '<div style="font-size:13px;color:var(--text3);font-style:italic">No venues yet.</div>'; return; }
+  var html = '';
+  venues.forEach(function(v) {
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;margin-bottom:6px"><span style="font-size:13px;color:var(--text)">' + v.name + '</span><button class="btn btn-danger btn-sm" onclick="deleteVenue(\'' + v.id + '\')">✕</button></div>';
+  });
+  list.innerHTML = html;
+}
+
+function renderSchedCatChecks() {
+  var wrap = document.getElementById('sched-cat-checks');
+  if (!wrap) return;
+  var editId = document.getElementById('sched-edit-id').value;
+  var entry = editId ? scheduleEntries.find(function(e){return e.id===editId;}) : null;
+  var checked = entry ? (entry.categoryIds || []) : [];
+  var html = '';
+  categories.forEach(function(c) {
+    var isChecked = checked.indexOf(c.id) !== -1;
+    html += '<label style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;cursor:pointer;font-size:13px;color:var(--text)"><input type="checkbox" id="schedcat_' + c.id + '" value="' + c.id + '"' + (isChecked ? ' checked' : '') + ' style="accent-color:var(--gold)">' + c.title + '</label>';
+  });
+  wrap.innerHTML = html;
+}
+
+function updateRecentHint() {
+  var venueId = document.getElementById('sched-venue-select').value;
+  var wrap = document.getElementById('recent-hint-wrap');
+  var list = document.getElementById('recent-hint-list');
+  if (!venueId || !wrap || !list) { if (wrap) wrap.style.display = 'none'; return; }
+  var recent = scheduleEntries.filter(function(e){return e.venueId === venueId;}).slice(-6).reverse();
+  if (!recent.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  var today = new Date().toISOString().split('T')[0];
+  var html = '';
+  recent.forEach(function(e) {
+    var cats = (e.categoryIds || []).map(function(id) { var c = categories.find(function(x){return x.id===id;}); return c ? c.title : id; }).join(', ');
+    var isPast = e.date < today;
+    html += '<div style="font-size:12px;padding:6px 10px;background:var(--surface2);border-radius:var(--radius);margin-bottom:4px;border-left:3px solid ' + (isPast ? 'var(--border2)' : 'var(--gold)') + '"><span style="color:' + (isPast ? 'var(--text2)' : 'var(--gold)') + ';font-weight:600">' + formatDate(e.date) + '</span><span style="color:var(--text3);margin:0 6px">·</span><span style="color:var(--text)">' + cats + '</span>' + (e.notes ? '<span style="color:var(--text3);font-style:italic"> — ' + e.notes + '</span>' : '') + '</div>';
+  });
+  list.innerHTML = html;
+}
+
+function saveSchedEntry() {
+  var date = document.getElementById('sched-date').value;
+  var venueId = document.getElementById('sched-venue-select').value;
+  if (!date) { showToast('Pick a date'); return; }
+  if (!venueId) { showToast('Pick a venue'); return; }
+  var checked = document.querySelectorAll('#sched-cat-checks input:checked');
+  var categoryIds = [];
+  checked.forEach(function(el) { categoryIds.push(el.value); });
+  if (!categoryIds.length) { showToast('Select at least one category'); return; }
+  var notes = document.getElementById('sched-notes').value.trim();
+  var editId = document.getElementById('sched-edit-id').value;
+  var id = editId || 'sched_' + Date.now();
+  db.ref('landing/schedule/' + id).set({id:id, date:date, venueId:venueId, categoryIds:categoryIds, notes:notes});
+  resetSchedForm(); showToast(editId ? 'Entry updated!' : 'Entry added!');
+}
+function editSchedEntry(id) {
+  var e = scheduleEntries.find(function(x){return x.id===id;});
+  if (!e) return;
+  document.getElementById('sched-edit-id').value = id;
+  document.getElementById('sched-date').value = e.date;
+  document.getElementById('sched-venue-select').value = e.venueId;
+  document.getElementById('sched-notes').value = e.notes || '';
+  document.getElementById('sched-form-label').textContent = 'Editing Entry';
+  document.getElementById('sched-cancel-btn').style.display = '';
+  switchSchedTab('add');
+  renderSchedCatChecks();
+  updateRecentHint();
+}
+function deleteSchedEntry(id) {
+  if (!db || !confirm('Delete this entry?')) return;
+  db.ref('landing/schedule/' + id).remove();
+  showToast('Entry removed');
+}
+function resetSchedForm() {
+  document.getElementById('sched-edit-id').value = '';
+  document.getElementById('sched-date').value = '';
+  document.getElementById('sched-venue-select').value = '';
+  document.getElementById('sched-notes').value = '';
+  document.getElementById('sched-form-label').textContent = 'Add Schedule Entry';
+  document.getElementById('sched-cancel-btn').style.display = 'none';
+  document.getElementById('recent-hint-wrap').style.display = 'none';
+  renderSchedCatChecks();
+}
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  var parts = dateStr.split('-');
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[parseInt(parts[1])-1] + ' ' + parseInt(parts[2]) + ', ' + parts[0];
+}
+
+function renderTimeline() {
+  var tl = document.getElementById('sched-timeline-content');
+  if (!tl) return;
+  var filterEl = document.getElementById('sched-venue-filter');
+  var venueFilter = filterEl ? filterEl.value : 'all';
+  var today = new Date().toISOString().split('T')[0];
+  var filtered = venueFilter === 'all' ? scheduleEntries : scheduleEntries.filter(function(e){return e.venueId===venueFilter;});
+  if (!filtered.length) {
+    tl.innerHTML = '<div style="font-size:14px;color:var(--text3);font-style:italic;padding:1rem 0">No schedule entries yet. Use Add Entry to plan your nights.</div>';
+    return;
+  }
+  var groups = {};
+  filtered.forEach(function(e) {
+    var key = e.date.slice(0,7);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(e);
+  });
+  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var upcoming = []; var past = [];
+  Object.keys(groups).sort().forEach(function(month) {
+    var entries = groups[month];
+    var mp = month.split('-');
+    var label = monthNames[parseInt(mp[1])-1] + ' ' + mp[0];
+    var isUpcoming = month >= today.slice(0,7);
+    var rows = '';
+    entries.forEach(function(e) {
+      var vname = (venues.find(function(v){return v.id===e.venueId;}) || {}).name || 'Unknown';
+      var catNames = (e.categoryIds||[]).map(function(id){ var c=categories.find(function(x){return x.id===id;}); return c?c.title:id; });
+      var isPast = e.date < today;
+      var pills = catNames.map(function(t){ return '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:99px;padding:2px 8px;color:var(--gold2);font-family:var(--cinzel);letter-spacing:.04em">' + t + '</span>'; }).join('');
+      rows += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:.5px solid var(--border);opacity:' + (isPast?'0.55':'1') + '"><div style="min-width:36px;font-size:12px;font-weight:700;color:' + (isPast?'var(--text3)':'var(--gold)') + ';font-family:var(--cinzel);padding-top:2px">' + e.date.split('-')[2] + '</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px">' + vname + '</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:' + (e.notes?'4px':'0') + '">' + pills + '</div>' + (e.notes?'<div style="font-size:11px;color:var(--text3);font-style:italic">'+e.notes+'</div>':'') + '</div><div style="display:flex;gap:4px;flex-shrink:0"><button class="btn-accent" onclick="editSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">✕</button></div></div>';
+    });
+    var block = '<div style="margin-bottom:1.5rem"><div style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:' + (isUpcoming?'var(--gold)':'var(--text3)') + ';margin-bottom:4px;padding-bottom:6px;border-bottom:1px solid var(--border)">' + label + '</div>' + rows + '</div>';
+    if (isUpcoming) upcoming.push(block); else past.push(block);
+  });
+  var html = '';
+  if (upcoming.length) html += '<div style="margin-bottom:2rem">' + upcoming.join('') + '</div>';
+  if (past.length) html += '<div style="opacity:.8"><div style="font-size:10px;font-family:var(--cinzel);letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Past</div>' + past.join('') + '</div>';
+  tl.innerHTML = html;
+}
+
+function renderHostSched() {
+  var res = document.getElementById('host-sched-results');
+  if (!res) return;
+  var date = document.getElementById('host-sched-date').value;
+  var venueId = document.getElementById('host-sched-venue').value;
+  if (!date || !venueId) {
+    res.innerHTML = '<div style="font-size:14px;color:var(--text3);font-style:italic;text-align:center;padding:1rem">Select a date and venue to see tonight\'s schedule.</div>';
+    return;
+  }
+  var entries = scheduleEntries.filter(function(e){return e.date===date && e.venueId===venueId;});
+  if (!entries.length) {
+    res.innerHTML = '<div style="font-size:14px;color:var(--text3);font-style:italic;text-align:center;padding:1rem">Nothing scheduled for this date and venue.</div>';
+    return;
+  }
+  var allIds = [];
+  entries.forEach(function(e){ (e.categoryIds||[]).forEach(function(id){ if (allIds.indexOf(id)===-1) allIds.push(id); }); });
+  var cats = allIds.map(function(id){return categories.find(function(c){return c.id===id;});}).filter(Boolean);
+  var html = '<div style="font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">' + cats.length + ' playlist' + (cats.length===1?'':'s') + ' tonight</div>';
+  cats.forEach(function(c) {
+    var appUrl = 'app.html?id=' + c.id;
+    var imgHTML = c.image ? '<img src="' + c.image + '" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;border-radius:6px 6px 0 0" onerror="this.style.display=\'none\'">' : '';
+    html += '<div onclick="window.open(\'' + appUrl + '\',\'_blank\')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px">' + imgHTML + '<div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between"><div style="font-family:var(--cinzel);font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--text)">' + c.title + '</div><span style="font-size:12px;color:var(--gold)">Open ↗</span></div></div>';
+  });
+  res.innerHTML = html;
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');}, 2200);
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeAdmin(); cancelDelete(); closeAdminSched(); document.getElementById('host-sched-overlay').classList.remove('show'); }
+});
+document.getElementById('admin-overlay').addEventListener('click', function(e) {
+  if (e.target === document.getElementById('admin-overlay')) closeAdmin();
+});
+
 initFirebase();
 </script>
 </body>
