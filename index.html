@@ -283,6 +283,11 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
       <div class="admin-list" id="admin-list"></div>
     </div>
     <div class="modal-footer">
+      <div style="flex:1;display:flex;align-items:center;gap:8px">
+        <input class="form-input" type="password" id="new-pw-input" placeholder="New password" style="max-width:180px;font-size:12px;padding:6px 10px">
+        <button class="btn btn-ghost btn-sm" onclick="changePassword()">Change Password</button>
+        <span id="pw-change-msg" style="font-size:11px;color:var(--gold);min-width:60px"></span>
+      </div>
       <button class="btn btn-ghost" onclick="closeAdmin()">Done</button>
     </div>
   </div>
@@ -439,6 +444,9 @@ function initFirebase() {
         scheduleEntries.sort(function(a,b) { return a.date.localeCompare(b.date); });
         renderTimeline();
       });
+      db.ref('landing/settings/adminPassword').on('value', function(snap) {
+        if (snap.val()) adminPassword = snap.val();
+      });
       db.ref('landing/settings/logoUrl').on('value', function(snap) {
         var url = snap.val() || '';
         applyLogo(url);
@@ -544,8 +552,9 @@ function openAdmin() {
   }
 }
 function closeAdmin() { document.getElementById('admin-overlay').classList.remove('show'); resetForm(); }
+let adminPassword = "BDAhnna44";
 function checkPW() {
-  if (document.getElementById('pw-input').value === ADMIN_PASSWORD) {
+  if (document.getElementById('pw-input').value === adminPassword) {
     adminUnlocked = true;
     document.getElementById('pw-screen').style.display = 'none';
     document.getElementById('admin-panel').style.display = '';
@@ -846,6 +855,16 @@ function renderHostSched() {
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
+function changePassword() {
+  var newPw = document.getElementById('new-pw-input').value.trim();
+  var msg = document.getElementById('pw-change-msg');
+  if (!newPw) { msg.textContent = 'Enter a password'; msg.style.color = '#e05050'; return; }
+  if (!db) return;
+  db.ref('landing/settings/adminPassword').set(newPw);
+  document.getElementById('new-pw-input').value = '';
+  msg.textContent = 'Saved!'; msg.style.color = 'var(--gold)';
+  setTimeout(function(){ msg.textContent = ''; }, 2500);
+}
 function showToast(msg) {
   var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');}, 2200);
