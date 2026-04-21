@@ -1027,4 +1027,8 @@ function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2200);
 }
-
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeQRFullscreen();});
+bootstrap();
+</script>
+</body>
+</html>
