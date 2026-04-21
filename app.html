@@ -204,7 +204,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <button class="nav-tab active" id="tab-host" onclick="showPage('host')">Host Tool</button>
     <button class="nav-tab" id="tab-cards" onclick="showPage('cards')">Card Generator</button>
     <button class="nav-tab" id="tab-player" onclick="showPage('player')">Player Card</button>
-    <a class="nav-tab" id="tab-tiebreaker" href="tiebreaker.html" target="_blank" style="text-decoration:none">Tie Breaker</a>
+    <a class="nav-tab" id="tab-tiebreaker" onclick="openTiebreaker()" style="text-decoration:none;cursor:pointer">Tie Breaker</a>
   </div>
 </nav>
 
@@ -271,9 +271,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
 
       <!-- TIEBREAKER LINK -->
       <div style="margin-top:2rem;padding-top:1.5rem;border-top:.5px solid var(--border);text-align:center">
-        <a href="tiebreaker.html" target="_blank"
-          style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s"
-          onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
+        <a onclick="openTiebreaker()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
           ⬡ Open Tie Breaker
         </a>
       </div></div>
@@ -385,6 +383,42 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <button class="btn btn-primary" onclick="document.getElementById('winner-overlay').classList.remove('show')">Close</button>
   </div>
 </div>
+<!-- TIEBREAKER POPUP -->
+<div id="tb-overlay" style="display:none;position:fixed;z-index:1000;background:var(--bg2);border:1px solid var(--gold-border);border-radius:var(--radius-lg);box-shadow:0 20px 60px rgba(0,0,0,.4);padding:0;min-width:420px;user-select:none;top:80px;left:50%;transform:translateX(-50%)">
+  <!-- Drag handle -->
+  <div id="tb-drag-handle" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:.5px solid var(--border);cursor:grab;background:var(--bg);border-radius:var(--radius-lg) var(--radius-lg) 0 0">
+    <div style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">⬡ Tie Breaker</div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:10px;color:var(--text3);font-family:var(--cinzel);letter-spacing:.06em">drag to move</span>
+      <button onclick="closeTiebreaker()" style="background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">✕</button>
+    </div>
+  </div>
+  <!-- Content -->
+  <div style="padding:1.25rem 1.5rem 1rem">
+    <div style="font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text2);text-align:center;margin-bottom:1.25rem">Each player picks a number. Spin — closest wins.</div>
+    <div style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;justify-content:center">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Player A</div>
+        <input type="number" id="tb-a" placeholder="—" min="1" max="9999" oninput="tbClear()"
+          style="width:90px;text-align:center;font-family:var(--cinzel);font-size:28px;font-weight:600;color:var(--text);background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius);padding:10px 6px;outline:none;transition:all .2s">
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+        <div style="position:relative;display:inline-block;margin-top:14px">
+          <div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-top:20px solid var(--gold);z-index:2;filter:drop-shadow(0 0 6px rgba(201,168,76,.7)) drop-shadow(0 2px 4px rgba(0,0,0,.8))"></div>
+          <canvas id="tb-wheel" width="260" height="260" style="display:block;border-radius:50%;box-shadow:0 4px 24px rgba(0,0,0,.2)"></canvas>
+        </div>
+        <button id="tb-spin-btn" onclick="tbSpin()" style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--text);color:var(--bg);border:none;border-radius:99px;padding:10px 32px;cursor:pointer;transition:opacity .15s">Spin</button>
+        <div id="tb-result" style="font-family:var(--cinzel);font-size:12px;letter-spacing:.06em;text-align:center;min-height:38px;color:var(--text2);line-height:1.7"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Player B</div>
+        <input type="number" id="tb-b" placeholder="—" min="1" max="9999" oninput="tbClear()"
+          style="width:90px;text-align:center;font-family:var(--cinzel);font-size:28px;font-weight:600;color:var(--text);background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius);padding:10px 6px;outline:none;transition:all .2s">
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1027,7 +1061,134 @@ function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2200);
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeQRFullscreen();});
+// ── TIEBREAKER ────────────────────────────────────────────────────────────────
+var tbAngle=0,tbSpinning=false;
+function openTiebreaker(){
+  var el=document.getElementById('tb-overlay');
+  el.style.display='block';
+  el.style.transform='translateX(-50%)';
+  el.style.left='50%';
+  el.style.top='80px';
+  document.fonts.ready.then(function(){tbDraw(tbAngle);});
+  // Set up drag
+  var handle=document.getElementById('tb-drag-handle');
+  var dragging=false,ox=0,oy=0;
+  handle.onmousedown=function(e){
+    if(e.target.tagName==='BUTTON')return;
+    dragging=true;
+    var rect=el.getBoundingClientRect();
+    ox=e.clientX-rect.left; oy=e.clientY-rect.top;
+    el.style.transform='none';
+    el.style.cursor='grabbing';
+    handle.style.cursor='grabbing';
+    e.preventDefault();
+  };
+  document.onmousemove=function(e){
+    if(!dragging)return;
+    el.style.left=(e.clientX-ox)+'px';
+    el.style.top=(e.clientY-oy)+'px';
+  };
+  document.onmouseup=function(){
+    dragging=false;
+    el.style.cursor='';
+    handle.style.cursor='grab';
+  };
+}
+function closeTiebreaker(){
+  document.getElementById('tb-overlay').style.display='none';
+}
+function tbDraw(angle){
+  var cv=document.getElementById('tb-wheel');if(!cv)return;
+  var ctx=cv.getContext('2d'),cx=130,cy=130,r=123,seg=20,arc=Math.PI*2/seg;
+  ctx.clearRect(0,0,260,260);
+  for(var i=0;i<seg;i++){
+    var s=angle+i*arc,e=s+arc,gold=i%2===0;
+    var grad=ctx.createLinearGradient(cx+Math.cos(s+arc/2)*(r*.3),cy+Math.sin(s+arc/2)*(r*.3),cx+Math.cos(s+arc/2)*r,cy+Math.sin(s+arc/2)*r);
+    if(gold){grad.addColorStop(0,'#d4a835');grad.addColorStop(.5,'#c9a030');grad.addColorStop(1,'#8a6010');}
+    else{grad.addColorStop(0,'#f8f3e8');grad.addColorStop(1,'#d8cfa8');}
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,s,e);ctx.closePath();
+    ctx.fillStyle=grad;ctx.fill();
+    ctx.strokeStyle='rgba(20,10,0,.6)';ctx.lineWidth=1;ctx.stroke();
+    ctx.save();
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r-3,s,e);ctx.closePath();ctx.clip();
+    ctx.translate(cx,cy);ctx.rotate(s+arc/2);ctx.transform(1,0,-0.42,1,0,0);
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    ctx.font='bold 22px "Bebas Neue",Impact,sans-serif';
+    ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=3;ctx.shadowOffsetX=1;ctx.shadowOffsetY=1;
+    ctx.strokeStyle='rgba(0,0,0,.95)';ctx.lineWidth=4;ctx.lineJoin='round';
+    ctx.strokeText(String(i+1),r-13,0);
+    ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+    ctx.fillStyle='#ffffff';ctx.fillText(String(i+1),r-13,0);
+    ctx.restore();
+  }
+  for(var j=0;j<seg;j++){var sa=angle+j*arc;ctx.beginPath();ctx.moveTo(cx+Math.cos(sa)*15,cy+Math.sin(sa)*15);ctx.lineTo(cx+Math.cos(sa)*(r-1),cy+Math.sin(sa)*(r-1));ctx.strokeStyle='rgba(20,8,0,.55)';ctx.lineWidth=1.5;ctx.stroke();}
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='#1a0a00';ctx.lineWidth=7;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,r-3.5,0,Math.PI*2);
+  var rimG=ctx.createLinearGradient(cx-r,cy-r,cx+r,cy+r);
+  rimG.addColorStop(0,'rgba(245,223,144,.9)');rimG.addColorStop(.5,'rgba(201,168,76,.6)');rimG.addColorStop(1,'rgba(245,223,144,.9)');
+  ctx.strokeStyle=rimG;ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,18,0,Math.PI*2);ctx.fillStyle='#0e0a06';ctx.fill();
+  ctx.beginPath();ctx.arc(cx,cy,15,0,Math.PI*2);
+  var hub=ctx.createRadialGradient(cx-5,cy-5,1,cx,cy,15);
+  hub.addColorStop(0,'#f9e87a');hub.addColorStop(.4,'#d4a835');hub.addColorStop(1,'#5a3800');
+  ctx.fillStyle=hub;ctx.fill();
+  ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.fillStyle='rgba(255,245,180,.9)';ctx.fill();
+}
+function tbLanded(angle){
+  var seg=20,arc=Math.PI*2/seg,ptr=-Math.PI/2;
+  var a=((ptr-angle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+  return Math.floor(a/arc)%seg+1;
+}
+function tbSpin(){
+  if(tbSpinning)return;
+  var aVal=document.getElementById('tb-a').value.trim();
+  var bVal=document.getElementById('tb-b').value.trim();
+  if(!aVal||!bVal){document.getElementById('tb-result').textContent='Enter both numbers first';return;}
+  var a=parseInt(aVal),b=parseInt(bVal);
+  if(isNaN(a)||isNaN(b)||a<1||a>9999||b<1||b>9999){document.getElementById('tb-result').textContent='Numbers must be 1–9999';return;}
+  tbSpinning=true;
+  document.getElementById('tb-spin-btn').disabled=true;
+  document.getElementById('tb-result').textContent='';
+  tbClearHighlights();
+  var tot=(6+Math.random()*6)*Math.PI*2+Math.random()*Math.PI*2;
+  var dur=3000+Math.random()*1000,sa=tbAngle,st=performance.now();
+  function eo(t){return 1-Math.pow(1-t,4);}
+  function fr(now){
+    var t=Math.min((now-st)/dur,1);
+    tbAngle=sa+tot*eo(t);tbDraw(tbAngle);
+    if(t<1){requestAnimationFrame(fr);}
+    else{tbSpinning=false;document.getElementById('tb-spin-btn').disabled=false;tbShowResult(a,b,tbLanded(tbAngle));}
+  }
+  requestAnimationFrame(fr);
+}
+function tbShowResult(a,b,landed){
+  var da=Math.abs(a-landed),db=Math.abs(b-landed);
+  var elA=document.getElementById('tb-a'),elB=document.getElementById('tb-b');
+  var res=document.getElementById('tb-result');
+  if(da===db){
+    elA.style.borderColor=elB.style.borderColor='var(--gold-border2)';
+    elA.style.boxShadow=elB.style.boxShadow='0 0 0 3px rgba(201,168,76,.25)';
+    res.innerHTML='<span style="color:var(--gold)">Landed on '+landed+' — still a tie! Spin again.</span>';
+  } else {
+    var w=da<db?'A':'B',we=w==='A'?elA:elB,le=w==='A'?elB:elA;
+    we.style.borderColor='var(--gold)';
+    we.style.boxShadow='0 0 0 3px rgba(201,168,76,.35),0 0 18px rgba(201,168,76,.3)';
+    we.style.color='var(--gold)';
+    le.style.opacity='.35';
+    res.innerHTML='Wheel: <strong style="color:var(--gold);font-family:var(--cinzel);font-size:15px">'+landed+'</strong><br>'
+      +'<span style="color:var(--gold);font-weight:600;font-family:var(--cinzel)">Player '+w+' wins!</span><br>'
+      +'<span style="font-size:11px;color:var(--text3)">'+(w==='A'?da:db)+' away vs '+(w==='A'?db:da)+' away</span>';
+  }
+}
+function tbClear(){tbClearHighlights();document.getElementById('tb-result').textContent='';}
+function tbClearHighlights(){
+  ['tb-a','tb-b'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.style.borderColor='';el.style.boxShadow='';el.style.color='';el.style.opacity='';
+  });
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeQRFullscreen();closeTiebreaker();}});
 bootstrap();
 </script>
 </body>
