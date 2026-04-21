@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>Tie Breaker — Music Bingo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f8f6f2;--bg3:#ede9e2;
+  --text:#1a1714;--text2:#6b6460;--text3:#a09890;
+  --border:rgba(0,0,0,.09);--border2:rgba(0,0,0,.16);
+  --gold:#c9a84c;--gold2:#e2c068;--gold3:#f5df90;
+  --gold-shine:linear-gradient(135deg,#c9a84c 0%,#f5df90 45%,#c9a84c 70%,#e2b84a 100%);
+  --gold-dim:rgba(201,168,76,.10);--gold-border:rgba(201,168,76,.35);--gold-border2:rgba(201,168,76,.6);
+  --radius:8px;--radius-lg:12px;
+  --font:'DM Sans',sans-serif;--cinzel:'Cinzel',serif;--serif:'EB Garamond',serif;
+}
+html,body{min-height:100%;font-family:var(--font);background:var(--bg2);color:var(--text)}
+
+/* NAV */
+.nav{background:var(--bg);border-bottom:1px solid var(--border2);padding:0 1.5rem;display:flex;align-items:center;height:60px;gap:12px}
+.nav-brand-text{font-family:var(--cinzel);font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-back{font-family:var(--cinzel);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);text-decoration:none;margin-left:auto;padding:6px 14px;border:.5px solid var(--border2);border-radius:var(--radius);transition:all .15s}
+.nav-back:hover{background:var(--bg2);color:var(--text)}
+
+/* PAGE */
+.page{max-width:700px;margin:0 auto;padding:2.5rem 1.5rem 5rem;display:flex;flex-direction:column;align-items:center;gap:2rem}
+.page-title{font-family:var(--cinzel);font-size:20px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center}
+.page-sub{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--text2);text-align:center;margin-top:-1rem}
+
+/* WHEEL SECTION */
+.wheel-layout{display:flex;align-items:center;gap:2rem;flex-wrap:wrap;justify-content:center;width:100%}
+.player-col{display:flex;flex-direction:column;align-items:center;gap:10px}
+.player-label{font-family:var(--cinzel);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.player-input{width:100px;text-align:center;font-family:var(--cinzel);font-size:32px;font-weight:600;color:var(--text);background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius);padding:12px 8px;outline:none;transition:border-color .2s,box-shadow .2s,color .2s,opacity .2s}
+.player-input:focus{border-color:var(--gold-border2)}
+.wheel-col{display:flex;flex-direction:column;align-items:center;gap:14px}
+.wheel-wrap{position:relative;display:inline-block;margin-top:14px}
+.wheel-ptr{position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:18px solid var(--gold);z-index:2;filter:drop-shadow(0 2px 6px rgba(201,168,76,.5))}
+canvas{display:block;border-radius:50%;box-shadow:0 4px 32px rgba(0,0,0,.13)}
+.spin-btn{font-family:var(--cinzel);font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--text);color:var(--bg);border:none;border-radius:99px;padding:11px 36px;cursor:pointer;transition:opacity .15s}
+.spin-btn:hover{opacity:.82}
+.spin-btn:disabled{opacity:.4;cursor:default}
+.result{font-family:var(--cinzel);font-size:13px;letter-spacing:.06em;text-align:center;min-height:42px;color:var(--text2);line-height:1.7}
+
+/* POPOUT BUTTON */
+.popout-btn{font-family:var(--cinzel);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);background:none;border:.5px solid var(--border2);border-radius:var(--radius);padding:5px 14px;cursor:pointer;transition:all .15s}
+.popout-btn:hover{background:var(--bg3);color:var(--text)}
+
+/* BACK LINK AT BOTTOM */
+.bottom-link{font-family:var(--cinzel);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s}
+.bottom-link:hover{background:var(--gold-dim)}
+
+@media(max-width:500px){
+  .wheel-layout{gap:1.25rem}
+  .player-input{font-size:26px;width:84px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-brand-text">Tie Breaker</span>
+  <a class="nav-back" href="javascript:history.back()">← Host Tool</a>
+</nav>
+
+<div class="page">
+  <div class="page-title">Tie Breaker</div>
+  <div class="page-sub">Each player picks a number. Spin the wheel — closest wins.</div>
+
+  <button class="popout-btn" onclick="tbPopout()">↗ Pop out in new window (drag to TV)</button>
+
+  <div class="wheel-layout">
+
+    <!-- Player A -->
+    <div class="player-col">
+      <div class="player-label">Player A</div>
+      <input type="number" class="player-input" id="tb-a" placeholder="—" min="1" max="9999" oninput="tbClear()">
+    </div>
+
+    <!-- Wheel -->
+    <div class="wheel-col">
+      <div class="wheel-wrap">
+        <div class="wheel-ptr" style="border-left:13px solid transparent;border-right:13px solid transparent;border-top:24px solid var(--gold);filter:drop-shadow(0 0 8px rgba(201,168,76,.8)) drop-shadow(0 3px 6px rgba(0,0,0,.8))"></div>
+        <canvas id="tb-wheel" width="300" height="300"></canvas>
+      </div>
+      <button class="spin-btn" id="tb-spin-btn" onclick="tbSpin()">Spin</button>
+      <div class="result" id="tb-result"></div>
+    </div>
+
+    <!-- Player B -->
+    <div class="player-col">
+      <div class="player-label">Player B</div>
+      <input type="number" class="player-input" id="tb-b" placeholder="—" min="1" max="9999" oninput="tbClear()">
+    </div>
+
+  </div>
+
+  <a class="bottom-link" href="javascript:history.back()">← Back to Host Tool</a>
+</div>
+
+<script>
+var tbAngle=0, tbSpinning=false;
+
+// Force font load before drawing
+document.fonts.ready.then(function(){ tbDraw(0); });
+
+function tbDraw(angle){
+  var cv=document.getElementById('tb-wheel');
+  if(!cv)return;
+  var ctx=cv.getContext('2d'),cx=150,cy=150,r=143,seg=20,arc=Math.PI*2/seg;
+  ctx.clearRect(0,0,300,300);
+
+  for(var i=0;i<seg;i++){
+    var s=angle+i*arc,e=s+arc,gold=i%2===0;
+
+    // Segment with gradient — richer look
+    var grad=ctx.createLinearGradient(
+      cx+Math.cos(s+arc/2)*(r*0.3), cy+Math.sin(s+arc/2)*(r*0.3),
+      cx+Math.cos(s+arc/2)*r,       cy+Math.sin(s+arc/2)*r
+    );
+    if(gold){
+      grad.addColorStop(0,'#d4a835');
+      grad.addColorStop(0.5,'#c9a030');
+      grad.addColorStop(1,'#8a6010');
+    } else {
+      grad.addColorStop(0,'#f8f3e8');
+      grad.addColorStop(1,'#d8cfa8');
+    }
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,s,e);ctx.closePath();
+    ctx.fillStyle=grad;ctx.fill();
+    ctx.strokeStyle='rgba(20,10,0,.6)';ctx.lineWidth=1;ctx.stroke();
+
+    // Clip to segment so numbers can never overflow
+    ctx.save();
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r-3,s,e);ctx.closePath();
+    ctx.clip();
+
+    // Rotate to segment center, place text well inside the rim
+    ctx.translate(cx,cy);
+    ctx.rotate(s+arc/2);
+    ctx.transform(1,0,-0.42,1,0,0); // italic skew
+    ctx.textAlign='right';
+    ctx.textBaseline='middle';
+    ctx.font='bold 24px "Bebas Neue",Impact,sans-serif';
+
+    // Shadow for depth
+    ctx.shadowColor='rgba(0,0,0,.7)';
+    ctx.shadowBlur=3;
+    ctx.shadowOffsetX=1;
+    ctx.shadowOffsetY=1;
+
+    // Outline
+    ctx.strokeStyle='rgba(0,0,0,.95)';
+    ctx.lineWidth=4;
+    ctx.lineJoin='round';
+    ctx.strokeText(String(i+1), r-14, 0);
+
+    // Fill
+    ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+    ctx.fillStyle='#ffffff';
+    ctx.fillText(String(i+1), r-14, 0);
+
+    ctx.restore();
+  }
+
+  // Spoke lines — drawn after segments so they're on top
+  for(var j=0;j<seg;j++){
+    var sa=angle+j*arc;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(sa)*16, cy+Math.sin(sa)*16);
+    ctx.lineTo(cx+Math.cos(sa)*(r-1), cy+Math.sin(sa)*(r-1));
+    ctx.strokeStyle='rgba(20,8,0,.55)';ctx.lineWidth=1.5;ctx.stroke();
+  }
+
+  // Outer rim — thick dark ring then gold highlight
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle='#1a0a00';ctx.lineWidth=7;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,r-3.5,0,Math.PI*2);
+  var rimGrad=ctx.createLinearGradient(cx-r,cy-r,cx+r,cy+r);
+  rimGrad.addColorStop(0,'rgba(245,223,144,.9)');
+  rimGrad.addColorStop(0.5,'rgba(201,168,76,.6)');
+  rimGrad.addColorStop(1,'rgba(245,223,144,.9)');
+  ctx.strokeStyle=rimGrad;ctx.lineWidth=2;ctx.stroke();
+
+  // Inner shadow ring
+  ctx.beginPath();ctx.arc(cx,cy,r-6,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,0,0,.2)';ctx.lineWidth=3;ctx.stroke();
+
+  // Center hub — multi-ring with gold gradient
+  ctx.beginPath();ctx.arc(cx,cy,18,0,Math.PI*2);
+  ctx.fillStyle='#0e0a06';ctx.fill();
+  ctx.strokeStyle='rgba(20,10,0,.8)';ctx.lineWidth=2;ctx.stroke();
+
+  ctx.beginPath();ctx.arc(cx,cy,15,0,Math.PI*2);
+  var hub=ctx.createRadialGradient(cx-5,cy-5,1,cx,cy,15);
+  hub.addColorStop(0,'#f9e87a');
+  hub.addColorStop(0.4,'#d4a835');
+  hub.addColorStop(1,'#5a3800');
+  ctx.fillStyle=hub;ctx.fill();
+
+  ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,245,180,.9)';ctx.fill();
+}
+
+function tbLanded(angle){
+  var seg=20,arc=Math.PI*2/seg,ptr=-Math.PI/2;
+  var a=((ptr-angle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+  return Math.floor(a/arc)%seg+1;
+}
+
+function tbSpin(){
+  if(tbSpinning)return;
+  var aVal=document.getElementById('tb-a').value.trim();
+  var bVal=document.getElementById('tb-b').value.trim();
+  if(!aVal||!bVal){
+    document.getElementById('tb-result').textContent='Enter both numbers first';return;
+  }
+  var a=parseInt(aVal),b=parseInt(bVal);
+  if(isNaN(a)||isNaN(b)||a<1||a>9999||b<1||b>9999){
+    document.getElementById('tb-result').textContent='Numbers must be 1–9999';return;
+  }
+  tbSpinning=true;
+  document.getElementById('tb-spin-btn').disabled=true;
+  document.getElementById('tb-result').textContent='';
+  tbClearHighlights();
+  var tot=(6+Math.random()*6)*Math.PI*2+Math.random()*Math.PI*2;
+  var dur=3000+Math.random()*1000,sa=tbAngle,st=performance.now();
+  function eo(t){return 1-Math.pow(1-t,4);}
+  function fr(now){
+    var t=Math.min((now-st)/dur,1);
+    tbAngle=sa+tot*eo(t);tbDraw(tbAngle);
+    if(t<1){requestAnimationFrame(fr);}
+    else{
+      tbSpinning=false;
+      document.getElementById('tb-spin-btn').disabled=false;
+      tbShowResult(a,b,tbLanded(tbAngle));
+    }
+  }
+  requestAnimationFrame(fr);
+}
+
+function tbShowResult(a,b,landed){
+  var da=Math.abs(a-landed),db=Math.abs(b-landed);
+  var elA=document.getElementById('tb-a'),elB=document.getElementById('tb-b');
+  var res=document.getElementById('tb-result');
+  if(da===db){
+    elA.style.borderColor='var(--gold-border2)';elB.style.borderColor='var(--gold-border2)';
+    elA.style.boxShadow=elB.style.boxShadow='0 0 0 3px rgba(201,168,76,.25)';
+    res.innerHTML='<span style="color:var(--gold)">Landed on '+landed+' — still a tie!<br>Spin again.</span>';
+  } else {
+    var w=da<db?'A':'B',we=w==='A'?elA:elB,le=w==='A'?elB:elA;
+    we.style.borderColor='var(--gold)';
+    we.style.boxShadow='0 0 0 3px rgba(201,168,76,.35),0 0 18px rgba(201,168,76,.3)';
+    we.style.color='var(--gold)';
+    le.style.opacity='.35';
+    res.innerHTML='Wheel: <strong style="color:var(--gold);font-family:var(--cinzel);font-size:16px">'+landed+'</strong><br>'
+      +'<span style="color:var(--gold);font-weight:600;font-family:var(--cinzel)">Player '+w+' wins!</span><br>'
+      +'<span style="font-size:11px;color:var(--text3)">'+(w==='A'?da:db)+' away vs '+(w==='A'?db:da)+' away</span>';
+  }
+}
+
+function tbClear(){
+  tbClearHighlights();
+  document.getElementById('tb-result').textContent='';
+}
+function tbClearHighlights(){
+  ['tb-a','tb-b'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.style.borderColor='';el.style.boxShadow='';el.style.color='';el.style.opacity='';
+  });
+}
+
+function tbPopout(){
+  var aVal=document.getElementById('tb-a').value||'';
+  var bVal=document.getElementById('tb-b').value||'';
+  var w=window.open('','_blank','width=860,height=560,toolbar=0,menubar=0,scrollbars=0,resizable=1');
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Tie Breaker</title>'
+    +'<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0}'
+    +'body{background:#1a1714;font-family:Cinzel,serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:22px;padding:20px}'
+    +':root{--gold:#c9a84c}'
+    +'.title{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:rgba(201,168,76,.6)}'
+    +'.row{display:flex;align-items:center;gap:44px;flex-wrap:wrap;justify-content:center}'
+    +'.pcol{display:flex;flex-direction:column;align-items:center;gap:10px}'
+    +'.plbl{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.35)}'
+    +'input{width:120px;text-align:center;font-family:Cinzel,serif;font-size:46px;font-weight:600;color:#f0ede8;background:rgba(255,255,255,.05);border:1px solid rgba(201,168,76,.28);border-radius:10px;padding:14px 8px;outline:none;transition:all .2s}'
+    +'.ww{position:relative;display:inline-block;margin-top:16px}'
+    +'.ptr{position:absolute;top:-16px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-top:20px solid var(--gold);z-index:2;filter:drop-shadow(0 2px 8px rgba(201,168,76,.6))}'
+    +'canvas{display:block;border-radius:50%;box-shadow:0 8px 48px rgba(0,0,0,.6)}'
+    +'.sbtn{font-family:Cinzel,serif;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;background:var(--gold);color:#000;border:none;border-radius:99px;padding:13px 44px;cursor:pointer;transition:opacity .15s}'
+    +'.sbtn:disabled{opacity:.4;cursor:default}'
+    +'.res{font-family:Cinzel,serif;font-size:15px;letter-spacing:.06em;text-align:center;min-height:52px;color:rgba(255,255,255,.5);line-height:1.8}'
+    +'</style></head><body>'
+    +'<div class="title">Tie Breaker</div>'
+    +'<div class="row">'
+    +'<div class="pcol"><div class="plbl">Player A</div><input type="number" id="pa" value="'+aVal+'" min="1" max="9999" oninput="clr()"></div>'
+    +'<div class="pcol">'
+    +'<div class="ww"><div class="ptr"></div><canvas id="wh" width="320" height="320" style="border-radius:50%"></canvas></div>'
+    +'<button class="sbtn" id="sb" onclick="spin()">Spin</button>'
+    +'<div class="res" id="res"></div>'
+    +'</div>'
+    +'<div class="pcol"><div class="plbl">Player B</div><input type="number" id="pb" value="'+bVal+'" min="1" max="9999" oninput="clr()"></div>'
+    +'</div>'
+    +'<script>'
+    +'var ang=0,sp=false;'
+    +'function draw(a){var cv=document.getElementById(\"wh\"),ctx=cv.getContext(\"2d\"),cx=160,cy=160,r=154,seg=20,arc=Math.PI*2/seg;ctx.clearRect(0,0,320,320);for(var i=0;i<seg;i++){var s=a+i*arc,e=s+arc,g=i%2===0;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,s,e);ctx.closePath();ctx.fillStyle=g?\"#b8922a\":\"#f0ebe0\";ctx.fill();ctx.save();ctx.translate(cx,cy);ctx.rotate(s+arc/2);ctx.transform(1,0,-0.45,1,0,0);ctx.textAlign=\"right\";ctx.textBaseline=\"middle\";ctx.font=\"bold 34px \\\\\"Bebas Neue\\\\\\",Impact,sans-serif\";ctx.strokeStyle=\"rgba(0,0,0,.9)\";ctx.lineWidth=6;ctx.lineJoin=\"round\";ctx.strokeText(String(i+1),r-5,0);ctx.fillStyle=\"#ffffff\";ctx.fillText(String(i+1),r-5,0);ctx.restore();}for(var j=0;j<seg;j++){ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a+j*arc)*r,cy+Math.sin(a+j*arc)*r);ctx.strokeStyle=\"rgba(40,20,0,.5)\";ctx.lineWidth=1;ctx.stroke();}ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle=\"#2a1500\";ctx.lineWidth=6;ctx.stroke();ctx.beginPath();ctx.arc(cx,cy,r-3,0,Math.PI*2);ctx.strokeStyle=\"rgba(201,168,76,.9)\";ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.arc(cx,cy,18,0,Math.PI*2);var h=ctx.createRadialGradient(cx-4,cy-4,2,cx,cy,18);h.addColorStop(0,\"#f5df90\");h.addColorStop(1,\"#1a1714\");ctx.fillStyle=h;ctx.fill();ctx.strokeStyle=\"rgba(201,168,76,.9)\";ctx.lineWidth=2;ctx.stroke();}'
+    +'function land(a){var seg=20,arc=Math.PI*2/seg,ptr=-Math.PI/2,n=((ptr-a)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);return Math.floor(n/arc)%seg+1;}'
+    +'function spin(){if(sp)return;var av=document.getElementById("pa").value,bv=document.getElementById("pb").value;if(!av||!bv){document.getElementById("res").textContent="Enter both numbers";return;}var a=parseInt(av),b=parseInt(bv);sp=true;document.getElementById("sb").disabled=true;document.getElementById("res").textContent="";clrh();var tot=(6+Math.random()*6)*Math.PI*2+Math.random()*Math.PI*2,dur=3000+Math.random()*1000,sa=ang,st=performance.now();function eo(t){return 1-Math.pow(1-t,4);}function fr(now){var t=Math.min((now-st)/dur,1);ang=sa+tot*eo(t);draw(ang);if(t<1){requestAnimationFrame(fr);}else{sp=false;document.getElementById("sb").disabled=false;var l=land(ang),da=Math.abs(a-l),db=Math.abs(b-l),res=document.getElementById("res"),ea=document.getElementById("pa"),eb=document.getElementById("pb");if(da===db){ea.style.borderColor=eb.style.borderColor="var(--gold)";ea.style.boxShadow=eb.style.boxShadow="0 0 0 3px rgba(201,168,76,.3)";res.innerHTML="Landed on "+l+" — still a tie!";}else{var w=da<db?"A":"B",we=w==="A"?ea:eb,le=w==="A"?eb:ea;we.style.borderColor="var(--gold)";we.style.boxShadow="0 0 0 4px rgba(201,168,76,.4),0 0 32px rgba(201,168,76,.35)";we.style.color="var(--gold)";le.style.opacity=".3";res.innerHTML="Wheel: <strong style=\\"color:var(--gold);font-size:22px\\">"+l+"</strong><br><span style=\\"color:var(--gold);font-weight:600\\">Player "+w+" wins!</span><br><span style=\\"font-size:11px;color:rgba(255,255,255,.35)\\">"+(w==="A"?da:db)+" away vs "+(w==="A"?db:da)+" away</span>";}}}requestAnimationFrame(fr);}'
+    +'function clr(){document.getElementById("res").textContent="";clrh();}'
+    +'function clrh(){["pa","pb"].forEach(function(id){var el=document.getElementById(id);if(!el)return;el.style.borderColor="rgba(201,168,76,.28)";el.style.boxShadow="";el.style.color="#f0ede8";el.style.opacity="";});}'
+    +'document.fonts.load("900 20px \\"Bebas Neue\\"").then(function(){draw(0);});'
+    +'<\/script></body></html>';
+  w.document.write(html);w.document.close();
+}
+
+// Init
+tbDraw(0);
+</script>
+</body>
+</html>
