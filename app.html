@@ -204,6 +204,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <button class="nav-tab active" id="tab-host" onclick="showPage('host')">Host Tool</button>
     <button class="nav-tab" id="tab-cards" onclick="showPage('cards')">Card Generator</button>
     <button class="nav-tab" id="tab-player" onclick="showPage('player')">Player Card</button>
+    <a class="nav-tab" id="tab-tiebreaker" href="tiebreaker.html" target="_blank" style="text-decoration:none">Tie Breaker</a>
   </div>
 </nav>
 
@@ -267,6 +268,15 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
         <button class="btn btn-ghost btn-sm" onclick="hostReset()" style="color:var(--text3)">Reset session</button>
         <button class="btn btn-ghost btn-sm" id="reset-undo-btn" onclick="undoReset()" style="display:none;border-color:var(--gold-border);color:var(--gold)">↩ Undo reset</button>
       </div>
+
+      <!-- TIEBREAKER LINK -->
+      <div style="margin-top:2rem;padding-top:1.5rem;border-top:.5px solid var(--border);text-align:center">
+        <a href="tiebreaker.html" target="_blank"
+          style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s"
+          onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
+          ⬡ Open Tie Breaker
+        </a>
+      </div></div>
     </div>
     <div id="hpanel-print" style="display:none">
       <div class="btn-row" style="margin-bottom:1rem">
@@ -366,6 +376,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
   <div class="qr-fullscreen-inner" id="qr-fullscreen-inner"></div>
   <div class="qr-fullscreen-label">Scan to play on your phone</div>
 </div>
+
 <div class="winner-overlay" id="winner-overlay" onclick="this.classList.remove('show')">
   <div class="winner-box">
     <div class="winner-emoji">🎉</div>
@@ -1016,8 +1027,4 @@ function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2200);
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeQRFullscreen();});
-bootstrap();
-</script>
-</body>
-</html>
+
