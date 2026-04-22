@@ -165,7 +165,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
   <div class="hero-text">
     <div class="hero-eyebrow">Belladonna Audio Alchemies presents</div>
     <div class="hero-title">MUSIC<br><span>BINGO</span></div>
-    <div class="hero-sub">Choose your playlist.</div>
+    <div class="hero-sub">Choose your playlist. Your host will take it from there.</div>
   </div>
 </div>
 
@@ -344,8 +344,22 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
             </div>
           </div>
           <div class="form-group" style="margin-bottom:1rem">
-            <label class="form-label">Categories for this night</label>
-            <div id="sched-cat-checks" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div>
+            <label class="form-label">Rounds for this night</label>
+            <div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:8px">Assign a category to each round. Round 3 is optional.</div>
+            <div style="display:flex;flex-direction:column;gap:8px" id="sched-rounds-wrap">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);min-width:56px">Round 1</div>
+                <select class="form-input" id="sched-round-1" style="flex:1"><option value="">— pick a category —</option></select>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);min-width:56px">Round 2</div>
+                <select class="form-input" id="sched-round-2" style="flex:1"><option value="">— pick a category —</option></select>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);min-width:56px">Round 3</div>
+                <select class="form-input" id="sched-round-3" style="flex:1"><option value="">(none)</option></select>
+              </div>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Notes <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
@@ -516,11 +530,11 @@ function renderGrid() {
     var imgHTML = c.image
       ? '<img class="cat-banner" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="cat-banner-placeholder" style="display:none"><span>' + c.title + '</span></div>'
       : '<div class="cat-banner-placeholder"><span>' + c.title + '</span></div>';
-    var clickAttr = isLive ? 'onclick="window.open(\'' + appUrl + '\',\'_blank\');return false;"' : '';
     var genreHTML = genres.length ? '<span class="cat-genre">' + genres[0] + '</span>' : '';
     var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
     var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
-    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="#" ' + clickAttr + '>' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
+    var href = isLive ? 'app.html?id=' + c.id : '#';
+    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
   });
   grid.innerHTML = html;
 }
@@ -705,17 +719,22 @@ function renderVenueList() {
 }
 
 function renderSchedCatChecks() {
-  var wrap = document.getElementById('sched-cat-checks');
-  if (!wrap) return;
+  // Populate all three round dropdowns with available categories
+  var opts = '<option value="">— pick a category —</option>';
+  categories.forEach(function(c) { opts += '<option value="' + c.id + '">' + c.title + '</option>'; });
+  var opts3 = '<option value="">(none)</option>';
+  categories.forEach(function(c) { opts3 += '<option value="' + c.id + '">' + c.title + '</option>'; });
   var editId = document.getElementById('sched-edit-id').value;
   var entry = editId ? scheduleEntries.find(function(e){return e.id===editId;}) : null;
-  var checked = entry ? (entry.categoryIds || []) : [];
-  var html = '';
-  categories.forEach(function(c) {
-    var isChecked = checked.indexOf(c.id) !== -1;
-    html += '<label style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;cursor:pointer;font-size:13px;color:var(--text)"><input type="checkbox" id="schedcat_' + c.id + '" value="' + c.id + '"' + (isChecked ? ' checked' : '') + ' style="accent-color:var(--gold)">' + c.title + '</label>';
+  var rounds = entry ? (entry.rounds || []) : [];
+  ['sched-round-1','sched-round-2'].forEach(function(id, i) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = opts;
+    el.value = rounds[i] || '';
   });
-  wrap.innerHTML = html;
+  var el3 = document.getElementById('sched-round-3');
+  if (el3) { el3.innerHTML = opts3; el3.value = rounds[2] || ''; }
 }
 
 function updateRecentHint() {
@@ -729,7 +748,8 @@ function updateRecentHint() {
   var today = new Date().toISOString().split('T')[0];
   var html = '';
   recent.forEach(function(e) {
-    var cats = (e.categoryIds || []).map(function(id) { var c = categories.find(function(x){return x.id===id;}); return c ? c.title : id; }).join(', ');
+    var roundLabelsH = ['R1','R2','R3'];
+    var cats = (e.rounds || e.categoryIds || []).map(function(id, i) { var c = categories.find(function(x){return x.id===id;}); return (roundLabelsH[i]?roundLabelsH[i]+' ':''+(c?c.title:id)); }).join(' · ');
     var isPast = e.date < today;
     html += '<div style="font-size:12px;padding:6px 10px;background:var(--surface2);border-radius:var(--radius);margin-bottom:4px;border-left:3px solid ' + (isPast ? 'var(--border2)' : 'var(--gold)') + '"><span style="color:' + (isPast ? 'var(--text2)' : 'var(--gold)') + ';font-weight:600">' + formatDate(e.date) + '</span><span style="color:var(--text3);margin:0 6px">·</span><span style="color:var(--text)">' + cats + '</span>' + (e.notes ? '<span style="color:var(--text3);font-style:italic"> — ' + e.notes + '</span>' : '') + '</div>';
   });
@@ -741,14 +761,17 @@ function saveSchedEntry() {
   var venueId = document.getElementById('sched-venue-select').value;
   if (!date) { showToast('Pick a date'); return; }
   if (!venueId) { showToast('Pick a venue'); return; }
-  var checked = document.querySelectorAll('#sched-cat-checks input:checked');
-  var categoryIds = [];
-  checked.forEach(function(el) { categoryIds.push(el.value); });
-  if (!categoryIds.length) { showToast('Select at least one category'); return; }
+  var r1 = document.getElementById('sched-round-1').value;
+  var r2 = document.getElementById('sched-round-2').value;
+  var r3 = document.getElementById('sched-round-3').value;
+  if (!r1 && !r2) { showToast('Pick at least one round'); return; }
+  var rounds = [r1, r2, r3].filter(Boolean);
+  // Also keep categoryIds for backwards compat with timeline display
+  var categoryIds = rounds.filter(function(id,i,a){return a.indexOf(id)===i;});
   var notes = document.getElementById('sched-notes').value.trim();
   var editId = document.getElementById('sched-edit-id').value;
   var id = editId || 'sched_' + Date.now();
-  db.ref('landing/schedule/' + id).set({id:id, date:date, venueId:venueId, categoryIds:categoryIds, notes:notes});
+  db.ref('landing/schedule/' + id).set({id:id, date:date, venueId:venueId, rounds:rounds, categoryIds:categoryIds, notes:notes});
   resetSchedForm(); showToast(editId ? 'Entry updated!' : 'Entry added!');
 }
 function editSchedEntry(id) {
@@ -813,10 +836,15 @@ function renderTimeline() {
     var rows = '';
     entries.forEach(function(e) {
       var vname = (venues.find(function(v){return v.id===e.venueId;}) || {}).name || 'Unknown';
-      var catNames = (e.categoryIds||[]).map(function(id){ var c=categories.find(function(x){return x.id===id;}); return c?c.title:id; });
+      var roundLabelsT = ['R1','R2','R3'];
+      var rounds = e.rounds || e.categoryIds || [];
+      var pills = rounds.map(function(id, ri) {
+        var c = categories.find(function(x){return x.id===id;});
+        var label = roundLabelsT[ri] ? '<span style="font-size:9px;color:var(--text3);margin-right:3px">' + roundLabelsT[ri] + '</span>' : '';
+        return '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:99px;padding:2px 8px;color:var(--gold2);font-family:var(--cinzel);letter-spacing:.04em">' + label + (c?c.title:id) + '</span>';
+      }).join('');
       var isPast = e.date < today;
-      var pills = catNames.map(function(t){ return '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:99px;padding:2px 8px;color:var(--gold2);font-family:var(--cinzel);letter-spacing:.04em">' + t + '</span>'; }).join('');
-      rows += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:.5px solid var(--border);opacity:' + (isPast?'0.55':'1') + '"><div style="min-width:36px;font-size:12px;font-weight:700;color:' + (isPast?'var(--text3)':'var(--gold)') + ';font-family:var(--cinzel);padding-top:2px">' + e.date.split('-')[2] + '</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px">' + vname + '</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:' + (e.notes?'4px':'0') + '">' + pills + '</div>' + (e.notes?'<div style="font-size:11px;color:var(--text3);font-style:italic">'+e.notes+'</div>':'') + '</div><div style="display:flex;gap:4px;flex-shrink:0"><button class="btn-accent" onclick="editSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">✕</button></div></div>';
+      rows += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:.5px solid var(--border);opacity:' + (isPast?'0.55':'1') + '"><div style="min-width:36px;font-size:12px;font-weight:700;color:' + (isPast?'var(--text3)':'var(--gold)') + ';font-family:var(--cinzel);padding-top:2px">' + e.date.split('-')[2] + '</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px">' + vname + '</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:' + (e.notes?'4px':'0') + '">' + pills + '</div>' + (e.notes?'<div style="font-size:11px;color:var(--gold2);font-style:italic;background:var(--gold-dim);border-radius:4px;padding:2px 6px;display:inline-block;margin-top:2px">📋 '+e.notes+'</div>':'') + '</div><div style="display:flex;gap:4px;flex-shrink:0"><button class="btn-accent" onclick="editSchedEntry('' + e.id + '')" style="font-size:10px;padding:3px 8px">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSchedEntry('' + e.id + '')" style="font-size:10px;padding:3px 8px">✕</button></div></div>';
     });
     var block = '<div style="margin-bottom:1.5rem"><div style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:' + (isUpcoming?'var(--gold)':'var(--text3)') + ';margin-bottom:4px;padding-bottom:6px;border-bottom:1px solid var(--border)">' + label + '</div>' + rows + '</div>';
     if (isUpcoming) upcoming.push(block); else past.push(block);
@@ -841,16 +869,30 @@ function renderHostSched() {
     res.innerHTML = '<div style="font-size:14px;color:var(--text3);font-style:italic;text-align:center;padding:1rem">Nothing scheduled for this date and venue.</div>';
     return;
   }
-  var allIds = [];
-  entries.forEach(function(e){ (e.categoryIds||[]).forEach(function(id){ if (allIds.indexOf(id)===-1) allIds.push(id); }); });
-  var cats = allIds.map(function(id){return categories.find(function(c){return c.id===id;});}).filter(Boolean);
-  var html = '<div style="font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">' + cats.length + ' playlist' + (cats.length===1?'':'s') + ' tonight</div>';
-  cats.forEach(function(c) {
-    var appUrl = 'app.html?id=' + c.id;
-    var imgHTML = c.image ? '<img src="' + c.image + '" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;border-radius:6px 6px 0 0" onerror="this.style.display=\'none\'">' : '';
-    html += '<div onclick="window.open(\'' + appUrl + '\',\'_blank\')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px">' + imgHTML + '<div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between"><div style="font-family:var(--cinzel);font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--text)">' + c.title + '</div><span style="font-size:12px;color:var(--gold)">Open ↗</span></div></div>';
+  var html = '';
+  entries.forEach(function(entry) {
+    // Notes block
+    if (entry.notes) {
+      html += '<div style="background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:var(--radius);padding:8px 12px;margin-bottom:12px;font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text2)">📋 ' + entry.notes + '</div>';
+    }
+    // Rounds
+    var rounds = entry.rounds || entry.categoryIds || [];
+    var roundLabels = ['Round 1', 'Round 2', 'Round 3'];
+    rounds.forEach(function(catId, i) {
+      var c = categories.find(function(x){return x.id===catId;});
+      if (!c) return;
+      var appUrl = 'app.html?id=' + c.id;
+      var imgHTML = c.image ? '<img src="' + c.image + '" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;border-radius:6px 6px 0 0" onerror="this.style.display=\'none\'">' : '';
+      var roundLabel = roundLabels[i] || ('Round ' + (i+1));
+      html += '<div style="margin-bottom:12px">'
+        + '<div style="font-family:var(--cinzel);font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:4px">' + roundLabel + '</div>'
+        + '<div onclick="window.open(\'' + appUrl + '\',\'_blank\')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:border-color .2s" onmouseover="this.style.borderColor=\'var(--gold-border)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'
+        + imgHTML
+        + '<div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between"><div style="font-family:var(--cinzel);font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--text)">' + c.title + '</div><span style="font-size:12px;color:var(--gold)">Open ↗</span></div>'
+        + '</div></div>';
+    });
   });
-  res.innerHTML = html;
+  res.innerHTML = html || '<div style="font-size:14px;color:var(--text3);font-style:italic;text-align:center;padding:1rem">Nothing scheduled for this date and venue.</div>';
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
