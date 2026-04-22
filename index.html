@@ -719,12 +719,13 @@ function renderVenueList() {
 }
 
 function renderSchedCatChecks() {
-  // Populate all three round dropdowns with available categories
+  var editIdEl = document.getElementById('sched-edit-id');
+  if (!editIdEl) return; // overlay not in DOM yet
   var opts = '<option value="">— pick a category —</option>';
   categories.forEach(function(c) { opts += '<option value="' + c.id + '">' + c.title + '</option>'; });
   var opts3 = '<option value="">(none)</option>';
   categories.forEach(function(c) { opts3 += '<option value="' + c.id + '">' + c.title + '</option>'; });
-  var editId = document.getElementById('sched-edit-id').value;
+  var editId = editIdEl.value;
   var entry = editId ? scheduleEntries.find(function(e){return e.id===editId;}) : null;
   var rounds = entry ? (entry.rounds || []) : [];
   ['sched-round-1','sched-round-2'].forEach(function(id, i) {
@@ -793,6 +794,7 @@ function deleteSchedEntry(id) {
   showToast('Entry removed');
 }
 function resetSchedForm() {
+  if (!document.getElementById('sched-edit-id')) return;
   document.getElementById('sched-edit-id').value = '';
   document.getElementById('sched-date').value = '';
   document.getElementById('sched-venue-select').value = '';
