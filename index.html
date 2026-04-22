@@ -749,10 +749,21 @@ function updateRecentHint() {
   var today = new Date().toISOString().split('T')[0];
   var html = '';
   recent.forEach(function(e) {
-    var roundLabelsH = ['R1','R2','R3'];
-    var cats = (e.rounds || e.categoryIds || []).map(function(id, i) { var c = categories.find(function(x){return x.id===id;}); return (roundLabelsH[i]?roundLabelsH[i]+' ':''+(c?c.title:id)); }).join(' · ');
+    var roundLabels = ['Round 1','Round 2','Round 3'];
+    var rounds = e.rounds || e.categoryIds || [];
     var isPast = e.date < today;
-    html += '<div style="font-size:12px;padding:6px 10px;background:var(--surface2);border-radius:var(--radius);margin-bottom:4px;border-left:3px solid ' + (isPast ? 'var(--border2)' : 'var(--gold)') + '"><span style="color:' + (isPast ? 'var(--text2)' : 'var(--gold)') + ';font-weight:600">' + formatDate(e.date) + '</span><span style="color:var(--text3);margin:0 6px">·</span><span style="color:var(--text)">' + cats + '</span>' + (e.notes ? '<span style="color:var(--text3);font-style:italic"> — ' + e.notes + '</span>' : '') + '</div>';
+    var roundsHTML = rounds.map(function(id, i) {
+      var cat = categories.find(function(x){return x.id===id;});
+      var label = roundLabels[i] || ('Round '+(i+1));
+      return '<span style="color:var(--gold);font-size:10px;font-family:var(--cinzel);letter-spacing:.06em">' + label + ':</span> ' + (cat ? cat.title : '—');
+    }).join(' &nbsp;·&nbsp; ');
+    html += '<div style="font-size:12px;padding:7px 10px;background:var(--surface2);border-radius:var(--radius);margin-bottom:4px;border-left:3px solid ' + (isPast ? 'var(--border2)' : 'var(--gold)') + '">'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:' + (roundsHTML?'4px':'0') + '">'
+      + '<span style="color:' + (isPast ? 'var(--text2)' : 'var(--gold)') + ';font-weight:600">' + formatDate(e.date) + '</span>'
+      + (e.notes ? '<span style="color:var(--text3);font-style:italic;font-size:11px"> — ' + e.notes + '</span>' : '')
+      + '</div>'
+      + (roundsHTML ? '<div style="color:var(--text);line-height:1.6">' + roundsHTML + '</div>' : '')
+      + '</div>';
   });
   list.innerHTML = html;
 }
@@ -767,7 +778,6 @@ function saveSchedEntry() {
   var r3 = document.getElementById('sched-round-3').value;
   if (!r1 && !r2) { showToast('Pick at least one round'); return; }
   var rounds = [r1, r2, r3].filter(Boolean);
-  // Also keep categoryIds for backwards compat with timeline display
   var categoryIds = rounds.filter(function(id,i,a){return a.indexOf(id)===i;});
   var notes = document.getElementById('sched-notes').value.trim();
   var editId = document.getElementById('sched-edit-id').value;
@@ -775,9 +785,11 @@ function saveSchedEntry() {
   db.ref('landing/schedule/' + id).set({id:id, date:date, venueId:venueId, rounds:rounds, categoryIds:categoryIds, notes:notes});
   resetSchedForm(); showToast(editId ? 'Entry updated!' : 'Entry added!');
 }
+
 function editSchedEntry(id) {
   var e = scheduleEntries.find(function(x){return x.id===id;});
   if (!e) return;
+  // Set the edit ID first so renderSchedCatChecks can read it
   document.getElementById('sched-edit-id').value = id;
   document.getElementById('sched-date').value = e.date;
   document.getElementById('sched-venue-select').value = e.venueId;
@@ -785,7 +797,14 @@ function editSchedEntry(id) {
   document.getElementById('sched-form-label').textContent = 'Editing Entry';
   document.getElementById('sched-cancel-btn').style.display = '';
   switchSchedTab('add');
+  // Rebuild dropdowns with category options, then restore saved rounds
   renderSchedCatChecks();
+  // Explicitly set the saved round values after dropdowns are populated
+  var rounds = e.rounds || e.categoryIds || [];
+  ['sched-round-1','sched-round-2','sched-round-3'].forEach(function(elId, i) {
+    var el = document.getElementById(elId);
+    if (el && rounds[i]) el.value = rounds[i];
+  });
   updateRecentHint();
 }
 function deleteSchedEntry(id) {
