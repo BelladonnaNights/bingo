@@ -270,9 +270,12 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
       </div>
 
       <!-- TIEBREAKER LINK -->
-      <div style="margin-top:2rem;padding-top:1.5rem;border-top:.5px solid var(--border);text-align:center">
+      <div style="margin-top:2rem;padding-top:1.5rem;border-top:.5px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center">
         <a onclick="openTiebreaker()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
           ⬡ Open Tie Breaker
+        </a>
+        <a onclick="openMediaPlayer()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#c084fc;text-decoration:none;border:.5px solid rgba(168,85,247,.35);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='rgba(168,85,247,.08)'" onmouseout="this.style.background='none'" id="btn-open-player">
+          ♪ Open Media Player
         </a>
       </div></div>
     </div>
@@ -994,6 +997,32 @@ function setupFirebaseListeners(){
     const c=snap.val();if(!c||c.dismissed)return;
     showBingoClaim(c.name,c.cardNum,snap.key,c.daubedSongs||[]);
   });
+  // ── PLAYER BRIDGE: auto-tick when media player plays a bingo song ─────────
+  db.ref(`sessions/${sessionKey}/nowPlaying`).on('value',snap=>{
+    const np=snap.val();
+    if(!np||!np.title)return;
+    if(Date.now()-np.at>30000)return; // ignore stale signals on load
+    autoTickFromPlayer(np.title,np.artist||'');
+  });
+}
+
+function normStr(s){
+  return s.toLowerCase()
+    .replace(/^(the|a|an)\s+/,'')
+    .replace(/[^a-z0-9\s]/g,'')
+    .replace(/\s+/g,' ').trim();
+}
+
+function autoTickFromPlayer(title,artist){
+  const nt=normStr(title),na=normStr(artist);
+  let match=allSongs.find(s=>!s.played&&normStr(s.title)===nt&&normStr(s.artist)===na);
+  if(!match&&na) match=allSongs.find(s=>!s.played&&normStr(s.title)===nt);
+  if(!match)return;
+  match.played=true;
+  hostPlayedOrder.push(match.id);
+  renderHostGrid(document.getElementById('host-search').value.toLowerCase());
+  updateHostStats();renderHostFeed();
+  showToast(`\u266a Auto-ticked: ${fmtPlain(match)}`);
 }
 function fbWritePlayer(name,cardNum){
   if(!db)return;
@@ -1064,6 +1093,15 @@ function dismissBingoClaim(){
 function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ── MEDIA PLAYER BRIDGE ───────────────────────────────────────────────────────
+// Opens the media player in a new tab with this category pre-linked.
+// The player reads ?bingo=<categoryId> on load and auto-activates the bridge.
+function openMediaPlayer(){
+  const playerFile='belladonna-player.html';
+  const url=`${playerFile}?bingo=${encodeURIComponent(categoryId)}`;
+  window.open(url,'_blank');
 }
 // ── TIEBREAKER ────────────────────────────────────────────────────────────────
 var tbAngle=0,tbSpinning=false;
