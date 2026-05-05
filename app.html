@@ -442,7 +442,7 @@ const FIREBASE_CONFIG={
 //   Same folder (default):  'belladonna-player.html'
 //   Subfolder:              'player/belladonna-player.html'
 //   Different domain:       'https://yoursite.com/belladonna-player.html'
-const MEDIA_PLAYER_URL = 'https://belladonnanights.github.io/musicplayer/belladonna-player.html';
+const MEDIA_PLAYER_URL = 'belladonna-player.html';
 
 // ─────────────────────────────────────────────────────────────────────────────
 let EVENT_TITLE='Music Bingo', EVENT_IMAGE='', SONGS_RAW=[], SPOTIFY_QR_URL='';
@@ -506,7 +506,16 @@ function loadCategory(data){
     return;
   }
   allSongs=parseSongs(SONGS_RAW);
-  sessionKey=categoryId;
+  // Session key = categoryId + a short random token so two venues running the
+  // same category never share the same Firebase path.
+  // The token is stored in sessionStorage so refreshing the page keeps the
+  // same session, but a brand-new tab gets a fresh one.
+  let venueToken = sessionStorage.getItem('bella_venue_token');
+  if (!venueToken) {
+    venueToken = Math.random().toString(36).slice(2, 8);
+    sessionStorage.setItem('bella_venue_token', venueToken);
+  }
+  sessionKey = categoryId + '_' + venueToken;
 
   document.getElementById('nav-brand').textContent=EVENT_TITLE;
   document.getElementById('host-title').textContent=EVENT_TITLE+' \u2014 Host Tool';
@@ -1107,7 +1116,7 @@ function showToast(msg){
 // Opens the media player in a new tab with this category pre-linked.
 // The player reads ?bingo=<categoryId> on load and auto-activates the bridge.
 function openMediaPlayer(){
-  const url=`${MEDIA_PLAYER_URL}?bingo=${encodeURIComponent(categoryId)}`;
+  const url=`${MEDIA_PLAYER_URL}?bingo=${encodeURIComponent(categoryId)}&session=${encodeURIComponent(sessionKey)}`;
   window.open(url,'_blank');
 }
 // ── TIEBREAKER ────────────────────────────────────────────────────────────────
