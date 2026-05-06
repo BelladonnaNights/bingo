@@ -51,6 +51,14 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 .search-box input:focus{outline:none;border-color:var(--gold-border2);box-shadow:0 0 0 3px rgba(201,168,76,.07)}
 .search-box input::placeholder{color:var(--text3);font-style:italic}
 .search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:15px;pointer-events:none;opacity:.7}
+.filter-pills-wrap{position:relative;flex-shrink:0}
+.filter-toggle{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--gold-border);border-radius:99px;padding:8px 16px;font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--gold2);cursor:pointer;transition:all .2s;white-space:nowrap}
+.filter-toggle:hover{background:var(--gold-dim);border-color:var(--gold-border2)}
+.filter-toggle.has-filter{background:var(--gold-dim);border-color:var(--gold-border2)}
+.filter-toggle-arrow{font-size:10px;transition:transform .2s;display:inline-block}
+.filter-toggle.open .filter-toggle-arrow{transform:rotate(180deg)}
+.filter-dropdown{display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:100;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:10px;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,.6);flex-wrap:wrap;gap:6px}
+.filter-dropdown.open{display:flex}
 .filter-pills{display:flex;gap:6px;flex-wrap:wrap}
 .pill{background:transparent;border:1px solid var(--border2);border-radius:99px;padding:7px 16px;font-size:11px;font-weight:500;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap}
 .pill:hover{border-color:var(--gold-border);color:var(--gold2)}
@@ -58,6 +66,10 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 .cat-count{max-width:1100px;margin:0 auto;padding:0 2rem .5rem;font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text3)}
 .grid{max-width:1100px;margin:0 auto;padding:0 2rem 5rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:18px}
 .cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;transition:border-color .25s,transform .2s,box-shadow .25s;text-decoration:none;display:block;position:relative}
+.cat-card.drag-over{border-color:var(--gold-border2);box-shadow:0 0 0 2px rgba(201,168,76,.3)}
+.cat-card.dragging{opacity:.4;transform:scale(.97)}
+.drag-handle{position:absolute;top:8px;left:8px;background:rgba(10,10,10,.7);border:1px solid var(--gold-border);border-radius:4px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--gold2);cursor:grab;z-index:5;opacity:0;transition:opacity .2s}
+.cat-card:hover .drag-handle{opacity:1}
 .cat-card:hover{border-color:var(--gold-border2);transform:translateY(-3px);box-shadow:0 10px 36px rgba(201,168,76,.1),0 2px 10px rgba(0,0,0,.5)}
 .cat-card.coming-soon{opacity:.45;cursor:default;pointer-events:none}
 .cat-banner{width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;background:var(--surface2)}
@@ -165,7 +177,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
   <div class="hero-text">
     <div class="hero-eyebrow">Belladonna Audio Alchemies presents</div>
     <div class="hero-title">MUSIC<br><span>BINGO</span></div>
-    <div class="hero-sub">Choose your playlist.</div>
+    <div class="hero-sub">Choose your playlist. Your host will take it from there.</div>
   </div>
 </div>
 
@@ -182,7 +194,15 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <span class="search-icon">♪</span>
     <input type="text" id="search-input" placeholder="Search playlists…" oninput="renderGrid()">
   </div>
-  <div class="filter-pills" id="filter-pills"></div>
+  <div class="filter-pills-wrap">
+    <button class="filter-toggle" id="filter-toggle" onclick="toggleFilterDropdown()">
+      <span id="filter-label">All Genres</span>
+      <span class="filter-toggle-arrow">▾</span>
+    </button>
+    <div class="filter-dropdown" id="filter-dropdown">
+      <div class="filter-pills" id="filter-pills"></div>
+    </div>
+  </div>
 </div>
 <div class="cat-count" id="cat-count"></div>
 <div class="grid" id="cat-grid"></div>
@@ -523,6 +543,7 @@ function renderGrid() {
     return;
   }
   var html = '';
+  var isAdmin = document.body.classList.contains('admin-drag-mode');
   filtered.forEach(function(c) {
     var isLive = c.status !== 'coming';
     var genres = getGenres(c);
@@ -534,9 +555,11 @@ function renderGrid() {
     var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
     var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
     var href = isLive ? 'app.html?id=' + c.id : '#';
-    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
+    var dragHandle = isAdmin ? '<div class="drag-handle" title="Drag to reorder">⠿</div>' : '';
+    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" draggable="' + (isAdmin ? 'true' : 'false') + '" data-cat-id="' + c.id + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + dragHandle + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
   });
   grid.innerHTML = html;
+  if (isAdmin) wireDragAndDrop();
 }
 function buildFilterPills() {
   var allGenres = [];
@@ -548,7 +571,38 @@ function buildFilterPills() {
     return '<button class="pill' + (activeFilter === val ? ' active' : '') + '" onclick="setFilter(\'' + val + '\')">' + g + '</button>';
   }).join('');
 }
-function setFilter(val) { activeFilter = val; buildFilterPills(); renderGrid(); }
+function setFilter(val) {
+  activeFilter = val;
+  buildFilterPills();
+  renderGrid();
+  // Close dropdown after picking
+  var dd = document.getElementById('filter-dropdown');
+  var toggle = document.getElementById('filter-toggle');
+  if (dd) dd.classList.remove('open');
+  if (toggle) toggle.classList.remove('open');
+  // Update toggle label and state
+  var label = document.getElementById('filter-label');
+  if (label) label.textContent = val === 'all' ? 'All Genres' : val;
+  if (toggle) toggle.classList.toggle('has-filter', val !== 'all');
+}
+function toggleFilterDropdown() {
+  var dd = document.getElementById('filter-dropdown');
+  var toggle = document.getElementById('filter-toggle');
+  if (!dd || !toggle) return;
+  var isOpen = dd.classList.contains('open');
+  dd.classList.toggle('open', !isOpen);
+  toggle.classList.toggle('open', !isOpen);
+}
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  var wrap = document.querySelector('.filter-pills-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    var dd = document.getElementById('filter-dropdown');
+    var toggle = document.getElementById('filter-toggle');
+    if (dd) dd.classList.remove('open');
+    if (toggle) toggle.classList.remove('open');
+  }
+});
 
 // ── ADMIN ─────────────────────────────────────────────────────────────────────
 function openAdmin() {
@@ -562,6 +616,7 @@ function openAdmin() {
   } else {
     document.getElementById('pw-screen').style.display = 'none';
     document.getElementById('admin-panel').style.display = '';
+    document.body.classList.add('admin-drag-mode');
     renderAdminList();
   }
 }
@@ -571,6 +626,7 @@ function checkPW() {
     adminUnlocked = true;
     document.getElementById('pw-screen').style.display = 'none';
     document.getElementById('admin-panel').style.display = '';
+    document.body.classList.add('admin-drag-mode');
     renderAdminList();
   } else {
     document.getElementById('pw-error').textContent = 'Incorrect password.';
@@ -927,6 +983,57 @@ function changePassword() {
   msg.textContent = 'Saved!'; msg.style.color = 'var(--gold)';
   setTimeout(function(){ msg.textContent = ''; }, 2500);
 }
+// ── DRAG & DROP CATEGORY ORDER ────────────────────────────────────────────────
+var dragSrcId = null;
+function wireDragAndDrop() {
+  var cards = document.querySelectorAll('.cat-card[draggable="true"]');
+  cards.forEach(function(card) {
+    card.addEventListener('dragstart', function(e) {
+      dragSrcId = card.dataset.catId;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      // Prevent navigation when dragging
+      e.dataTransfer.setData('text/plain', dragSrcId);
+    });
+    card.addEventListener('dragend', function() {
+      card.classList.remove('dragging');
+      document.querySelectorAll('.cat-card').forEach(function(c){ c.classList.remove('drag-over'); });
+    });
+    card.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      card.classList.add('drag-over');
+      return false;
+    });
+    card.addEventListener('dragleave', function() { card.classList.remove('drag-over'); });
+    card.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      card.classList.remove('drag-over');
+      var destId = card.dataset.catId;
+      if (!dragSrcId || dragSrcId === destId) return;
+      // Reorder in local array
+      var srcIdx = categories.findIndex(function(c){return c.id === dragSrcId;});
+      var dstIdx = categories.findIndex(function(c){return c.id === destId;});
+      if (srcIdx < 0 || dstIdx < 0) return;
+      var moved = categories.splice(srcIdx, 1)[0];
+      categories.splice(dstIdx, 0, moved);
+      // Write new order to Firebase
+      categories.forEach(function(c, i) {
+        c.order = i;
+        if (db) db.ref('landing/categories/' + c.id + '/order').set(i);
+      });
+      dragSrcId = null;
+      renderGrid();
+      showToast('Order saved');
+    });
+    // Prevent card click when dragging
+    card.addEventListener('click', function(e) {
+      if (dragSrcId) { e.preventDefault(); dragSrcId = null; }
+    });
+  });
+}
+
 function showToast(msg) {
   var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');}, 2200);
