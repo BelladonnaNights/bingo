@@ -217,6 +217,9 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <div id="host-banner" class="banner-wrap" style="display:none"></div>
     <div class="page-title" id="host-title">Music Bingo — Host Tool</div>
     <div class="page-sub">Tap a song when it plays. Check the played list to verify bingo calls.</div>
+    <div id="player-link-indicator" style="display:none;margin-bottom:1rem;padding:8px 14px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:var(--radius);font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;color:var(--gold2);">
+      ♪ Media player linked — songs will auto-tick when played
+    </div>
     <div class="host-tabs">
       <button class="host-tab active" id="htab-daub" onclick="switchHostTab('daub')">Live Daubing Board</button>
       <button class="host-tab" id="htab-print" onclick="switchHostTab('print')">Printable Sheet</button>
@@ -254,7 +257,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
         </div>
       </div>
       <div class="top-bar">
-        <div class="search-wrap"><input type="text" id="host-search" placeholder="Search songs…" oninput="hostFilter()"></div>
+        <div class="search-wrap"><input type="text" id="host-search" placeholder="Search songs…" autocomplete="off" oninput="hostFilter()"></div>
       </div>
       <div class="song-grid" id="host-song-grid"></div>
       <div class="feed" id="host-feed" style="display:none">
@@ -270,11 +273,11 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
       </div>
 
       <!-- TIEBREAKER LINK -->
-      <div style="margin-top:2rem;padding-top:1.5rem;border-top:.5px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center">
+      <div style="margin-top:2rem;padding-top:1.5rem;border-top:.5px solid var(--border);text-align:center">
         <a onclick="openTiebreaker()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
           ⬡ Open Tie Breaker
         </a>
-        <a onclick="openMediaPlayer()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#c084fc;text-decoration:none;border:.5px solid rgba(168,85,247,.35);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='rgba(168,85,247,.08)'" onmouseout="this.style.background='none'" id="btn-open-player">
+        <a onclick="openMediaPlayer()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'" id="btn-open-player">
           ♪ Open Media Player
         </a>
       </div></div>
@@ -436,15 +439,7 @@ const FIREBASE_CONFIG={
   appId:"1:657495697029:web:3fe565cbe05455b7982bec"
 };
 
-// ── MEDIA PLAYER URL ──────────────────────────────────────────────────────────
-// Set this to wherever your belladonna-player.html file lives.
-// Examples:
-//   Same folder (default):  'belladonna-player.html'
-//   Subfolder:              'player/belladonna-player.html'
-//   Different domain:       'https://yoursite.com/belladonna-player.html'
-const MEDIA_PLAYER_URL = 'https://belladonnanights.github.io/musicplayer/belladonna-player.html';
-
-// ─────────────────────────────────────────────────────────────────────────────
+// ── STATE ─────────────────────────────────────────────────────────────────────
 let EVENT_TITLE='Music Bingo', EVENT_IMAGE='', SONGS_RAW=[], SPOTIFY_QR_URL='';
 let allSongs=[], hostPlayedOrder=[];
 let db=null, sessionKey=null, categoryId=null;
@@ -506,16 +501,21 @@ function loadCategory(data){
     return;
   }
   allSongs=parseSongs(SONGS_RAW);
-  // Session key = categoryId + a short random token so two venues running the
-  // same category never share the same Firebase path.
-  // The token is stored in sessionStorage so refreshing the page keeps the
-  // same session, but a brand-new tab gets a fresh one.
-  let venueToken = sessionStorage.getItem('bella_venue_token');
-  if (!venueToken) {
-    venueToken = Math.random().toString(36).slice(2, 8);
-    sessionStorage.setItem('bella_venue_token', venueToken);
+  // Session key = categoryId + a venue token — two hosts running the same
+  // category never share the same Firebase path.
+  // Priority: 1) ?session= param passed from the player (reverse-link)
+  //           2) existing token in sessionStorage (page refresh)
+  //           3) fresh random token (brand new session)
+  const urlSession = new URLSearchParams(window.location.search).get('session');
+  if (urlSession && urlSession.startsWith(categoryId + '_')) {
+    sessionKey = urlSession;
+    sessionStorage.setItem('bella_venue_token', urlSession.slice(categoryId.length + 1));
+    setTimeout(() => { const ind = document.getElementById('player-link-indicator'); if (ind) ind.style.display = ''; }, 800);
+  } else {
+    let venueToken = sessionStorage.getItem('bella_venue_token');
+    if (!venueToken) { venueToken = Math.random().toString(36).slice(2, 8); sessionStorage.setItem('bella_venue_token', venueToken); }
+    sessionKey = categoryId + '_' + venueToken;
   }
-  sessionKey = categoryId + '_' + venueToken;
 
   document.getElementById('nav-brand').textContent=EVENT_TITLE;
   document.getElementById('host-title').textContent=EVENT_TITLE+' \u2014 Host Tool';
@@ -1014,32 +1014,6 @@ function setupFirebaseListeners(){
     const c=snap.val();if(!c||c.dismissed)return;
     showBingoClaim(c.name,c.cardNum,snap.key,c.daubedSongs||[]);
   });
-  // ── PLAYER BRIDGE: auto-tick when media player plays a bingo song ─────────
-  db.ref(`sessions/${sessionKey}/nowPlaying`).on('value',snap=>{
-    const np=snap.val();
-    if(!np||!np.title)return;
-    if(Date.now()-np.at>30000)return; // ignore stale signals on load
-    autoTickFromPlayer(np.title,np.artist||'');
-  });
-}
-
-function normStr(s){
-  return s.toLowerCase()
-    .replace(/^(the|a|an)\s+/,'')
-    .replace(/[^a-z0-9\s]/g,'')
-    .replace(/\s+/g,' ').trim();
-}
-
-function autoTickFromPlayer(title,artist){
-  const nt=normStr(title),na=normStr(artist);
-  let match=allSongs.find(s=>!s.played&&normStr(s.title)===nt&&normStr(s.artist)===na);
-  if(!match&&na) match=allSongs.find(s=>!s.played&&normStr(s.title)===nt);
-  if(!match)return;
-  match.played=true;
-  hostPlayedOrder.push(match.id);
-  renderHostGrid(document.getElementById('host-search').value.toLowerCase());
-  updateHostStats();renderHostFeed();
-  showToast(`\u266a Auto-ticked: ${fmtPlain(match)}`);
 }
 function fbWritePlayer(name,cardNum){
   if(!db)return;
@@ -1111,14 +1085,15 @@ function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2200);
 }
+// ── MEDIA PLAYER URL ──────────────────────────────────────────────────────────
+// Set this to wherever your belladonna-player.html lives.
+const MEDIA_PLAYER_URL = 'https://belladonnanights.github.io/musicplayer/belladonna-player.html';
 
-// ── MEDIA PLAYER BRIDGE ───────────────────────────────────────────────────────
-// Opens the media player in a new tab with this category pre-linked.
-// The player reads ?bingo=<categoryId> on load and auto-activates the bridge.
 function openMediaPlayer(){
   const url=`${MEDIA_PLAYER_URL}?bingo=${encodeURIComponent(categoryId)}&session=${encodeURIComponent(sessionKey)}`;
   window.open(url,'_blank');
 }
+
 // ── TIEBREAKER ────────────────────────────────────────────────────────────────
 var tbAngle=0,tbSpinning=false;
 function openTiebreaker(){
