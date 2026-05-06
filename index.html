@@ -192,7 +192,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 <div class="toolbar">
   <div class="search-box">
     <span class="search-icon">♪</span>
-    <input type="text" id="search-input" placeholder="Search playlists…" oninput="renderGrid()">
+    <input type="text" id="search-input" placeholder="Search playlists…" autocomplete="off" oninput="renderGrid()">
   </div>
   <div class="filter-pills-wrap">
     <button class="filter-toggle" id="filter-toggle" onclick="toggleFilterDropdown()">
@@ -231,7 +231,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <h2>ADMIN</h2>
     <p>Enter your password to manage categories.</p>
     <div style="display:flex;gap:8px;margin-bottom:12px">
-      <input class="form-input" type="password" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkPW()" style="flex:1">
+      <input class="form-input" type="password" id="pw-input" placeholder="Password" autocomplete="off" onkeydown="if(event.key==='Enter')checkPW()" style="flex:1">
       <button class="btn btn-primary" onclick="checkPW()">Enter</button>
     </div>
     <div id="pw-error" style="font-size:12px;color:#e05050;min-height:18px"></div>
@@ -304,7 +304,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     </div>
     <div class="modal-footer">
       <div style="flex:1;display:flex;align-items:center;gap:8px">
-        <input class="form-input" type="password" id="new-pw-input" placeholder="New password" style="max-width:180px;font-size:12px;padding:6px 10px">
+        <input class="form-input" type="password" id="new-pw-input" placeholder="New password" autocomplete="new-password" style="max-width:180px;font-size:12px;padding:6px 10px">
         <button class="btn btn-ghost btn-sm" onclick="changePassword()">Change Password</button>
         <span id="pw-change-msg" style="font-size:11px;color:var(--gold);min-width:60px"></span>
       </div>
@@ -533,13 +533,13 @@ function renderGrid() {
   var filtered = categories.filter(function(c) {
     var genres = getGenres(c);
     var ms = !q || c.title.toLowerCase().includes(q) || genres.join(' ').toLowerCase().includes(q);
-    var mf = activeFilter === 'all' || genres.map(function(g){return g.toLowerCase();}).indexOf(activeFilter.toLowerCase()) !== -1;
+    var mf = activeFilter === 'all' || genres.some(function(g){ return g.toLowerCase() === activeFilter.toLowerCase(); });
     return ms && mf;
   });
   var countEl = document.getElementById('cat-count');
-  countEl.textContent = filtered.length === 0 ? '' : filtered.length === 1 ? '1 playlist' : filtered.length + ' playlists';
+  countEl.textContent = filtered.length === 0 ? (activeFilter !== 'all' ? 'No playlists in this category' : '') : filtered.length === 1 ? '1 playlist' : filtered.length + ' playlists';
   if (!filtered.length) {
-    grid.innerHTML = '<div class="empty"><span class="empty-icon">♪</span><div class="empty-text">' + (categories.length === 0 ? 'No playlists yet — open Admin to add your first one.' : 'No playlists match your search.') + '</div></div>';
+    grid.innerHTML = '<div class="empty"><span class="empty-icon">♪</span><div class="empty-text">' + (categories.length === 0 ? 'No playlists yet — open Admin to add your first one.' : activeFilter !== 'all' ? 'No playlists in this category.' : 'No playlists match your search.') + '</div></div>';
     return;
   }
   var html = '';
@@ -551,7 +551,7 @@ function renderGrid() {
     var imgHTML = c.image
       ? '<img class="cat-banner" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="cat-banner-placeholder" style="display:none"><span>' + c.title + '</span></div>'
       : '<div class="cat-banner-placeholder"><span>' + c.title + '</span></div>';
-    var genreHTML = genres.length ? '<span class="cat-genre">' + genres[0] + '</span>' : '';
+    var genreHTML = genres.map(function(g){ return '<span class="cat-genre">' + g + '</span>'; }).join('');
     var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
     var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
     var href = isLive ? 'app.html?id=' + c.id : '#';
@@ -562,13 +562,21 @@ function renderGrid() {
   if (isAdmin) wireDragAndDrop();
 }
 function buildFilterPills() {
+  // Deduplicate case-insensitively, keep first-seen casing
+  var seen = {};
   var allGenres = [];
-  categories.forEach(function(c) { getGenres(c).forEach(function(g) { if (allGenres.indexOf(g) === -1) allGenres.push(g); }); });
-  allGenres.sort();
+  categories.forEach(function(c) {
+    getGenres(c).forEach(function(g) {
+      var key = g.toLowerCase();
+      if (!seen[key]) { seen[key] = true; allGenres.push(g); }
+    });
+  });
+  allGenres.sort(function(a,b){ return a.toLowerCase().localeCompare(b.toLowerCase()); });
   var pills = ['All'].concat(allGenres);
   document.getElementById('filter-pills').innerHTML = pills.map(function(g) {
-    var val = g === 'All' ? 'all' : g;
-    return '<button class="pill' + (activeFilter === val ? ' active' : '') + '" onclick="setFilter(\'' + val + '\')">' + g + '</button>';
+    var val = g === 'All' ? 'all' : g.toLowerCase();
+    var isActive = activeFilter === 'all' ? g === 'All' : activeFilter.toLowerCase() === val;
+    return '<button class="pill' + (isActive ? ' active' : '') + '" onclick="setFilter(\'' + val + '\')">' + g + '</button>';
   }).join('');
 }
 function setFilter(val) {
@@ -582,7 +590,14 @@ function setFilter(val) {
   if (toggle) toggle.classList.remove('open');
   // Update toggle label and state
   var label = document.getElementById('filter-label');
-  if (label) label.textContent = val === 'all' ? 'All Genres' : val;
+  // Show display name (original casing) in the toggle button
+  var displayName = 'All Genres';
+  if (val !== 'all') {
+    var match = [];
+    categories.forEach(function(c){ getGenres(c).forEach(function(g){ if (g.toLowerCase() === val) match.push(g); }); });
+    displayName = match[0] || val;
+  }
+  if (label) label.textContent = displayName;
   if (toggle) toggle.classList.toggle('has-filter', val !== 'all');
 }
 function toggleFilterDropdown() {
