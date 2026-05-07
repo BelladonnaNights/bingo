@@ -217,6 +217,10 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <div id="host-banner" class="banner-wrap" style="display:none"></div>
     <div class="page-title" id="host-title">Music Bingo — Host Tool</div>
     <div class="page-sub">Tap a song when it plays. Check the played list to verify bingo calls.</div>
+    <div id="player-link-indicator" style="display:none;margin-bottom:1.25rem;padding:10px 16px;background:#fffbe6;border:1.5px solid var(--gold);border-radius:var(--radius);font-family:var(--cinzel);font-size:11px;letter-spacing:.08em;color:#7a5500;display:none;align-items:center;gap:10px">
+      <span style="font-size:18px">♪</span>
+      <span><strong>Media Player Linked</strong> — songs will auto-tick when played</span>
+    </div>
     <div class="host-tabs">
       <button class="host-tab active" id="htab-daub" onclick="switchHostTab('daub')">Live Daubing Board</button>
       <button class="host-tab" id="htab-print" onclick="switchHostTab('print')">Printable Sheet</button>
@@ -503,7 +507,7 @@ function loadCategory(data){
   if (urlSession && urlSession.startsWith(categoryId + '_')) {
     sessionKey = urlSession;
     sessionStorage.setItem('bella_venue_token', urlSession.slice(categoryId.length + 1));
-    setTimeout(() => { const ind = document.getElementById('player-link-indicator'); if (ind) ind.style.display = ''; }, 800);
+    setTimeout(() => { const ind = document.getElementById('player-link-indicator'); if (ind) ind.style.display = 'flex'; }, 800);
   } else {
     let venueToken = sessionStorage.getItem('bella_venue_token');
     if (!venueToken) { venueToken = Math.random().toString(36).slice(2, 8); sessionStorage.setItem('bella_venue_token', venueToken); }
