@@ -217,12 +217,9 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <div id="host-banner" class="banner-wrap" style="display:none"></div>
     <div class="page-title" id="host-title">Music Bingo — Host Tool</div>
     <div class="page-sub">Tap a song when it plays. Check the played list to verify bingo calls.</div>
-    <div id="player-link-indicator" style="display:none;margin-bottom:1.25rem;padding:10px 16px;background:#fffbe6;border:1.5px solid var(--gold);border-radius:var(--radius);font-family:var(--cinzel);font-size:11px;letter-spacing:.08em;color:#7a5500;display:none;align-items:center;gap:10px">
-      <span style="font-size:18px">♪</span>
-      <span><strong>Media Player Linked</strong> — songs will auto-tick when played</span>
-    </div>
     <div class="host-tabs">
       <button class="host-tab active" id="htab-daub" onclick="switchHostTab('daub')">Live Daubing Board</button>
+      <button class="host-tab" id="htab-log" onclick="switchHostTab('log')">Play Log</button>
       <button class="host-tab" id="htab-print" onclick="switchHostTab('print')">Printable Sheet</button>
     </div>
     <div id="hpanel-daub">
@@ -258,7 +255,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
         </div>
       </div>
       <div class="top-bar">
-        <div class="search-wrap"><input type="text" id="host-search" placeholder="Search songs…" autocomplete="off" oninput="hostFilter()"></div>
+        <div class="search-wrap"><input type="text" id="host-search" placeholder="Search songs…" oninput="hostFilter()"></div>
       </div>
       <div class="song-grid" id="host-song-grid"></div>
       <div class="feed" id="host-feed" style="display:none">
@@ -278,10 +275,20 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
         <a onclick="openTiebreaker()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
           ⬡ Open Tie Breaker
         </a>
-        <a onclick="openMediaPlayer()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
-          ♪ Open Media Player
-        </a>
       </div></div>
+    </div>
+    <div id="hpanel-log" style="display:none">
+      <div id="log-played-section">
+        <div class="section-label" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+          <span>Played <span id="log-played-count" style="color:var(--gold);margin-left:4px">0</span></span>
+          <button class="btn btn-ghost btn-sm" onclick="hostCopyList()">Copy list</button>
+        </div>
+        <div id="log-played-list" style="display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+      <div style="margin:1.25rem 0;border-top:.5px solid var(--border2);position:relative">
+        <span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--bg2);padding:0 10px;font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">not yet played</span>
+      </div>
+      <div id="log-remaining-list" style="display:flex;flex-direction:column;gap:4px"></div>
     </div>
     <div id="hpanel-print" style="display:none">
       <div class="btn-row" style="margin-bottom:1rem">
@@ -502,17 +509,7 @@ function loadCategory(data){
     return;
   }
   allSongs=parseSongs(SONGS_RAW);
-  // Venue-scoped session key so two hosts running the same category don't clash
-  const urlSession = new URLSearchParams(window.location.search).get('session');
-  if (urlSession && urlSession.startsWith(categoryId + '_')) {
-    sessionKey = urlSession;
-    sessionStorage.setItem('bella_venue_token', urlSession.slice(categoryId.length + 1));
-    setTimeout(() => { const ind = document.getElementById('player-link-indicator'); if (ind) ind.style.display = 'flex'; }, 800);
-  } else {
-    let venueToken = sessionStorage.getItem('bella_venue_token');
-    if (!venueToken) { venueToken = Math.random().toString(36).slice(2, 8); sessionStorage.setItem('bella_venue_token', venueToken); }
-    sessionKey = categoryId + '_' + venueToken;
-  }
+  sessionKey=categoryId;
 
   document.getElementById('nav-brand').textContent=EVENT_TITLE;
   document.getElementById('host-title').textContent=EVENT_TITLE+' \u2014 Host Tool';
@@ -603,9 +600,37 @@ function showPage(page,skipHistory){
 // ── HOST ──────────────────────────────────────────────────────────────────────
 function switchHostTab(tab){
   document.getElementById('hpanel-daub').style.display=tab==='daub'?'':'none';
+  document.getElementById('hpanel-log').style.display=tab==='log'?'':'none';
   document.getElementById('hpanel-print').style.display=tab==='print'?'':'none';
   document.getElementById('htab-daub').classList.toggle('active',tab==='daub');
+  document.getElementById('htab-log').classList.toggle('active',tab==='log');
   document.getElementById('htab-print').classList.toggle('active',tab==='print');
+  if(tab==='log') renderPlayLog();
+}
+
+function renderPlayLog(){
+  const played = hostPlayedOrder.map((id,i)=>{
+    const s=allSongs.find(x=>x.id===id); if(!s) return '';
+    const n=i+1;
+    const tsHTML=s.ts?` <span class="song-ts">${s.ts}</span>`:'';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--green-bg);border:.5px solid var(--green-border);border-radius:var(--radius)">
+      <span style="font-size:11px;color:var(--green-sub);min-width:24px;font-family:var(--cinzel);font-weight:600">#${n}</span>
+      <span style="flex:1;font-size:13px;color:var(--green-text)">${fmtLabel(s)}${tsHTML}</span>
+      <button onclick="hostToggle(${s.id})" style="font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">undo</button>
+    </div>`;
+  }).join('');
+
+  const remaining = allSongs.filter(s=>!s.played).map(s=>{
+    const tsHTML=s.ts?` <span class="song-ts">${s.ts}</span>`:'';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);cursor:pointer" onclick="hostToggle(${s.id});renderPlayLog()">
+      <span style="flex:1;font-size:13px;color:var(--text)">${fmtLabel(s)}${tsHTML}</span>
+      <span style="font-size:11px;color:var(--text3);font-family:var(--cinzel);letter-spacing:.06em">tap to play</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('log-played-count').textContent=hostPlayedOrder.length;
+  document.getElementById('log-played-list').innerHTML=played||'<div style="font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);padding:4px 0">No songs played yet.</div>';
+  document.getElementById('log-remaining-list').innerHTML=remaining||'<div style="font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);padding:4px 0">All songs have been played!</div>';
 }
 function hostFilter(){renderHostGrid(document.getElementById('host-search').value.toLowerCase());}
 function renderHostGrid(filter=''){
@@ -620,6 +645,7 @@ function hostToggle(id){
   else{s.played=false;hostPlayedOrder=hostPlayedOrder.filter(x=>x!==id);}
   renderHostGrid(document.getElementById('host-search').value.toLowerCase());
   updateHostStats();renderHostFeed();
+  if(document.getElementById('hpanel-log').style.display!=='none') renderPlayLog();
 }
 function updateHostStats(){
   const p=allSongs.filter(s=>s.played).length;
@@ -1011,33 +1037,7 @@ function setupFirebaseListeners(){
     const c=snap.val();if(!c||c.dismissed)return;
     showBingoClaim(c.name,c.cardNum,snap.key,c.daubedSongs||[]);
   });
-  // Player bridge — auto-tick when media player plays a song
-  db.ref(`sessions/${sessionKey}/nowPlaying`).on('value',snap=>{
-    const np=snap.val();
-    if(!np||!np.title)return;
-    if(Date.now()-np.at>30000)return;
-    autoTickFromPlayer(np.title,np.artist||'');
-  });
 }
-function normStr(s){
-  return s.toLowerCase()
-    .replace(/^(the|a|an)\s+/,'')
-    .replace(/[^a-z0-9\s]/g,'')
-    .replace(/\s+/g,' ').trim();
-}
-
-function autoTickFromPlayer(title,artist){
-  const nt=normStr(title),na=normStr(artist);
-  let match=allSongs.find(s=>!s.played&&normStr(s.title)===nt&&normStr(s.artist)===na);
-  if(!match&&na) match=allSongs.find(s=>!s.played&&normStr(s.title)===nt);
-  if(!match)return;
-  match.played=true;
-  hostPlayedOrder.push(match.id);
-  renderHostGrid(document.getElementById('host-search').value.toLowerCase());
-  updateHostStats();renderHostFeed();
-  showToast(`♪ Auto-ticked: ${fmtPlain(match)}`);
-}
-
 function fbWritePlayer(name,cardNum){
   if(!db)return;
   const key=name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+cardNum;
@@ -1108,14 +1108,6 @@ function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2200);
 }
-// ── MEDIA PLAYER URL ─────────────────────────────────────────────────────────
-const MEDIA_PLAYER_URL = 'https://belladonnanights.github.io/musicplayer/belladonna-player.html';
-
-function openMediaPlayer(){
-  const url=`${MEDIA_PLAYER_URL}?bingo=${encodeURIComponent(categoryId)}&session=${encodeURIComponent(sessionKey)}`;
-  window.open(url,'_blank');
-}
-
 // ── TIEBREAKER ────────────────────────────────────────────────────────────────
 var tbAngle=0,tbSpinning=false;
 function openTiebreaker(){
