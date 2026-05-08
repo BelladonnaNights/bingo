@@ -51,6 +51,14 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 .search-box input:focus{outline:none;border-color:var(--gold-border2);box-shadow:0 0 0 3px rgba(201,168,76,.07)}
 .search-box input::placeholder{color:var(--text3);font-style:italic}
 .search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:15px;pointer-events:none;opacity:.7}
+.filter-pills-wrap{position:relative;flex-shrink:0}
+.filter-toggle{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--gold-border);border-radius:99px;padding:8px 16px;font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--gold2);cursor:pointer;transition:all .2s;white-space:nowrap;user-select:none}
+.filter-toggle:hover{background:var(--gold-dim);border-color:var(--gold-border2)}
+.filter-toggle.has-filter{background:var(--gold-dim);border-color:var(--gold-border2)}
+.filter-toggle-arrow{font-size:10px;transition:transform .2s;display:inline-block}
+.filter-toggle.open .filter-toggle-arrow{transform:rotate(180deg)}
+.filter-dropdown{display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:200;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:10px;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.6);flex-wrap:wrap;gap:6px}
+.filter-dropdown.open{display:flex}
 .filter-pills{display:flex;gap:6px;flex-wrap:wrap}
 .pill{background:transparent;border:1px solid var(--border2);border-radius:99px;padding:7px 16px;font-size:11px;font-weight:500;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap}
 .pill:hover{border-color:var(--gold-border);color:var(--gold2)}
@@ -184,9 +192,17 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 <div class="toolbar">
   <div class="search-box">
     <span class="search-icon">♪</span>
-    <input type="text" id="search-input" placeholder="Search playlists…" oninput="renderGrid()">
+    <input type="text" id="search-input" placeholder="Search playlists…" autocomplete="off" oninput="renderGrid()">
   </div>
-  <div class="filter-pills" id="filter-pills"></div>
+  <div class="filter-pills-wrap">
+    <button class="filter-toggle" id="filter-toggle" onclick="toggleFilterDropdown()">
+      <span id="filter-label">All Genres</span>
+      <span class="filter-toggle-arrow">▾</span>
+    </button>
+    <div class="filter-dropdown" id="filter-dropdown">
+      <div class="filter-pills" id="filter-pills"></div>
+    </div>
+  </div>
 </div>
 <div class="cat-count" id="cat-count"></div>
 <div class="grid" id="cat-grid"></div>
@@ -215,7 +231,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <h2>ADMIN</h2>
     <p>Enter your password to manage categories.</p>
     <div style="display:flex;gap:8px;margin-bottom:12px">
-      <input class="form-input" type="password" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkPW()" style="flex:1">
+      <input class="form-input" type="password" id="pw-input" placeholder="Password" autocomplete="off" onkeydown="if(event.key==='Enter')checkPW()" style="flex:1">
       <button class="btn btn-primary" onclick="checkPW()">Enter</button>
     </div>
     <div id="pw-error" style="font-size:12px;color:#e05050;min-height:18px"></div>
@@ -517,7 +533,7 @@ function renderGrid() {
   var filtered = categories.filter(function(c) {
     var genres = getGenres(c);
     var ms = !q || c.title.toLowerCase().includes(q) || genres.join(' ').toLowerCase().includes(q);
-    var mf = activeFilter === 'all' || genres.map(function(g){return g.toLowerCase();}).indexOf(activeFilter.toLowerCase()) !== -1;
+    var mf = activeFilter === 'all' || genres.some(function(g){ return g.toLowerCase() === activeFilter.toLowerCase(); });
     return ms && mf;
   });
   var countEl = document.getElementById('cat-count');
@@ -534,7 +550,7 @@ function renderGrid() {
     var imgHTML = c.image
       ? '<img class="cat-banner" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="cat-banner-placeholder" style="display:none"><span>' + c.title + '</span></div>'
       : '<div class="cat-banner-placeholder"><span>' + c.title + '</span></div>';
-    var genreHTML = genres.length ? '<span class="cat-genre">' + genres[0] + '</span>' : '';
+    var genreHTML = genres.map(function(g){ return '<span class="cat-genre">' + g + '</span>'; }).join('');
     var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
     var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
     var href = isLive ? 'app.html?id=' + c.id : '#';
@@ -543,16 +559,57 @@ function renderGrid() {
   grid.innerHTML = html;
 }
 function buildFilterPills() {
+  var seen = {};
   var allGenres = [];
-  categories.forEach(function(c) { getGenres(c).forEach(function(g) { if (allGenres.indexOf(g) === -1) allGenres.push(g); }); });
-  allGenres.sort();
+  categories.forEach(function(c) {
+    getGenres(c).forEach(function(g) {
+      var key = g.toLowerCase();
+      if (!seen[key]) { seen[key] = true; allGenres.push(g); }
+    });
+  });
+  allGenres.sort(function(a,b){ return a.toLowerCase().localeCompare(b.toLowerCase()); });
   var pills = ['All'].concat(allGenres);
   document.getElementById('filter-pills').innerHTML = pills.map(function(g) {
-    var val = g === 'All' ? 'all' : g;
-    return '<button class="pill' + (activeFilter === val ? ' active' : '') + '" onclick="setFilter(\'' + val + '\')">' + g + '</button>';
+    var val = g === 'All' ? 'all' : g.toLowerCase();
+    var isActive = activeFilter === 'all' ? g === 'All' : activeFilter.toLowerCase() === val;
+    return '<button class="pill' + (isActive ? ' active' : '') + '" onclick="setFilter(\'' + val + '\')">' + g + '</button>';
   }).join('');
 }
-function setFilter(val) { activeFilter = val; buildFilterPills(); renderGrid(); }
+
+function setFilter(val) {
+  activeFilter = val;
+  buildFilterPills();
+  renderGrid();
+  // Close dropdown after selection
+  document.getElementById('filter-dropdown').classList.remove('open');
+  document.getElementById('filter-toggle').classList.remove('open');
+  // Update toggle label and highlight
+  var displayName = 'All Genres';
+  if (val !== 'all') {
+    categories.forEach(function(c){ getGenres(c).forEach(function(g){ if(g.toLowerCase()===val && displayName==='All Genres') displayName=g; }); });
+  }
+  var lbl = document.getElementById('filter-label');
+  var tog = document.getElementById('filter-toggle');
+  if (lbl) lbl.textContent = displayName;
+  if (tog) tog.classList.toggle('has-filter', val !== 'all');
+}
+
+function toggleFilterDropdown() {
+  var dd = document.getElementById('filter-dropdown');
+  var tog = document.getElementById('filter-toggle');
+  var isOpen = dd.classList.contains('open');
+  dd.classList.toggle('open', !isOpen);
+  tog.classList.toggle('open', !isOpen);
+}
+
+// Close filter dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  var wrap = document.querySelector('.filter-pills-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('filter-dropdown').classList.remove('open');
+    document.getElementById('filter-toggle').classList.remove('open');
+  }
+});
 
 // ── ADMIN ─────────────────────────────────────────────────────────────────────
 function openAdmin() {
@@ -594,7 +651,7 @@ function renderAdminList() {
       '<div class="admin-drag-handle" title="Drag to reorder">⠿</div>' +
       thumb +
       '<div class="admin-item-info"><div class="admin-item-title">' + c.title + '</div><div class="admin-item-meta">' + meta + '</div></div>' +
-      '<div class="admin-item-actions"><button class="btn-accent" onclick="editCategory(\'' + c.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="promptDelete(\'' + c.id + '\',\'' + c.title.replace(/'/g, "\\'") + '\')">✕</button></div>' +
+      '<div class="admin-item-actions" onmousedown="event.stopPropagation()" ondragstart="event.stopPropagation()"><button class="btn-accent" onclick="event.stopPropagation();editCategory(\'' + c.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();promptDelete(\'' + c.id + '\',\'' + c.title.replace(/'/g, "\\'") + '\')">✕</button></div>' +
       '</div>';
   });
   list.innerHTML = html;
