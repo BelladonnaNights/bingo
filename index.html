@@ -51,14 +51,6 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 .search-box input:focus{outline:none;border-color:var(--gold-border2);box-shadow:0 0 0 3px rgba(201,168,76,.07)}
 .search-box input::placeholder{color:var(--text3);font-style:italic}
 .search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:15px;pointer-events:none;opacity:.7}
-.filter-pills-wrap{position:relative;flex-shrink:0}
-.filter-toggle{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--gold-border);border-radius:99px;padding:8px 16px;font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--gold2);cursor:pointer;transition:all .2s;white-space:nowrap}
-.filter-toggle:hover{background:var(--gold-dim);border-color:var(--gold-border2)}
-.filter-toggle.has-filter{background:var(--gold-dim);border-color:var(--gold-border2)}
-.filter-toggle-arrow{font-size:10px;transition:transform .2s;display:inline-block}
-.filter-toggle.open .filter-toggle-arrow{transform:rotate(180deg)}
-.filter-dropdown{display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:100;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:10px;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,.6);flex-wrap:wrap;gap:6px}
-.filter-dropdown.open{display:flex}
 .filter-pills{display:flex;gap:6px;flex-wrap:wrap}
 .pill{background:transparent;border:1px solid var(--border2);border-radius:99px;padding:7px 16px;font-size:11px;font-weight:500;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap}
 .pill:hover{border-color:var(--gold-border);color:var(--gold2)}
@@ -66,10 +58,6 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 .cat-count{max-width:1100px;margin:0 auto;padding:0 2rem .5rem;font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text3)}
 .grid{max-width:1100px;margin:0 auto;padding:0 2rem 5rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:18px}
 .cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;transition:border-color .25s,transform .2s,box-shadow .25s;text-decoration:none;display:block;position:relative}
-.cat-card.drag-over{border-color:var(--gold-border2);box-shadow:0 0 0 2px rgba(201,168,76,.3)}
-.cat-card.dragging{opacity:.4;transform:scale(.97)}
-.drag-handle{position:absolute;top:8px;left:8px;background:rgba(10,10,10,.7);border:1px solid var(--gold-border);border-radius:4px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--gold2);cursor:grab;z-index:5;opacity:0;transition:opacity .2s}
-.cat-card:hover .drag-handle{opacity:1}
 .cat-card:hover{border-color:var(--gold-border2);transform:translateY(-3px);box-shadow:0 10px 36px rgba(201,168,76,.1),0 2px 10px rgba(0,0,0,.5)}
 .cat-card.coming-soon{opacity:.45;cursor:default;pointer-events:none}
 .cat-banner{width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;background:var(--surface2)}
@@ -124,7 +112,11 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 .btn-accent{background:var(--gold-dim);border:1px solid var(--gold-border);color:var(--gold2);font-size:10px;padding:5px 12px;border-radius:var(--radius);font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s}
 .btn-accent:hover{background:var(--gold);color:#000;border-color:var(--gold)}
 .admin-list{display:flex;flex-direction:column;gap:8px;margin-bottom:1.5rem}
-.admin-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;gap:12px}
+.admin-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;gap:12px;transition:border-color .15s}
+.admin-item.drag-over{border-color:var(--gold-border2);background:var(--gold-dim)}
+.admin-item.dragging{opacity:.4}
+.admin-drag-handle{cursor:grab;color:var(--text3);font-size:14px;flex-shrink:0;padding:0 4px;user-select:none}
+.admin-drag-handle:hover{color:var(--gold2)}
 .admin-item-thumb{width:72px;aspect-ratio:1554/319;object-fit:cover;border-radius:3px;background:var(--surface3);flex-shrink:0}
 .admin-item-info{flex:1;min-width:0}
 .admin-item-title{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--cinzel);letter-spacing:.04em}
@@ -192,17 +184,9 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 <div class="toolbar">
   <div class="search-box">
     <span class="search-icon">♪</span>
-    <input type="text" id="search-input" placeholder="Search playlists…" autocomplete="off" oninput="renderGrid()">
+    <input type="text" id="search-input" placeholder="Search playlists…" oninput="renderGrid()">
   </div>
-  <div class="filter-pills-wrap">
-    <button class="filter-toggle" id="filter-toggle" onclick="toggleFilterDropdown()">
-      <span id="filter-label">All Genres</span>
-      <span class="filter-toggle-arrow">▾</span>
-    </button>
-    <div class="filter-dropdown" id="filter-dropdown">
-      <div class="filter-pills" id="filter-pills"></div>
-    </div>
-  </div>
+  <div class="filter-pills" id="filter-pills"></div>
 </div>
 <div class="cat-count" id="cat-count"></div>
 <div class="grid" id="cat-grid"></div>
@@ -231,7 +215,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <h2>ADMIN</h2>
     <p>Enter your password to manage categories.</p>
     <div style="display:flex;gap:8px;margin-bottom:12px">
-      <input class="form-input" type="password" id="pw-input" placeholder="Password" autocomplete="off" onkeydown="if(event.key==='Enter')checkPW()" style="flex:1">
+      <input class="form-input" type="password" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkPW()" style="flex:1">
       <button class="btn btn-primary" onclick="checkPW()">Enter</button>
     </div>
     <div id="pw-error" style="font-size:12px;color:#e05050;min-height:18px"></div>
@@ -304,7 +288,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     </div>
     <div class="modal-footer">
       <div style="flex:1;display:flex;align-items:center;gap:8px">
-        <input class="form-input" type="password" id="new-pw-input" placeholder="New password" autocomplete="new-password" style="max-width:180px;font-size:12px;padding:6px 10px">
+        <input class="form-input" type="password" id="new-pw-input" placeholder="New password" style="max-width:180px;font-size:12px;padding:6px 10px">
         <button class="btn btn-ghost btn-sm" onclick="changePassword()">Change Password</button>
         <span id="pw-change-msg" style="font-size:11px;color:var(--gold);min-width:60px"></span>
       </div>
@@ -533,17 +517,16 @@ function renderGrid() {
   var filtered = categories.filter(function(c) {
     var genres = getGenres(c);
     var ms = !q || c.title.toLowerCase().includes(q) || genres.join(' ').toLowerCase().includes(q);
-    var mf = activeFilter === 'all' || genres.some(function(g){ return g.toLowerCase() === activeFilter.toLowerCase(); });
+    var mf = activeFilter === 'all' || genres.map(function(g){return g.toLowerCase();}).indexOf(activeFilter.toLowerCase()) !== -1;
     return ms && mf;
   });
   var countEl = document.getElementById('cat-count');
-  countEl.textContent = filtered.length === 0 ? (activeFilter !== 'all' ? 'No playlists in this category' : '') : filtered.length === 1 ? '1 playlist' : filtered.length + ' playlists';
+  countEl.textContent = filtered.length === 0 ? '' : filtered.length === 1 ? '1 playlist' : filtered.length + ' playlists';
   if (!filtered.length) {
-    grid.innerHTML = '<div class="empty"><span class="empty-icon">♪</span><div class="empty-text">' + (categories.length === 0 ? 'No playlists yet — open Admin to add your first one.' : activeFilter !== 'all' ? 'No playlists in this category.' : 'No playlists match your search.') + '</div></div>';
+    grid.innerHTML = '<div class="empty"><span class="empty-icon">♪</span><div class="empty-text">' + (categories.length === 0 ? 'No playlists yet — open Admin to add your first one.' : 'No playlists match your search.') + '</div></div>';
     return;
   }
   var html = '';
-  var isAdmin = document.body.classList.contains('admin-drag-mode');
   filtered.forEach(function(c) {
     var isLive = c.status !== 'coming';
     var genres = getGenres(c);
@@ -551,73 +534,25 @@ function renderGrid() {
     var imgHTML = c.image
       ? '<img class="cat-banner" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="cat-banner-placeholder" style="display:none"><span>' + c.title + '</span></div>'
       : '<div class="cat-banner-placeholder"><span>' + c.title + '</span></div>';
-    var genreHTML = genres.map(function(g){ return '<span class="cat-genre">' + g + '</span>'; }).join('');
+    var genreHTML = genres.length ? '<span class="cat-genre">' + genres[0] + '</span>' : '';
     var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
     var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
     var href = isLive ? 'app.html?id=' + c.id : '#';
-    var dragHandle = isAdmin ? '<div class="drag-handle" title="Drag to reorder">⠿</div>' : '';
-    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" draggable="' + (isAdmin ? 'true' : 'false') + '" data-cat-id="' + c.id + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + dragHandle + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
+    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
   });
   grid.innerHTML = html;
-  if (isAdmin) wireDragAndDrop();
 }
 function buildFilterPills() {
-  // Deduplicate case-insensitively, keep first-seen casing
-  var seen = {};
   var allGenres = [];
-  categories.forEach(function(c) {
-    getGenres(c).forEach(function(g) {
-      var key = g.toLowerCase();
-      if (!seen[key]) { seen[key] = true; allGenres.push(g); }
-    });
-  });
-  allGenres.sort(function(a,b){ return a.toLowerCase().localeCompare(b.toLowerCase()); });
+  categories.forEach(function(c) { getGenres(c).forEach(function(g) { if (allGenres.indexOf(g) === -1) allGenres.push(g); }); });
+  allGenres.sort();
   var pills = ['All'].concat(allGenres);
   document.getElementById('filter-pills').innerHTML = pills.map(function(g) {
-    var val = g === 'All' ? 'all' : g.toLowerCase();
-    var isActive = activeFilter === 'all' ? g === 'All' : activeFilter.toLowerCase() === val;
-    return '<button class="pill' + (isActive ? ' active' : '') + '" onclick="setFilter(\'' + val + '\')">' + g + '</button>';
+    var val = g === 'All' ? 'all' : g;
+    return '<button class="pill' + (activeFilter === val ? ' active' : '') + '" onclick="setFilter(\'' + val + '\')">' + g + '</button>';
   }).join('');
 }
-function setFilter(val) {
-  activeFilter = val;
-  buildFilterPills();
-  renderGrid();
-  // Close dropdown after picking
-  var dd = document.getElementById('filter-dropdown');
-  var toggle = document.getElementById('filter-toggle');
-  if (dd) dd.classList.remove('open');
-  if (toggle) toggle.classList.remove('open');
-  // Update toggle label and state
-  var label = document.getElementById('filter-label');
-  // Show display name (original casing) in the toggle button
-  var displayName = 'All Genres';
-  if (val !== 'all') {
-    var match = [];
-    categories.forEach(function(c){ getGenres(c).forEach(function(g){ if (g.toLowerCase() === val) match.push(g); }); });
-    displayName = match[0] || val;
-  }
-  if (label) label.textContent = displayName;
-  if (toggle) toggle.classList.toggle('has-filter', val !== 'all');
-}
-function toggleFilterDropdown() {
-  var dd = document.getElementById('filter-dropdown');
-  var toggle = document.getElementById('filter-toggle');
-  if (!dd || !toggle) return;
-  var isOpen = dd.classList.contains('open');
-  dd.classList.toggle('open', !isOpen);
-  toggle.classList.toggle('open', !isOpen);
-}
-// Close dropdown when clicking outside
-document.addEventListener('click', function(e) {
-  var wrap = document.querySelector('.filter-pills-wrap');
-  if (wrap && !wrap.contains(e.target)) {
-    var dd = document.getElementById('filter-dropdown');
-    var toggle = document.getElementById('filter-toggle');
-    if (dd) dd.classList.remove('open');
-    if (toggle) toggle.classList.remove('open');
-  }
-});
+function setFilter(val) { activeFilter = val; buildFilterPills(); renderGrid(); }
 
 // ── ADMIN ─────────────────────────────────────────────────────────────────────
 function openAdmin() {
@@ -631,7 +566,6 @@ function openAdmin() {
   } else {
     document.getElementById('pw-screen').style.display = 'none';
     document.getElementById('admin-panel').style.display = '';
-    document.body.classList.add('admin-drag-mode');
     renderAdminList();
   }
 }
@@ -641,7 +575,6 @@ function checkPW() {
     adminUnlocked = true;
     document.getElementById('pw-screen').style.display = 'none';
     document.getElementById('admin-panel').style.display = '';
-    document.body.classList.add('admin-drag-mode');
     renderAdminList();
   } else {
     document.getElementById('pw-error').textContent = 'Incorrect password.';
@@ -653,13 +586,53 @@ function renderAdminList() {
   var list = document.getElementById('admin-list');
   if (!categories.length) { list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0;font-style:italic">No categories yet. Add one above.</div>'; return; }
   var html = '';
-  categories.forEach(function(c) {
-    var thumb = c.image ? '<img class="admin-item-thumb" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.background=\'var(--surface3)\'">' : '<div class="admin-item-thumb"></div>';
+  categories.forEach(function(c, idx) {
+    var thumb = c.image ? '<img class="admin-item-thumb" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.background=\'var(--surface3)\'">': '<div class="admin-item-thumb"></div>';
     var genres = getGenres(c);
     var meta = (genres.length ? genres.join(', ') : 'No genre') + ' · ' + (c.status === 'coming' ? 'Coming soon' : 'Live');
-    html += '<div class="admin-item">' + thumb + '<div class="admin-item-info"><div class="admin-item-title">' + c.title + '</div><div class="admin-item-meta">' + meta + '</div></div><div class="admin-item-actions"><button class="btn-accent" onclick="editCategory(\'' + c.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="promptDelete(\'' + c.id + '\',\'' + c.title.replace(/'/g, "\\'") + '\')">✕</button></div></div>';
+    html += '<div class="admin-item" draggable="true" data-idx="' + idx + '" data-id="' + c.id + '">' +
+      '<div class="admin-drag-handle" title="Drag to reorder">⠿</div>' +
+      thumb +
+      '<div class="admin-item-info"><div class="admin-item-title">' + c.title + '</div><div class="admin-item-meta">' + meta + '</div></div>' +
+      '<div class="admin-item-actions"><button class="btn-accent" onclick="editCategory(\'' + c.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="promptDelete(\'' + c.id + '\',\'' + c.title.replace(/'/g, "\\'") + '\')">✕</button></div>' +
+      '</div>';
   });
   list.innerHTML = html;
+  wireAdminDrag();
+}
+
+var adminDragSrc = null;
+
+function wireAdminDrag() {
+  document.querySelectorAll('.admin-item[draggable]').forEach(function(item) {
+    item.addEventListener('dragstart', function(e) {
+      adminDragSrc = parseInt(item.dataset.idx);
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', function() {
+      item.classList.remove('dragging');
+      document.querySelectorAll('.admin-item').forEach(function(i){ i.classList.remove('drag-over'); });
+    });
+    item.addEventListener('dragover', function(e) { e.preventDefault(); item.classList.add('drag-over'); });
+    item.addEventListener('dragleave', function() { item.classList.remove('drag-over'); });
+    item.addEventListener('drop', function(e) {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      var destIdx = parseInt(item.dataset.idx);
+      if (adminDragSrc === null || adminDragSrc === destIdx) return;
+      var moved = categories.splice(adminDragSrc, 1)[0];
+      categories.splice(destIdx, 0, moved);
+      adminDragSrc = null;
+      categories.forEach(function(c, i) {
+        c.order = i;
+        if (db) db.ref('landing/categories/' + c.id + '/order').set(i);
+      });
+      renderAdminList();
+      renderGrid();
+      showToast('Order saved');
+    });
+  });
 }
 function updateSongCount() {
   var lines = document.getElementById('f-songs').value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
@@ -998,57 +971,6 @@ function changePassword() {
   msg.textContent = 'Saved!'; msg.style.color = 'var(--gold)';
   setTimeout(function(){ msg.textContent = ''; }, 2500);
 }
-// ── DRAG & DROP CATEGORY ORDER ────────────────────────────────────────────────
-var dragSrcId = null;
-function wireDragAndDrop() {
-  var cards = document.querySelectorAll('.cat-card[draggable="true"]');
-  cards.forEach(function(card) {
-    card.addEventListener('dragstart', function(e) {
-      dragSrcId = card.dataset.catId;
-      card.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      // Prevent navigation when dragging
-      e.dataTransfer.setData('text/plain', dragSrcId);
-    });
-    card.addEventListener('dragend', function() {
-      card.classList.remove('dragging');
-      document.querySelectorAll('.cat-card').forEach(function(c){ c.classList.remove('drag-over'); });
-    });
-    card.addEventListener('dragover', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      card.classList.add('drag-over');
-      return false;
-    });
-    card.addEventListener('dragleave', function() { card.classList.remove('drag-over'); });
-    card.addEventListener('drop', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      card.classList.remove('drag-over');
-      var destId = card.dataset.catId;
-      if (!dragSrcId || dragSrcId === destId) return;
-      // Reorder in local array
-      var srcIdx = categories.findIndex(function(c){return c.id === dragSrcId;});
-      var dstIdx = categories.findIndex(function(c){return c.id === destId;});
-      if (srcIdx < 0 || dstIdx < 0) return;
-      var moved = categories.splice(srcIdx, 1)[0];
-      categories.splice(dstIdx, 0, moved);
-      // Write new order to Firebase
-      categories.forEach(function(c, i) {
-        c.order = i;
-        if (db) db.ref('landing/categories/' + c.id + '/order').set(i);
-      });
-      dragSrcId = null;
-      renderGrid();
-      showToast('Order saved');
-    });
-    // Prevent card click when dragging
-    card.addEventListener('click', function(e) {
-      if (dragSrcId) { e.preventDefault(); dragSrcId = null; }
-    });
-  });
-}
-
 function showToast(msg) {
   var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');}, 2200);
