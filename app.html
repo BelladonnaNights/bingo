@@ -217,6 +217,10 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <div id="host-banner" class="banner-wrap" style="display:none"></div>
     <div class="page-title" id="host-title">Music Bingo — Host Tool</div>
     <div class="page-sub">Tap a song when it plays. Check the played list to verify bingo calls.</div>
+    <div id="player-link-indicator" style="display:none;margin-bottom:1.25rem;padding:10px 16px;background:#fffbe6;border:1.5px solid var(--gold);border-radius:var(--radius);font-family:var(--cinzel);font-size:11px;letter-spacing:.08em;color:#7a5500;align-items:center;gap:10px">
+      <span style="font-size:18px">&#9835;</span>
+      <span><strong>Media Player Linked</strong> &mdash; songs will auto-tick when played</span>
+    </div>
     <div class="host-tabs">
       <button class="host-tab active" id="htab-daub" onclick="switchHostTab('daub')">Live Daubing Board</button>
       <button class="host-tab" id="htab-log" onclick="switchHostTab('log')">Play Log</button>
@@ -255,7 +259,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
         </div>
       </div>
       <div class="top-bar">
-        <div class="search-wrap"><input type="text" id="host-search" placeholder="Search songs…" oninput="hostFilter()"></div>
+        <div class="search-wrap"><input type="text" id="host-search" placeholder="Search songs…" autocomplete="off" oninput="hostFilter()"></div>
       </div>
       <div class="song-grid" id="host-song-grid"></div>
       <div class="feed" id="host-feed" style="display:none">
@@ -274,6 +278,9 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
       <div style="margin-top:2rem;padding-top:1.5rem;border-top:.5px solid var(--border);text-align:center">
         <a onclick="openTiebreaker()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
           ⬡ Open Tie Breaker
+        </a>
+        <a onclick="openMediaPlayer()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
+          ♪ Open Media Player
         </a>
       </div></div>
     </div>
@@ -509,7 +516,18 @@ function loadCategory(data){
     return;
   }
   allSongs=parseSongs(SONGS_RAW);
-  sessionKey=categoryId;
+
+  // Venue-scoped session key — two hosts on the same category don't clash
+  const urlSession = new URLSearchParams(window.location.search).get('session');
+  if (urlSession && urlSession.startsWith(categoryId + '_')) {
+    sessionKey = urlSession;
+    sessionStorage.setItem('bella_venue_token', urlSession.slice(categoryId.length + 1));
+    setTimeout(() => { const ind = document.getElementById('player-link-indicator'); if (ind) ind.style.display = 'flex'; }, 800);
+  } else {
+    let venueToken = sessionStorage.getItem('bella_venue_token');
+    if (!venueToken) { venueToken = Math.random().toString(36).slice(2, 8); sessionStorage.setItem('bella_venue_token', venueToken); }
+    sessionKey = categoryId + '_' + venueToken;
+  }
 
   document.getElementById('nav-brand').textContent=EVENT_TITLE;
   document.getElementById('host-title').textContent=EVENT_TITLE+' \u2014 Host Tool';
@@ -1037,6 +1055,33 @@ function setupFirebaseListeners(){
     const c=snap.val();if(!c||c.dismissed)return;
     showBingoClaim(c.name,c.cardNum,snap.key,c.daubedSongs||[]);
   });
+  // Player bridge: auto-tick when media player plays a song
+  db.ref(`sessions/${sessionKey}/nowPlaying`).on('value',snap=>{
+    const np=snap.val();
+    if(!np||!np.title)return;
+    if(Date.now()-np.at>30000)return;
+    autoTickFromPlayer(np.title,np.artist||'');
+  });
+}
+
+function normStr(s){
+  return s.toLowerCase()
+    .replace(/^(the|a|an)\s+/,'')
+    .replace(/[\u2018\u2019\u0060\u00b4\u02bc]/g,"'")
+    .replace(/[^a-z0-9'\s]/g,'')
+    .replace(/\s+/g,' ').trim();
+}
+
+function autoTickFromPlayer(title,artist){
+  const nt=normStr(title),na=normStr(artist);
+  let match=allSongs.find(s=>!s.played&&normStr(s.title)===nt&&normStr(s.artist)===na);
+  if(!match&&na) match=allSongs.find(s=>!s.played&&normStr(s.title)===nt);
+  if(!match)return;
+  match.played=true;
+  hostPlayedOrder.push(match.id);
+  renderHostGrid(document.getElementById('host-search').value.toLowerCase());
+  updateHostStats();renderHostFeed();
+  showToast('\u266a Auto-ticked: '+fmtPlain(match));
 }
 function fbWritePlayer(name,cardNum){
   if(!db)return;
@@ -1108,6 +1153,14 @@ function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2200);
 }
+// ── MEDIA PLAYER URL ─────────────────────────────────────────────
+const MEDIA_PLAYER_URL = 'https://belladonnanights.github.io/musicplayer/belladonna-player.html';
+
+function openMediaPlayer(){
+  const url=`${MEDIA_PLAYER_URL}?bingo=${encodeURIComponent(categoryId)}&session=${encodeURIComponent(sessionKey)}`;
+  window.open(url,'_blank');
+}
+
 // ── TIEBREAKER ────────────────────────────────────────────────────────────────
 var tbAngle=0,tbSpinning=false;
 function openTiebreaker(){
