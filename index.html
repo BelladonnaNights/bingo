@@ -51,14 +51,6 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 .search-box input:focus{outline:none;border-color:var(--gold-border2);box-shadow:0 0 0 3px rgba(201,168,76,.07)}
 .search-box input::placeholder{color:var(--text3);font-style:italic}
 .search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:15px;pointer-events:none;opacity:.7}
-.filter-pills-wrap{position:relative;flex-shrink:0}
-.filter-toggle{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--gold-border);border-radius:99px;padding:8px 16px;font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--gold2);cursor:pointer;transition:all .2s;white-space:nowrap;user-select:none}
-.filter-toggle:hover{background:var(--gold-dim);border-color:var(--gold-border2)}
-.filter-toggle.has-filter{background:var(--gold-dim);border-color:var(--gold-border2)}
-.filter-toggle-arrow{font-size:10px;transition:transform .2s;display:inline-block}
-.filter-toggle.open .filter-toggle-arrow{transform:rotate(180deg)}
-.filter-dropdown{display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:200;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:10px;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.6);flex-wrap:wrap;gap:6px}
-.filter-dropdown.open{display:flex}
 .filter-pills{display:flex;gap:6px;flex-wrap:wrap}
 .pill{background:transparent;border:1px solid var(--border2);border-radius:99px;padding:7px 16px;font-size:11px;font-weight:500;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap}
 .pill:hover{border-color:var(--gold-border);color:var(--gold2)}
@@ -120,11 +112,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 .btn-accent{background:var(--gold-dim);border:1px solid var(--gold-border);color:var(--gold2);font-size:10px;padding:5px 12px;border-radius:var(--radius);font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s}
 .btn-accent:hover{background:var(--gold);color:#000;border-color:var(--gold)}
 .admin-list{display:flex;flex-direction:column;gap:8px;margin-bottom:1.5rem}
-.admin-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;gap:12px;transition:border-color .15s}
-.admin-item.drag-over{border-color:var(--gold-border2);background:var(--gold-dim)}
-.admin-item.dragging{opacity:.4}
-.admin-drag-handle{cursor:grab;color:var(--text3);font-size:14px;flex-shrink:0;padding:0 4px;user-select:none}
-.admin-drag-handle:hover{color:var(--gold2)}
+.admin-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;gap:12px}
 .admin-item-thumb{width:72px;aspect-ratio:1554/319;object-fit:cover;border-radius:3px;background:var(--surface3);flex-shrink:0}
 .admin-item-info{flex:1;min-width:0}
 .admin-item-title{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--cinzel);letter-spacing:.04em}
@@ -192,17 +180,9 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 <div class="toolbar">
   <div class="search-box">
     <span class="search-icon">♪</span>
-    <input type="text" id="search-input" placeholder="Search playlists…" autocomplete="off" oninput="renderGrid()">
+    <input type="text" id="search-input" placeholder="Search playlists…" oninput="renderGrid()">
   </div>
-  <div class="filter-pills-wrap">
-    <button class="filter-toggle" id="filter-toggle" onclick="toggleFilterDropdown()">
-      <span id="filter-label">All Genres</span>
-      <span class="filter-toggle-arrow">▾</span>
-    </button>
-    <div class="filter-dropdown" id="filter-dropdown">
-      <div class="filter-pills" id="filter-pills"></div>
-    </div>
-  </div>
+  <div class="filter-pills" id="filter-pills"></div>
 </div>
 <div class="cat-count" id="cat-count"></div>
 <div class="grid" id="cat-grid"></div>
@@ -231,7 +211,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <h2>ADMIN</h2>
     <p>Enter your password to manage categories.</p>
     <div style="display:flex;gap:8px;margin-bottom:12px">
-      <input class="form-input" type="password" id="pw-input" placeholder="Password" autocomplete="off" onkeydown="if(event.key==='Enter')checkPW()" style="flex:1">
+      <input class="form-input" type="password" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkPW()" style="flex:1">
       <button class="btn btn-primary" onclick="checkPW()">Enter</button>
     </div>
     <div id="pw-error" style="font-size:12px;color:#e05050;min-height:18px"></div>
@@ -344,6 +324,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
       <div class="sched-tabs">
         <button class="sched-tab active" id="stab-timeline" onclick="switchSchedTab('timeline')">Timeline</button>
         <button class="sched-tab" id="stab-add" onclick="switchSchedTab('add')">Add Entry</button>
+        <button class="sched-tab" id="stab-bulk" onclick="switchSchedTab('bulk')">Bulk Add</button>
         <button class="sched-tab" id="stab-venues" onclick="switchSchedTab('venues')">Venues</button>
       </div>
       <div id="spanel-timeline"><div id="sched-timeline-content"></div></div>
@@ -401,6 +382,36 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
           <button class="btn btn-primary" onclick="addVenue()">Add Venue</button>
         </div>
         <div id="venue-list"></div>
+      </div>
+
+      <div id="spanel-bulk" style="display:none">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem">
+          <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:.75rem;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase">Bulk Schedule Import</div>
+          <div class="form-group">
+            <label class="form-label">Venue</label>
+            <select class="form-input" id="bulk-venue-select" style="margin-bottom:.5rem">
+              <option value="">— select venue —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Paste your schedule</label>
+            <div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:6px;line-height:1.6">
+              One entry per line. Format:<br>
+              <code style="background:var(--surface3);padding:1px 5px;border-radius:3px;font-size:11px">Apr 5 - Round 1: 90s Hip Hop, Round 2: Disney</code><br>
+              Optional notes after a pipe: <code style="background:var(--surface3);padding:1px 5px;border-radius:3px;font-size:11px">| private event</code><br>
+              Round 3 is optional. Year defaults to current year if not included.
+            </div>
+            <textarea class="form-input" id="bulk-text" rows="10"
+              style="font-family:var(--mono,monospace);font-size:12px;line-height:1.6;resize:vertical"
+              placeholder="Apr 5 - Round 1: 90s Hip Hop, Round 2: Disney&#10;Apr 12 - Round 1: Country, Round 2: 90s Hip Hop&#10;Apr 19 - Round 1: Disney, Round 2: Country, Round 3: 80s Pop | special night"></textarea>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:.75rem">
+            <button class="btn btn-ghost" onclick="bulkParse()">Preview</button>
+            <button class="btn btn-primary" id="bulk-save-btn" onclick="bulkSave()" style="display:none">Save all entries</button>
+            <button class="btn btn-ghost btn-sm" onclick="bulkClear()" style="color:var(--text3)">Clear</button>
+          </div>
+        </div>
+        <div id="bulk-preview"></div>
       </div>
     </div>
   </div>
@@ -533,7 +544,7 @@ function renderGrid() {
   var filtered = categories.filter(function(c) {
     var genres = getGenres(c);
     var ms = !q || c.title.toLowerCase().includes(q) || genres.join(' ').toLowerCase().includes(q);
-    var mf = activeFilter === 'all' || genres.some(function(g){ return g.toLowerCase() === activeFilter.toLowerCase(); });
+    var mf = activeFilter === 'all' || genres.map(function(g){return g.toLowerCase();}).indexOf(activeFilter.toLowerCase()) !== -1;
     return ms && mf;
   });
   var countEl = document.getElementById('cat-count');
@@ -550,7 +561,7 @@ function renderGrid() {
     var imgHTML = c.image
       ? '<img class="cat-banner" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="cat-banner-placeholder" style="display:none"><span>' + c.title + '</span></div>'
       : '<div class="cat-banner-placeholder"><span>' + c.title + '</span></div>';
-    var genreHTML = genres.map(function(g){ return '<span class="cat-genre">' + g + '</span>'; }).join('');
+    var genreHTML = genres.length ? '<span class="cat-genre">' + genres[0] + '</span>' : '';
     var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
     var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
     var href = isLive ? 'app.html?id=' + c.id : '#';
@@ -559,57 +570,16 @@ function renderGrid() {
   grid.innerHTML = html;
 }
 function buildFilterPills() {
-  var seen = {};
   var allGenres = [];
-  categories.forEach(function(c) {
-    getGenres(c).forEach(function(g) {
-      var key = g.toLowerCase();
-      if (!seen[key]) { seen[key] = true; allGenres.push(g); }
-    });
-  });
-  allGenres.sort(function(a,b){ return a.toLowerCase().localeCompare(b.toLowerCase()); });
+  categories.forEach(function(c) { getGenres(c).forEach(function(g) { if (allGenres.indexOf(g) === -1) allGenres.push(g); }); });
+  allGenres.sort();
   var pills = ['All'].concat(allGenres);
   document.getElementById('filter-pills').innerHTML = pills.map(function(g) {
-    var val = g === 'All' ? 'all' : g.toLowerCase();
-    var isActive = activeFilter === 'all' ? g === 'All' : activeFilter.toLowerCase() === val;
-    return '<button class="pill' + (isActive ? ' active' : '') + '" onclick="setFilter(\'' + val + '\')">' + g + '</button>';
+    var val = g === 'All' ? 'all' : g;
+    return '<button class="pill' + (activeFilter === val ? ' active' : '') + '" onclick="setFilter(\'' + val + '\')">' + g + '</button>';
   }).join('');
 }
-
-function setFilter(val) {
-  activeFilter = val;
-  buildFilterPills();
-  renderGrid();
-  // Close dropdown after selection
-  document.getElementById('filter-dropdown').classList.remove('open');
-  document.getElementById('filter-toggle').classList.remove('open');
-  // Update toggle label and highlight
-  var displayName = 'All Genres';
-  if (val !== 'all') {
-    categories.forEach(function(c){ getGenres(c).forEach(function(g){ if(g.toLowerCase()===val && displayName==='All Genres') displayName=g; }); });
-  }
-  var lbl = document.getElementById('filter-label');
-  var tog = document.getElementById('filter-toggle');
-  if (lbl) lbl.textContent = displayName;
-  if (tog) tog.classList.toggle('has-filter', val !== 'all');
-}
-
-function toggleFilterDropdown() {
-  var dd = document.getElementById('filter-dropdown');
-  var tog = document.getElementById('filter-toggle');
-  var isOpen = dd.classList.contains('open');
-  dd.classList.toggle('open', !isOpen);
-  tog.classList.toggle('open', !isOpen);
-}
-
-// Close filter dropdown when clicking outside
-document.addEventListener('click', function(e) {
-  var wrap = document.querySelector('.filter-pills-wrap');
-  if (wrap && !wrap.contains(e.target)) {
-    document.getElementById('filter-dropdown').classList.remove('open');
-    document.getElementById('filter-toggle').classList.remove('open');
-  }
-});
+function setFilter(val) { activeFilter = val; buildFilterPills(); renderGrid(); }
 
 // ── ADMIN ─────────────────────────────────────────────────────────────────────
 function openAdmin() {
@@ -643,53 +613,13 @@ function renderAdminList() {
   var list = document.getElementById('admin-list');
   if (!categories.length) { list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0;font-style:italic">No categories yet. Add one above.</div>'; return; }
   var html = '';
-  categories.forEach(function(c, idx) {
-    var thumb = c.image ? '<img class="admin-item-thumb" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.background=\'var(--surface3)\'">': '<div class="admin-item-thumb"></div>';
+  categories.forEach(function(c) {
+    var thumb = c.image ? '<img class="admin-item-thumb" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.background=\'var(--surface3)\'">' : '<div class="admin-item-thumb"></div>';
     var genres = getGenres(c);
     var meta = (genres.length ? genres.join(', ') : 'No genre') + ' · ' + (c.status === 'coming' ? 'Coming soon' : 'Live');
-    html += '<div class="admin-item" draggable="true" data-idx="' + idx + '" data-id="' + c.id + '">' +
-      '<div class="admin-drag-handle" title="Drag to reorder">⠿</div>' +
-      thumb +
-      '<div class="admin-item-info"><div class="admin-item-title">' + c.title + '</div><div class="admin-item-meta">' + meta + '</div></div>' +
-      '<div class="admin-item-actions" onmousedown="event.stopPropagation()" ondragstart="event.stopPropagation()"><button class="btn-accent" onclick="event.stopPropagation();editCategory(\'' + c.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();promptDelete(\'' + c.id + '\',\'' + c.title.replace(/'/g, "\\'") + '\')">✕</button></div>' +
-      '</div>';
+    html += '<div class="admin-item">' + thumb + '<div class="admin-item-info"><div class="admin-item-title">' + c.title + '</div><div class="admin-item-meta">' + meta + '</div></div><div class="admin-item-actions"><button class="btn-accent" onclick="editCategory(\'' + c.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="promptDelete(\'' + c.id + '\',\'' + c.title.replace(/'/g, "\\'") + '\')">✕</button></div></div>';
   });
   list.innerHTML = html;
-  wireAdminDrag();
-}
-
-var adminDragSrc = null;
-
-function wireAdminDrag() {
-  document.querySelectorAll('.admin-item[draggable]').forEach(function(item) {
-    item.addEventListener('dragstart', function(e) {
-      adminDragSrc = parseInt(item.dataset.idx);
-      item.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    item.addEventListener('dragend', function() {
-      item.classList.remove('dragging');
-      document.querySelectorAll('.admin-item').forEach(function(i){ i.classList.remove('drag-over'); });
-    });
-    item.addEventListener('dragover', function(e) { e.preventDefault(); item.classList.add('drag-over'); });
-    item.addEventListener('dragleave', function() { item.classList.remove('drag-over'); });
-    item.addEventListener('drop', function(e) {
-      e.preventDefault();
-      item.classList.remove('drag-over');
-      var destIdx = parseInt(item.dataset.idx);
-      if (adminDragSrc === null || adminDragSrc === destIdx) return;
-      var moved = categories.splice(adminDragSrc, 1)[0];
-      categories.splice(destIdx, 0, moved);
-      adminDragSrc = null;
-      categories.forEach(function(c, i) {
-        c.order = i;
-        if (db) db.ref('landing/categories/' + c.id + '/order').set(i);
-      });
-      renderAdminList();
-      renderGrid();
-      showToast('Order saved');
-    });
-  });
 }
 function updateSongCount() {
   var lines = document.getElementById('f-songs').value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
@@ -769,13 +699,14 @@ function openScheduleBtn() {
 function closeAdminSched() { document.getElementById('admin-sched-overlay').classList.remove('show'); }
 
 function switchSchedTab(tab) {
-  ['timeline','add','venues'].forEach(function(t) {
+  ['timeline','add','bulk','venues'].forEach(function(t) {
     document.getElementById('spanel-' + t).style.display = t === tab ? '' : 'none';
     var btn = document.getElementById('stab-' + t);
     if (btn) { btn.classList.toggle('active', t === tab); }
   });
   if (tab === 'add') renderSchedCatChecks();
   if (tab === 'venues') renderVenueList();
+  if (tab === 'bulk') bulkPopulateVenue();
 }
 
 function populateVenueDropdowns() {
@@ -783,7 +714,7 @@ function populateVenueDropdowns() {
   venues.forEach(function(v) { opts += '<option value="' + v.id + '">' + v.name + '</option>'; });
   var filterOpts = '<option value="all">All venues</option>';
   venues.forEach(function(v) { filterOpts += '<option value="' + v.id + '">' + v.name + '</option>'; });
-  var selects = ['sched-venue-select', 'host-sched-venue'];
+  var selects = ['sched-venue-select', 'host-sched-venue', 'bulk-venue-select'];
   selects.forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
@@ -1017,7 +948,155 @@ function renderHostSched() {
   res.innerHTML = html || '<div style="font-size:14px;color:var(--text3);font-style:italic;text-align:center;padding:1rem">Nothing scheduled for this date and venue.</div>';
 }
 
-// ── UTILS ─────────────────────────────────────────────────────────────────────
+// ── BULK SCHEDULE IMPORT ──────────────────────────────────────────────────────
+var bulkParsed = [];
+
+function bulkPopulateVenue() {
+  var sel = document.getElementById('bulk-venue-select');
+  if (!sel) return;
+  var cur = sel.value;
+  var opts = '<option value="">— select venue —</option>';
+  venues.forEach(function(v) { opts += '<option value="' + v.id + '">' + v.name + '</option>'; });
+  sel.innerHTML = opts;
+  if (cur) sel.value = cur;
+}
+
+function bulkParse() {
+  var venueId = document.getElementById('bulk-venue-select').value;
+  var text = document.getElementById('bulk-text').value.trim();
+  var preview = document.getElementById('bulk-preview');
+  var saveBtn = document.getElementById('bulk-save-btn');
+  if (!venueId) { preview.innerHTML = '<div style="color:#e05050;font-size:13px;padding:.5rem 0">Pick a venue first.</div>'; return; }
+  if (!text) { preview.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:.5rem 0">Paste some schedule entries above.</div>'; return; }
+
+  var vname = (venues.find(function(v){return v.id===venueId;})||{}).name||'';
+  var year = new Date().getFullYear();
+  var monthMap = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11,
+    january:0,february:1,march:2,april:3,june:5,july:6,august:7,september:8,october:9,november:10,december:11};
+
+  bulkParsed = [];
+  var errors = [];
+  var lines = text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+
+  lines.forEach(function(line, li) {
+    // Split notes
+    var noteParts = line.split('|');
+    var main = noteParts[0].trim();
+    var notes = noteParts[1] ? noteParts[1].trim() : '';
+
+    // Parse date — expect "Month Day" or "Month Day Year" before a dash
+    var dashIdx = main.indexOf('-');
+    if (dashIdx === -1) { errors.push('Line ' + (li+1) + ': no dash found after date'); return; }
+    var datePart = main.slice(0, dashIdx).trim();
+    var roundsPart = main.slice(dashIdx+1).trim();
+
+    // Parse date
+    var dateTokens = datePart.replace(',','').split(/\s+/);
+    var parsedDate = null;
+    if (dateTokens.length >= 2) {
+      var mKey = dateTokens[0].toLowerCase().slice(0,3);
+      var mNum = monthMap[mKey];
+      var day = parseInt(dateTokens[1]);
+      var yr = dateTokens[2] ? parseInt(dateTokens[2]) : year;
+      if (mNum !== undefined && !isNaN(day)) {
+        parsedDate = yr + '-' + String(mNum+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+      }
+    }
+    if (!parsedDate) { errors.push('Line ' + (li+1) + ': could not parse date "' + datePart + '"'); return; }
+
+    // Parse rounds — "Round 1: Title, Round 2: Title, Round 3: Title"
+    var rounds = [];
+    var roundMatches = roundsPart.split(',');
+    roundMatches.forEach(function(seg) {
+      seg = seg.trim();
+      var colonIdx = seg.indexOf(':');
+      if (colonIdx === -1) return;
+      var catName = seg.slice(colonIdx+1).trim().toLowerCase();
+      // Fuzzy match category name
+      var match = categories.find(function(c){ return c.title.toLowerCase() === catName; });
+      if (!match) {
+        // Try partial match
+        match = categories.find(function(c){ return c.title.toLowerCase().indexOf(catName) !== -1 || catName.indexOf(c.title.toLowerCase()) !== -1; });
+      }
+      rounds.push({ raw: seg.slice(colonIdx+1).trim(), catId: match ? match.id : null, catTitle: match ? match.title : null });
+    });
+
+    if (!rounds.length) { errors.push('Line ' + (li+1) + ': no rounds found'); return; }
+
+    bulkParsed.push({ date: parsedDate, venueId: venueId, rounds: rounds, notes: notes, raw: line });
+  });
+
+  // Build preview HTML
+  var html = '';
+  if (errors.length) {
+    html += '<div style="background:rgba(220,60,60,.08);border:1px solid rgba(220,60,60,.25);border-radius:var(--radius);padding:10px 14px;margin-bottom:1rem">';
+    html += '<div style="font-size:11px;font-weight:600;color:#e05050;margin-bottom:6px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase">Parse errors</div>';
+    errors.forEach(function(e){ html += '<div style="font-size:12px;color:#e05050;margin-bottom:2px">⚠ ' + e + '</div>'; });
+    html += '</div>';
+  }
+
+  if (bulkParsed.length) {
+    html += '<div style="font-family:var(--cinzel);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">'
+      + bulkParsed.length + ' entr' + (bulkParsed.length===1?'y':'ies') + ' ready to save for ' + vname + '</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:6px">';
+    bulkParsed.forEach(function(entry) {
+      var roundsHTML = entry.rounds.map(function(r, i) {
+        var label = ['Round 1','Round 2','Round 3'][i] || ('Round '+(i+1));
+        var ok = r.catId !== null;
+        return '<span style="font-size:11px;' + (ok?'color:var(--text)':'color:#e05050;text-decoration:line-through') + '">'
+          + '<span style="color:var(--gold);font-family:var(--cinzel);font-size:9px">' + label + ':</span> '
+          + (ok ? r.catTitle : r.raw + ' ⚠ not found') + '</span>';
+      }).join(' &nbsp;·&nbsp; ');
+      var hasError = entry.rounds.some(function(r){return !r.catId;});
+      html += '<div style="background:' + (hasError?'rgba(220,60,60,.06)':'var(--surface2)') + ';border:1px solid '
+        + (hasError?'rgba(220,60,60,.2)':'var(--border)') + ';border-radius:var(--radius);padding:8px 12px">'
+        + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+        + '<span style="font-family:var(--cinzel);font-size:11px;font-weight:600;color:var(--gold);min-width:72px">' + formatDate(entry.date) + '</span>'
+        + '<span>' + roundsHTML + '</span>'
+        + (entry.notes ? '<span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:auto">📋 ' + entry.notes + '</span>' : '')
+        + '</div></div>';
+    });
+    html += '</div>';
+
+    var allOk = bulkParsed.every(function(e){return e.rounds.every(function(r){return r.catId;});});
+    saveBtn.style.display = '';
+    saveBtn.textContent = 'Save ' + bulkParsed.length + ' entr' + (bulkParsed.length===1?'y':'ies');
+    if (!allOk) {
+      html += '<div style="font-size:11px;color:#e05050;margin-top:8px;font-style:italic">⚠ Some categories weren\'t matched — fix the names and re-preview, or save anyway and edit later.</div>';
+      saveBtn.textContent += ' (some unmatched)';
+    }
+  } else {
+    saveBtn.style.display = 'none';
+  }
+
+  preview.innerHTML = html;
+}
+
+function bulkSave() {
+  if (!bulkParsed.length) return;
+  var venueId = document.getElementById('bulk-venue-select').value;
+  var saved = 0;
+  bulkParsed.forEach(function(entry) {
+    var rounds = entry.rounds.filter(function(r){return r.catId;}).map(function(r){return r.catId;});
+    if (!rounds.length) return;
+    var id = 'sched_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+    db.ref('landing/schedule/' + id).set({
+      id: id, date: entry.date, venueId: venueId,
+      rounds: rounds, categoryIds: rounds, notes: entry.notes
+    });
+    saved++;
+  });
+  showToast(saved + ' entr' + (saved===1?'y':'ies') + ' saved!');
+  bulkClear();
+  switchSchedTab('timeline');
+}
+
+function bulkClear() {
+  document.getElementById('bulk-text').value = '';
+  document.getElementById('bulk-preview').innerHTML = '';
+  document.getElementById('bulk-save-btn').style.display = 'none';
+  bulkParsed = [];
+}
 function changePassword() {
   var newPw = document.getElementById('new-pw-input').value.trim();
   var msg = document.getElementById('pw-change-msg');
