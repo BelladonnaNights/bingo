@@ -1379,6 +1379,7 @@ var spinning=false;
 var globeAngle=0;
 var lastTs=0;
 var isFull=false;
+var lastCalledLabel='';  // module-scope so both callNext and Firebase listener share it
 
 var gc=document.getElementById('gc');
 var ctx=gc.getContext('2d');
@@ -1566,11 +1567,26 @@ var fbDb=null;
       try{
         firebase.initializeApp(${fbConfig});
         fbDb=firebase.database();
-        // Listen for caller updates from sidebar
-        var lastCalledLabel='';
+        // Listen for caller updates from sidebar — uses module-scope lastCalledLabel
         fbDb.ref('sessions/${fbSessionKey}/caller').on('value',function(snap){
           var data=snap.val();
-          if(!data||!data.current)return;
+          // Reset: if caller cleared, reset popup state
+          if(!data||!data.current){
+            if(data===null){
+              // Full reset — reshuffle remaining
+              remaining=${remaining};
+              called=[];lastCalledLabel='';
+              document.getElementById('cl').textContent='?';
+              document.getElementById('cn').textContent='\u2014';
+              document.getElementById('cb').classList.remove('lit');
+              document.getElementById('hrow').innerHTML='';
+              document.getElementById('cnt').textContent='75 remaining';
+              document.getElementById('hlabel').textContent='Called numbers';
+              var btn2=document.getElementById('callbtn');
+              if(btn2){btn2.disabled=false;btn2.textContent='Call Number';}
+            }
+            return;
+          }
           var ball=data.current;
           var ballLabel=ball.col+ball.num;
           // Sync remaining/called lists
@@ -1703,34 +1719,44 @@ function sidebarCallNumber(){
 }
 
 function updateSidebarCaller(data){
-  if(!data||!data.current)return;
-  const ball=data.current;
   const sbBtn=document.getElementById('sc-call-btn');
+  // Handle reset (null data)
+  if(!data||!data.current){
+    const scLetter=document.getElementById('sc-letter');
+    const scNumber=document.getElementById('sc-number');
+    const scBall=document.getElementById('sc-ball');
+    const scCount=document.getElementById('sc-count');
+    const scHist=document.getElementById('sc-history');
+    if(scLetter)scLetter.textContent='?';
+    if(scNumber)scNumber.textContent='—';
+    if(scBall){scBall.style.borderColor='var(--gold-border)';scBall.style.background='var(--bg2)';}
+    if(scCount)scCount.textContent='75 left';
+    if(sbBtn){sbBtn.disabled=false;sbBtn.textContent='Call';}
+    if(scHist)scHist.innerHTML='';
+    return;
+  }
+  const ball=data.current;
   const rem=data.remaining||0;
+  const allCalled=data.called||[];
   // Update ball display
   const ballEl=document.getElementById('sc-ball');
   const letterEl=document.getElementById('sc-letter');
   const numberEl=document.getElementById('sc-number');
-  letterEl.textContent=ball.col;
-  numberEl.textContent=ball.num;
-  letterEl.style.color='var(--gold)';
-  numberEl.style.color='var(--gold2)';
-  ballEl.style.borderColor='var(--gold)';
-  ballEl.style.background='var(--bg)';
-  // Update remaining count
+  if(letterEl){letterEl.textContent=ball.col;letterEl.style.color='var(--gold)';}
+  if(numberEl){numberEl.textContent=ball.num;numberEl.style.color='var(--gold2)';}
+  if(ballEl){ballEl.style.borderColor='var(--gold)';ballEl.style.background='var(--bg)';}
+  // Count uses Firebase as source of truth
   document.getElementById('sc-count').textContent=rem+' left';
-  // Sync local remaining list
-  const calledSet=new Set(data.called||[]);
+  // Sync local callerRemaining against Firebase called list
+  const calledSet=new Set(allCalled);
   callerRemaining=callerRemaining.filter(b=>!calledSet.has(b.col+b.num));
-  // Update history — last 3
+  // History — last 3 before current (Firebase is source of truth)
   const hist=document.getElementById('sc-history');
-  const called=(data.called||[]).slice(-4,-1).reverse(); // last 3 before current
-  hist.innerHTML=called.map(lbl=>`<div style="width:30px;height:30px;border-radius:50%;border:1px solid var(--gold-border);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--cinzel);font-size:10px;font-weight:600;color:var(--text2)">${lbl}</div>`).join('');
-  // Re-enable button
-  if(sbBtn){
-    sbBtn.disabled=rem===0;
-    sbBtn.textContent=rem===0?'Done':'Call';
+  if(hist){
+    const prev=allCalled.slice(-4,-1).reverse();
+    hist.innerHTML=prev.map(lbl=>'<div style="width:30px;height:30px;border-radius:50%;border:1px solid var(--gold-border);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--cinzel);font-size:10px;font-weight:600;color:var(--text2)">'+lbl+'</div>').join('');
   }
+  if(sbBtn){sbBtn.disabled=rem===0;sbBtn.textContent=rem===0?'Done':'Call';}
 }
 
 // ── NUMBER CALLER ─────────────────────────────────────────────────────────────
