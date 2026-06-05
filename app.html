@@ -217,13 +217,8 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <div id="host-banner" class="banner-wrap" style="display:none"></div>
     <div class="page-title" id="host-title">Music Bingo — Host Tool</div>
     <div class="page-sub">Tap a song when it plays. Check the played list to verify bingo calls.</div>
-    <div id="player-link-indicator" style="display:none;margin-bottom:1.25rem;padding:10px 16px;background:#fffbe6;border:1.5px solid var(--gold);border-radius:var(--radius);font-family:var(--cinzel);font-size:11px;letter-spacing:.08em;color:#7a5500;align-items:center;gap:10px">
-      <span style="font-size:18px">&#9835;</span>
-      <span><strong>Media Player Linked</strong> &mdash; songs will auto-tick when played</span>
-    </div>
     <div class="host-tabs">
       <button class="host-tab active" id="htab-daub" onclick="switchHostTab('daub')">Live Daubing Board</button>
-      <button class="host-tab" id="htab-log" onclick="switchHostTab('log')">Play Log</button>
       <button class="host-tab" id="htab-print" onclick="switchHostTab('print')">Printable Sheet</button>
     </div>
     <div id="hpanel-daub">
@@ -259,7 +254,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
         </div>
       </div>
       <div class="top-bar">
-        <div class="search-wrap"><input type="text" id="host-search" placeholder="Search songs…" autocomplete="off" oninput="hostFilter()"></div>
+        <div class="search-wrap"><input type="text" id="host-search" placeholder="Search songs…" oninput="hostFilter()"></div>
       </div>
       <div class="song-grid" id="host-song-grid"></div>
       <div class="feed" id="host-feed" style="display:none">
@@ -279,23 +274,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
         <a onclick="openTiebreaker()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
           ⬡ Open Tie Breaker
         </a>
-        <a onclick="openMediaPlayer()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
-          ♪ Open Media Player
-        </a>
       </div></div>
-    </div>
-    <div id="hpanel-log" style="display:none">
-      <div id="log-played-section">
-        <div class="section-label" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
-          <span>Played <span id="log-played-count" style="color:var(--gold);margin-left:4px">0</span></span>
-          <button class="btn btn-ghost btn-sm" onclick="hostCopyList()">Copy list</button>
-        </div>
-        <div id="log-played-list" style="display:flex;flex-direction:column;gap:4px"></div>
-      </div>
-      <div style="margin:1.25rem 0;border-top:.5px solid var(--border2);position:relative">
-        <span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--bg2);padding:0 10px;font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">not yet played</span>
-      </div>
-      <div id="log-remaining-list" style="display:flex;flex-direction:column;gap:4px"></div>
     </div>
     <div id="hpanel-print" style="display:none">
       <div class="btn-row" style="margin-bottom:1rem">
@@ -459,6 +438,11 @@ let EVENT_TITLE='Music Bingo', EVENT_IMAGE='', SONGS_RAW=[], SPOTIFY_QR_URL='';
 let allSongs=[], hostPlayedOrder=[];
 let db=null, sessionKey=null, categoryId=null;
 let resetSnapshot=null;
+let CLASSIC_BINGO=false; // true when category is classic number bingo
+
+// Classic bingo column definitions
+const CLASSIC_COLS=['B','I','N','G','O'];
+const CLASSIC_RANGES=[[1,15],[16,30],[31,45],[46,60],[61,75]];
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
 function bootstrap(){
@@ -508,26 +492,28 @@ function loadCategory(data){
   const rawSongs=data.songs||'';
   const spotifyUrl=data.spotifyUrl||'';
   const spotifyQrUrl=data.spotifyQrUrl||'';
+  CLASSIC_BINGO=!!(data.classicBingo);
 
   SONGS_RAW=rawSongs.split('\n').map(s=>s.trim()).filter(Boolean);
   SPOTIFY_QR_URL=spotifyQrUrl;
-  if(SONGS_RAW.length<25){
-    showError(`This playlist only has ${SONGS_RAW.length} song${SONGS_RAW.length===1?'':'s'}. At least 25 are needed. Go to the Admin panel on the landing page and add more songs to this category.`);
-    return;
-  }
-  allSongs=parseSongs(SONGS_RAW);
 
-  // Venue-scoped session key — two hosts on the same category don't clash
-  const urlSession = new URLSearchParams(window.location.search).get('session');
-  if (urlSession && urlSession.startsWith(categoryId + '_')) {
-    sessionKey = urlSession;
-    sessionStorage.setItem('bella_venue_token', urlSession.slice(categoryId.length + 1));
-    setTimeout(() => { const ind = document.getElementById('player-link-indicator'); if (ind) ind.style.display = 'flex'; }, 800);
+  if(CLASSIC_BINGO){
+    // Generate all 75 classic bingo numbers as the "songs"
+    allSongs=[];
+    CLASSIC_COLS.forEach((col,ci)=>{
+      const [lo,hi]=CLASSIC_RANGES[ci];
+      for(let n=lo;n<=hi;n++){
+        allSongs.push({id:(ci*15+(n-lo)),title:String(n),artist:'',col,played:false});
+      }
+    });
   } else {
-    let venueToken = sessionStorage.getItem('bella_venue_token');
-    if (!venueToken) { venueToken = Math.random().toString(36).slice(2, 8); sessionStorage.setItem('bella_venue_token', venueToken); }
-    sessionKey = categoryId + '_' + venueToken;
+    if(SONGS_RAW.length<25){
+      showError(`This playlist only has ${SONGS_RAW.length} song${SONGS_RAW.length===1?'':'s'}. At least 25 are needed. Go to the Admin panel on the landing page and add more songs to this category.`);
+      return;
+    }
+    allSongs=parseSongs(SONGS_RAW);
   }
+  sessionKey=categoryId;
 
   document.getElementById('nav-brand').textContent=EVENT_TITLE;
   document.getElementById('host-title').textContent=EVENT_TITLE+' \u2014 Host Tool';
@@ -594,10 +580,14 @@ function parseSongs(lines){
   });
 }
 function fmtLabel(s){
+  if(CLASSIC_BINGO) return`<span style="font-family:var(--cinzel);font-weight:700">${s.col}${s.title}</span>`;
   const tsHTML=s.ts?` <span class="song-ts">${s.ts}</span>`:'';
   return s.artist?`${s.title} <span class="artist-part">\u2013 ${s.artist}</span>${tsHTML}`:`${s.title}${tsHTML}`;
 }
-function fmtPlain(s){return s.artist?`${s.title} \u2013 ${s.artist}`:s.title;}
+function fmtPlain(s){
+  if(CLASSIC_BINGO) return`${s.col}${s.title}`;
+  return s.artist?`${s.title} \u2013 ${s.artist}`:s.title;
+}
 
 // ── ROUTING ───────────────────────────────────────────────────────────────────
 function showPage(page,skipHistory){
@@ -618,41 +608,34 @@ function showPage(page,skipHistory){
 // ── HOST ──────────────────────────────────────────────────────────────────────
 function switchHostTab(tab){
   document.getElementById('hpanel-daub').style.display=tab==='daub'?'':'none';
-  document.getElementById('hpanel-log').style.display=tab==='log'?'':'none';
   document.getElementById('hpanel-print').style.display=tab==='print'?'':'none';
   document.getElementById('htab-daub').classList.toggle('active',tab==='daub');
-  document.getElementById('htab-log').classList.toggle('active',tab==='log');
   document.getElementById('htab-print').classList.toggle('active',tab==='print');
-  if(tab==='log') renderPlayLog();
-}
-
-function renderPlayLog(){
-  const played = hostPlayedOrder.map((id,i)=>{
-    const s=allSongs.find(x=>x.id===id); if(!s) return '';
-    const n=i+1;
-    const tsHTML=s.ts?` <span class="song-ts">${s.ts}</span>`:'';
-    return`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--green-bg);border:.5px solid var(--green-border);border-radius:var(--radius)">
-      <span style="font-size:11px;color:var(--green-sub);min-width:24px;font-family:var(--cinzel);font-weight:600">#${n}</span>
-      <span style="flex:1;font-size:13px;color:var(--green-text)">${fmtLabel(s)}${tsHTML}</span>
-      <button onclick="hostToggle(${s.id})" style="font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">undo</button>
-    </div>`;
-  }).join('');
-
-  const remaining = allSongs.filter(s=>!s.played).map(s=>{
-    const tsHTML=s.ts?` <span class="song-ts">${s.ts}</span>`:'';
-    return`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);cursor:pointer" onclick="hostToggle(${s.id});renderPlayLog()">
-      <span style="flex:1;font-size:13px;color:var(--text)">${fmtLabel(s)}${tsHTML}</span>
-      <span style="font-size:11px;color:var(--text3);font-family:var(--cinzel);letter-spacing:.06em">tap to play</span>
-    </div>`;
-  }).join('');
-
-  document.getElementById('log-played-count').textContent=hostPlayedOrder.length;
-  document.getElementById('log-played-list').innerHTML=played||'<div style="font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);padding:4px 0">No songs played yet.</div>';
-  document.getElementById('log-remaining-list').innerHTML=remaining||'<div style="font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);padding:4px 0">All songs have been played!</div>';
 }
 function hostFilter(){renderHostGrid(document.getElementById('host-search').value.toLowerCase());}
 function renderHostGrid(filter=''){
   const grid=document.getElementById('host-song-grid');
+  if(CLASSIC_BINGO){
+    // Classic mode: show 5 column groups B I N G O
+    grid.style.gridTemplateColumns='repeat(5,1fr)';
+    let html='';
+    CLASSIC_COLS.forEach((col,ci)=>{
+      const [lo,hi]=CLASSIC_RANGES[ci];
+      const colColor=['#1a6b9a','#2e8b57','#cc0000','#b8860b','#6a0dad'][ci];
+      html+=`<div style="display:flex;flex-direction:column;gap:4px">
+        <div style="font-family:var(--cinzel);font-size:18px;font-weight:700;text-align:center;color:${colColor};padding:4px 0;border-bottom:2px solid ${colColor};margin-bottom:4px">${col}</div>`;
+      for(let n=lo;n<=hi;n++){
+        const s=allSongs.find(x=>x.title===String(n)&&x.col===col);
+        if(!s)continue;
+        html+=`<div class="song-card${s.played?' played':''}" onclick="hostToggle(${s.id})" style="text-align:center;padding:8px 4px;font-family:var(--cinzel);font-size:14px;font-weight:600">${n}</div>`;
+      }
+      html+=`</div>`;
+    });
+    grid.innerHTML=html;
+    return;
+  }
+  // Standard song mode
+  grid.style.gridTemplateColumns='';
   const vis=filter?allSongs.filter(s=>s.title.toLowerCase().includes(filter)||s.artist.toLowerCase().includes(filter)):allSongs;
   if(!vis.length){grid.innerHTML='<div class="no-results">No songs match.</div>';return;}
   grid.innerHTML=vis.map(s=>`<div class="song-card${s.played?' played':''}" onclick="hostToggle(${s.id})"><div class="song-label">${fmtLabel(s)}</div></div>`).join('');
@@ -663,7 +646,6 @@ function hostToggle(id){
   else{s.played=false;hostPlayedOrder=hostPlayedOrder.filter(x=>x!==id);}
   renderHostGrid(document.getElementById('host-search').value.toLowerCase());
   updateHostStats();renderHostFeed();
-  if(document.getElementById('hpanel-log').style.display!=='none') renderPlayLog();
 }
 function updateHostStats(){
   const p=allSongs.filter(s=>s.played).length;
@@ -820,10 +802,14 @@ function printCards(){
     const imgHTML=EVENT_IMAGE
       ?`<img style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block" src="${EVENT_IMAGE}" onerror="this.style.display='none'">`:'';
 
+    const colColors=['#1a6b9a','#2e8b57','#cc0000','#b8860b','#6a0dad'];
+    const printHeaderHTML=CLASSIC_BINGO?`<div class="bingo-header">${CLASSIC_COLS.map((l,ci)=>`<div style="color:${colColors[ci]}">${l}</div>`).join('')}</div>`:'';
+
     const cellsHTML=cells.map(s=>{
       if(s.free) return`<div class="bc free"><div class="fsi"><div class="frt"><div class="fr" style="transform:rotate(-35deg)"></div><div class="fr" style="transform:rotate(-12deg)"></div><div class="fr"></div><div class="fr" style="transform:rotate(12deg)"></div><div class="fr" style="transform:rotate(35deg)"></div></div><div class="fw"><span class="fword">FREE</span><span class="fword">SPACE</span></div><div class="frb"><div class="fr" style="transform:rotate(35deg)"></div><div class="fr" style="transform:rotate(12deg)"></div><div class="fr"></div><div class="fr" style="transform:rotate(-12deg)"></div><div class="fr" style="transform:rotate(-35deg)"></div></div></div></div>`;
-      const art=s.artist?`<span class="ca" style="font-size:${scaledArtist}px">${s.artist}</span>`:'';
-      return`<div class="bc"><div class="ct" style="font-size:${scaledFont}px"><span class="cs">${s.title}</span>${art}</div></div>`;
+      const art=s.artist&&!CLASSIC_BINGO?`<span class="ca" style="font-size:${scaledArtist}px">${s.artist}</span>`:'';
+      const numFontSize=CLASSIC_BINGO?`${Math.round(scaledFont*1.4)}px`:scaledFont+'px';
+      return`<div class="bc"><div class="ct" style="font-size:${numFontSize};font-weight:${CLASSIC_BINGO?'700':'500'}"><span class="cs">${s.title}</span>${art}</div></div>`;
     }).join('');
 
     const qr=SPOTIFY_QR_URL
@@ -844,8 +830,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fr{width:2px;height:8px;border-radius:1px;background:#000}
 .fw{display:flex;flex-direction:column;align-items:center;line-height:1.05}
 .fword{font-size:9px;font-weight:900;letter-spacing:.01em;text-transform:uppercase;color:#000}
+.bingo-header{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:3px 4px 0;font-family:'Cinzel',Georgia,serif;font-size:18px;font-weight:700;text-align:center}
 </style></head><body>
-<div class="card">${imgHTML}<div class="grid">${cellsHTML}</div>${qr}</div>
+<div class="card">${imgHTML}${printHeaderHTML}<div class="grid">${cellsHTML}</div>${qr}</div>
 </body></html>`;
   });
 
@@ -872,13 +859,36 @@ function hostCopyTSV(){
 
 // ── CARD GENERATOR ────────────────────────────────────────────────────────────
 let generatedCards=[];
-// sessionOffset is randomised fresh every page load so card #1 always looks
-// different — but stays stable within a single session so digital and printed
-// cards generated in the same run stay in sync.
-const sessionOffset=Math.floor(Math.random()*2147483647);
 function seededRng(seed){let s=seed;return()=>{s=(s*1664525+1013904223)&0xffffffff;return(s>>>0)/0xffffffff;};}
 function generateCard(num){
-  const rng=seededRng((num*31337+17+sessionOffset)&0x7fffffff),pool=[...allSongs];
+  if(CLASSIC_BINGO){
+    const rng=seededRng(num*31337+17);
+    const cells=[];
+    CLASSIC_COLS.forEach((col,ci)=>{
+      const [lo,hi]=CLASSIC_RANGES[ci];
+      // Shuffle numbers in this column range
+      const pool=[];
+      for(let n=lo;n<=hi;n++) pool.push(n);
+      for(let i=pool.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+      // Take 5 per column
+      for(let k=0;k<5;k++) cells.push({id:ci*5+k+num*1000,title:String(pool[k]),artist:'',col,num:pool[k]});
+    });
+    // Insert free space at position 12 (center of 5x5)
+    // cells is 25 items in column-major order — convert to row-major for display
+    // Column-major: B0,B1,B2,B3,B4, I0..., N0..., G0..., O0...
+    // We want row-major: B0,I0,N0,G0,O0, B1,I1,N1,G1,O1, ...
+    const rowMajor=[];
+    for(let row=0;row<5;row++){
+      for(let col=0;col<5;col++){
+        rowMajor.push(cells[col*5+row]);
+      }
+    }
+    // Free space at index 12 (row 2, col 2 = N column, middle)
+    rowMajor[12]={id:-1,title:'FREE',artist:'',col:'N',free:true};
+    return rowMajor;
+  }
+  // Standard song card
+  const rng=seededRng(num*31337+17),pool=[...allSongs];
   for(let i=pool.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
   const cells=pool.slice(0,24);
   cells.splice(12,0,{id:-1,title:'FREE',artist:'',free:true});
@@ -889,12 +899,17 @@ function buildFreeCell(){
 }
 function renderCardHTML(cells,cardNum){
   const imgHTML=EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" onerror="this.style.display='none'">`: '';
+  const colColors=['#1a6b9a','#2e8b57','#cc0000','#b8860b','#6a0dad'];
+  const headerHTML=CLASSIC_BINGO?`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:4px 7px 0">
+    ${CLASSIC_COLS.map((l,i)=>`<div style="text-align:center;font-family:var(--cinzel);font-size:18px;font-weight:700;color:${colColors[i]};line-height:1.2;padding:2px 0">${l}</div>`).join('')}
+  </div>`:'';
   const cellsHTML=cells.map(s=>{
     if(s.free)return buildFreeCell();
     const artistHTML=s.artist?`<span class="cell-artist">${s.artist}</span>`:'';
-    return`<div class="bingo-cell" data-id="${s.id}"><div class="cell-text"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
+    const numStyle=CLASSIC_BINGO?'font-size:1.4em;font-weight:700;font-family:var(--cinzel)':'';
+    return`<div class="bingo-cell" data-id="${s.id}"><div class="cell-text" style="${numStyle}"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
   }).join('');
-  return`<div class="bingo-card-wrap">${imgHTML}<div class="bingo-grid" data-card="${cardNum}">${cellsHTML}</div></div>`;
+  return`<div class="bingo-card-wrap">${imgHTML}${headerHTML}<div class="bingo-grid" data-card="${cardNum}">${cellsHTML}</div></div>`;
 }
 function generateCards(){
   const count=Math.min(100,Math.max(1,parseInt(document.getElementById('card-count').value)||30));
@@ -998,17 +1013,22 @@ function loadPlayerCard(){
 function renderPlayerCard(){
   const wrap=document.getElementById('player-bingo-card');
   const bannerHTML=EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" onerror="this.style.display='none'">`: '';
+  const colColors=['#1a6b9a','#2e8b57','#cc0000','#b8860b','#6a0dad'];
+  const headerHTML=CLASSIC_BINGO?`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:4px 7px 0">
+    ${CLASSIC_COLS.map((l,i)=>`<div style="text-align:center;font-family:var(--cinzel);font-size:clamp(16px,5vw,22px);font-weight:700;color:${colColors[i]};line-height:1.2;padding:2px 0">${l}</div>`).join('')}
+  </div>`:'';
   const cellsHTML=playerCells.map((s,idx)=>{
     if(s.free){
       const isDaubed=playerDaubed.has('free');
       return`<div class="bingo-cell free${isDaubed?' daubed':''}" onclick="playerDaubFree()"><div class="free-space-inner"><div class="free-rays-top"><div class="free-ray" style="transform:rotate(-35deg)"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray" style="transform:rotate(35deg)"></div></div><div class="free-words"><span class="free-word">FREE</span><span class="free-word">SPACE</span></div><div class="free-rays-bottom"><div class="free-ray" style="transform:rotate(35deg)"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray" style="transform:rotate(-35deg)"></div></div></div></div>`;
     }
     const isDaubed=playerDaubed.has(s.id);
+    const numStyle=CLASSIC_BINGO?'font-size:clamp(16px,5vw,24px);font-weight:700;font-family:var(--cinzel)':'';
     const artistHTML=s.artist?`<span class="cell-artist">${s.artist}</span>`:'';
-    return`<div class="bingo-cell${isDaubed?' daubed':''}" onclick="playerDaub(${s.id})"><div class="cell-text"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
+    return`<div class="bingo-cell${isDaubed?' daubed':''}" onclick="playerDaub(${s.id})"><div class="cell-text" style="${numStyle}"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
   }).join('');
-  wrap.innerHTML=`${bannerHTML}<div class="bingo-grid" id="player-grid">${cellsHTML}</div>`;
-  requestAnimationFrame(()=>sizeCellText(wrap));
+  wrap.innerHTML=`${bannerHTML}${headerHTML}<div class="bingo-grid" id="player-grid">${cellsHTML}</div>`;
+  if(!CLASSIC_BINGO) requestAnimationFrame(()=>sizeCellText(wrap));
   updatePlayerStatus();
 }
 function playerDaub(id){
@@ -1055,33 +1075,6 @@ function setupFirebaseListeners(){
     const c=snap.val();if(!c||c.dismissed)return;
     showBingoClaim(c.name,c.cardNum,snap.key,c.daubedSongs||[]);
   });
-  // Player bridge: auto-tick when media player plays a song
-  db.ref(`sessions/${sessionKey}/nowPlaying`).on('value',snap=>{
-    const np=snap.val();
-    if(!np||!np.title)return;
-    if(Date.now()-np.at>30000)return;
-    autoTickFromPlayer(np.title,np.artist||'');
-  });
-}
-
-function normStr(s){
-  return s.toLowerCase()
-    .replace(/^(the|a|an)\s+/,'')
-    .replace(/[\u2018\u2019\u0060\u00b4\u02bc]/g,"'")
-    .replace(/[^a-z0-9'\s]/g,'')
-    .replace(/\s+/g,' ').trim();
-}
-
-function autoTickFromPlayer(title,artist){
-  const nt=normStr(title),na=normStr(artist);
-  let match=allSongs.find(s=>!s.played&&normStr(s.title)===nt&&normStr(s.artist)===na);
-  if(!match&&na) match=allSongs.find(s=>!s.played&&normStr(s.title)===nt);
-  if(!match)return;
-  match.played=true;
-  hostPlayedOrder.push(match.id);
-  renderHostGrid(document.getElementById('host-search').value.toLowerCase());
-  updateHostStats();renderHostFeed();
-  showToast('\u266a Auto-ticked: '+fmtPlain(match));
 }
 function fbWritePlayer(name,cardNum){
   if(!db)return;
@@ -1153,14 +1146,6 @@ function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2200);
 }
-// ── MEDIA PLAYER URL ─────────────────────────────────────────────
-const MEDIA_PLAYER_URL = 'https://belladonnanights.github.io/musicplayer/belladonna-player.html';
-
-function openMediaPlayer(){
-  const url=`${MEDIA_PLAYER_URL}?bingo=${encodeURIComponent(categoryId)}&session=${encodeURIComponent(sessionKey)}`;
-  window.open(url,'_blank');
-}
-
 // ── TIEBREAKER ────────────────────────────────────────────────────────────────
 var tbAngle=0,tbSpinning=false;
 function openTiebreaker(){
