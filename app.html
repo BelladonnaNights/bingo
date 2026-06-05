@@ -673,9 +673,8 @@ function renderHostGrid(filter=''){
     let html='';
     CLASSIC_COLS.forEach((col,ci)=>{
       const [lo,hi]=CLASSIC_RANGES[ci];
-      const colColor=['#1a6b9a','#2e8b57','#cc0000','#b8860b','#6a0dad'][ci];
       html+=`<div style="display:flex;flex-direction:column;gap:4px">
-        <div style="font-family:var(--cinzel);font-size:18px;font-weight:700;text-align:center;color:${colColor};padding:4px 0;border-bottom:2px solid ${colColor};margin-bottom:4px">${col}</div>`;
+        <div style="font-family:var(--cinzel);font-size:18px;font-weight:700;text-align:center;color:var(--gold);padding:4px 0;border-bottom:2px solid var(--gold);margin-bottom:4px">${col}</div>`;
       for(let n=lo;n<=hi;n++){
         const s=allSongs.find(x=>x.title===String(n)&&x.col===col);
         if(!s)continue;
@@ -737,10 +736,36 @@ function hostReset(){
   document.getElementById('host-feed').style.display='none';
   document.getElementById('bingo-claim-banner').classList.remove('show');
 
-  // Clear Firebase players and claims
+  // Clear Firebase players, claims, and caller session
   if(db&&sessionKey){
     db.ref(`sessions/${sessionKey}/players`).remove();
     db.ref(`sessions/${sessionKey}/bingoClaims`).remove();
+    db.ref(`sessions/${sessionKey}/caller`).remove();
+  }
+  // Reset caller remaining list
+  if(CLASSIC_BINGO){
+    callerRemaining=[];callerCalled=[];
+    CLASSIC_COLS.forEach((col,ci)=>{
+      const [lo,hi]=CLASSIC_RANGES[ci];
+      for(let n=lo;n<=hi;n++) callerRemaining.push({col,num:n,label:col+n});
+    });
+    for(let i=callerRemaining.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [callerRemaining[i],callerRemaining[j]]=[callerRemaining[j],callerRemaining[i]];
+    }
+    // Reset sidebar display
+    const scLetter=document.getElementById('sc-letter');
+    const scNumber=document.getElementById('sc-number');
+    const scBall=document.getElementById('sc-ball');
+    const scCount=document.getElementById('sc-count');
+    const scBtn=document.getElementById('sc-call-btn');
+    const scHist=document.getElementById('sc-history');
+    if(scLetter) scLetter.textContent='?';
+    if(scNumber) scNumber.textContent='—';
+    if(scBall){scBall.style.borderColor='var(--gold-border)';scBall.style.background='var(--bg2)';}
+    if(scCount) scCount.textContent='75 left';
+    if(scBtn){scBtn.disabled=false;scBtn.textContent='Call';}
+    if(scHist) scHist.innerHTML='';
   }
 
   // Show undo button
@@ -854,11 +879,10 @@ function printCards(){
     const imgHTML=EVENT_IMAGE
       ?`<img style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block" src="${EVENT_IMAGE}" onerror="this.style.display='none'">`:'';
 
-    const colColors=['#1a6b9a','#2e8b57','#cc0000','#b8860b','#6a0dad'];
-    const printHeaderHTML=CLASSIC_BINGO?`<div class="bingo-header">${CLASSIC_COLS.map((l,ci)=>`<div style="color:${colColors[ci]}">${l}</div>`).join('')}</div>`:'';
+    const printHeaderHTML=CLASSIC_BINGO?`<div class="bingo-header">${CLASSIC_COLS.map((l)=>`<div style="color:#c9a84c">${l}</div>`).join('')}</div>`:'';
 
     const cellsHTML=cells.map(s=>{
-      if(s.free) return`<div class="bc free"><div class="fsi"><div class="frt"><div class="fr" style="transform:rotate(-35deg)"></div><div class="fr" style="transform:rotate(-12deg)"></div><div class="fr"></div><div class="fr" style="transform:rotate(12deg)"></div><div class="fr" style="transform:rotate(35deg)"></div></div><div class="fw"><span class="fword">FREE</span><span class="fword">SPACE</span></div><div class="frb"><div class="fr" style="transform:rotate(35deg)"></div><div class="fr" style="transform:rotate(12deg)"></div><div class="fr"></div><div class="fr" style="transform:rotate(-12deg)"></div><div class="fr" style="transform:rotate(-35deg)"></div></div></div></div>`;
+      if(s.free) return`<div class="bc free" style="display:flex;align-items:center;justify-content:center;padding:8%"><svg viewBox="-12 -12 24 24" width="70%" height="70%" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="-10" x2="0" y2="10" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="-10" y1="0" x2="10" y2="0" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="-7.07" y1="-7.07" x2="7.07" y2="7.07" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="7.07" y1="-7.07" x2="-7.07" y2="7.07" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><circle cx="0" cy="0" r="2.2" fill="#000"/></svg></div>`;
       const art=s.artist&&!CLASSIC_BINGO?`<span class="ca" style="font-size:${scaledArtist}px">${s.artist}</span>`:'';
       const numFontSize=CLASSIC_BINGO?`${Math.round(scaledFont*1.4)}px`:scaledFont+'px';
       return`<div class="bc"><div class="ct" style="font-size:${numFontSize};font-weight:${CLASSIC_BINGO?'700':'500'}"><span class="cs">${s.title}</span>${art}</div></div>`;
@@ -947,13 +971,12 @@ function generateCard(num){
   return cells;
 }
 function buildFreeCell(){
-  return`<div class="bingo-cell free"><div class="free-space-inner"><div class="free-rays-top"><div class="free-ray" style="transform:rotate(-35deg)"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray" style="transform:rotate(35deg)"></div></div><div class="free-words"><span class="free-word">FREE</span><span class="free-word">SPACE</span></div><div class="free-rays-bottom"><div class="free-ray" style="transform:rotate(35deg)"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray" style="transform:rotate(-35deg)"></div></div></div></div>`;
+  return`<div class="bingo-cell free" style="display:flex;align-items:center;justify-content:center;padding:10%"><svg viewBox="-12 -12 24 24" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;max-width:52px;max-height:52px;margin:auto"><line x1="0" y1="-10" x2="0" y2="10" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="-10" y1="0" x2="10" y2="0" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="-7.07" y1="-7.07" x2="7.07" y2="7.07" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="7.07" y1="-7.07" x2="-7.07" y2="7.07" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><circle cx="0" cy="0" r="2.2" fill="#000"/></svg></div>`;
 }
 function renderCardHTML(cells,cardNum){
   const imgHTML=EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" onerror="this.style.display='none'">`: '';
-  const colColors=['#1a6b9a','#2e8b57','#cc0000','#b8860b','#6a0dad'];
   const headerHTML=CLASSIC_BINGO?`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:4px 7px 0">
-    ${CLASSIC_COLS.map((l,i)=>`<div style="text-align:center;font-family:var(--cinzel);font-size:18px;font-weight:700;color:${colColors[i]};line-height:1.2;padding:2px 0">${l}</div>`).join('')}
+    ${CLASSIC_COLS.map((l)=>`<div style="text-align:center;font-family:var(--cinzel);font-size:18px;font-weight:700;color:var(--gold);line-height:1.2;padding:2px 0">${l}</div>`).join('')}
   </div>`:'';
   const cellsHTML=cells.map(s=>{
     if(s.free)return buildFreeCell();
@@ -1065,14 +1088,13 @@ function loadPlayerCard(){
 function renderPlayerCard(){
   const wrap=document.getElementById('player-bingo-card');
   const bannerHTML=EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" onerror="this.style.display='none'">`: '';
-  const colColors=['#1a6b9a','#2e8b57','#cc0000','#b8860b','#6a0dad'];
   const headerHTML=CLASSIC_BINGO?`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:4px 7px 0">
-    ${CLASSIC_COLS.map((l,i)=>`<div style="text-align:center;font-family:var(--cinzel);font-size:clamp(16px,5vw,22px);font-weight:700;color:${colColors[i]};line-height:1.2;padding:2px 0">${l}</div>`).join('')}
+    ${CLASSIC_COLS.map((l)=>`<div style="text-align:center;font-family:var(--cinzel);font-size:clamp(16px,5vw,22px);font-weight:700;color:var(--gold);line-height:1.2;padding:2px 0">${l}</div>`).join('')}
   </div>`:'';
   const cellsHTML=playerCells.map((s,idx)=>{
     if(s.free){
       const isDaubed=playerDaubed.has('free');
-      return`<div class="bingo-cell free${isDaubed?' daubed':''}" onclick="playerDaubFree()"><div class="free-space-inner"><div class="free-rays-top"><div class="free-ray" style="transform:rotate(-35deg)"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray" style="transform:rotate(35deg)"></div></div><div class="free-words"><span class="free-word">FREE</span><span class="free-word">SPACE</span></div><div class="free-rays-bottom"><div class="free-ray" style="transform:rotate(35deg)"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray" style="transform:rotate(-35deg)"></div></div></div></div>`;
+      return`<div class="bingo-cell free${isDaubed?' daubed':''}" onclick="playerDaubFree()" style="display:flex;align-items:center;justify-content:center;padding:10%"><svg viewBox="-12 -12 24 24" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;max-width:52px;max-height:52px;margin:auto"><line x1="0" y1="-10" x2="0" y2="10" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="-10" y1="0" x2="10" y2="0" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="-7.07" y1="-7.07" x2="7.07" y2="7.07" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="7.07" y1="-7.07" x2="-7.07" y2="7.07" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><circle cx="0" cy="0" r="2.2" fill="#000"/></svg></div>`;
     }
     const isDaubed=playerDaubed.has(s.id);
     const numStyle=CLASSIC_BINGO?'font-size:clamp(16px,5vw,24px);font-weight:700;font-family:var(--cinzel)':'';
