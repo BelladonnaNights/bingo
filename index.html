@@ -254,6 +254,13 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
           </select>
         </div>
         <div class="form-group">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)">
+            <input type="checkbox" id="f-classic-bingo" style="accent-color:var(--gold);width:15px;height:15px">
+            Classic Bingo (B-I-N-G-O numbers instead of songs)
+          </label>
+          <div class="form-hint">Check this for a traditional numbered bingo card. No song list needed — numbers 1–75 are generated automatically.</div>
+        </div>
+        <div class="form-group">
           <label class="form-label">Spotify playlist URL <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
           <input class="form-input" type="text" id="f-spotify" placeholder="https://open.spotify.com/playlist/...">
           <div class="form-hint">Players see a Spotify button on their card screen.</div>
@@ -472,7 +479,7 @@ function initFirebase() {
       db.ref('landing/categories').on('value', function(snap) {
         var data = snap.val() || {};
         categories = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
-        categories.sort(function(a,b) { return (a.order||0)-(b.order||0); });
+        categories.sort(function(a,b) { if (a.classicBingo && !b.classicBingo) return -1; if (!a.classicBingo && b.classicBingo) return 1; return (a.order||0)-(b.order||0); });
         renderGrid(); buildFilterPills();
         if (adminUnlocked) renderAdminList();
       });
@@ -561,7 +568,7 @@ function renderGrid() {
     var imgHTML = c.image
       ? '<img class="cat-banner" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="cat-banner-placeholder" style="display:none"><span>' + c.title + '</span></div>'
       : '<div class="cat-banner-placeholder"><span>' + c.title + '</span></div>';
-    var genreHTML = genres.length ? '<span class="cat-genre">' + genres[0] + '</span>' : '';
+    var genreHTML = c.classicBingo ? '<span class="cat-genre" style="background:rgba(201,168,76,.2);border-color:var(--gold-border2);color:var(--gold2)">Classic Bingo</span>' : (genres.length ? '<span class="cat-genre">' + genres[0] + '</span>' : '');
     var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
     var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
     var href = isLive ? 'app.html?id=' + c.id : '#';
@@ -629,6 +636,7 @@ function updateSongCount() {
 }
 function resetForm() {
   ['edit-id','f-title','f-genre','f-image','f-songs','f-spotify','f-spotify-qr'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('f-classic-bingo').checked = false;
   document.getElementById('f-status').value = 'live';
   document.getElementById('banner-preview-img').style.display = 'none';
   document.getElementById('form-mode-label').textContent = 'Add New Category';
@@ -646,6 +654,7 @@ function editCategory(id) {
   document.getElementById('f-spotify').value = c.spotifyUrl || '';
   document.getElementById('f-spotify-qr').value = c.spotifyQrUrl || '';
   document.getElementById('f-status').value = c.status || 'live';
+  document.getElementById('f-classic-bingo').checked = !!(c.classicBingo);
   document.getElementById('form-mode-label').textContent = 'Editing: ' + c.title;
   document.getElementById('cancel-edit-btn').style.display = '';
   updateSongCount(); previewBanner();
@@ -654,15 +663,15 @@ function editCategory(id) {
 function saveCategory() {
   var title = document.getElementById('f-title').value.trim();
   if (!title) { showToast('Title required'); return; }
+  var isClassic = document.getElementById('f-classic-bingo').checked;
   var songs = document.getElementById('f-songs').value.trim();
-  var songCount = songs.split('\n').map(function(s){return s.trim();}).filter(Boolean).length;
-  if (songCount < 25) { showToast('Need at least 25 songs (have ' + songCount + ')'); return; }
+  if (!isClassic) { var songCount = songs.split('\n').map(function(s){return s.trim();}).filter(Boolean).length; if (songCount < 25) { showToast('Need at least 25 songs (have ' + songCount + ')'); return; } }
   var genreRaw = document.getElementById('f-genre').value.trim();
   var genres = genreRaw ? genreRaw.split(',').map(function(g){return g.trim();}).filter(Boolean) : [];
   var editId = document.getElementById('edit-id').value;
   var id = editId || 'cat_' + Date.now();
   var order = editId ? (function(){ var c = categories.find(function(x){return x.id===editId;}); return c ? (c.order||0) : categories.length; })() : categories.length;
-  saveToFirebase({id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order});
+  saveToFirebase({id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic});
   resetForm(); showToast(editId ? 'Updated!' : 'Category added!');
 }
 function previewBanner() {
