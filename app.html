@@ -223,6 +223,9 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
       <button class="host-tab" id="htab-caller" onclick="switchHostTab('caller')" style="display:none">🎱 Number Caller</button>
     </div>
     <div id="hpanel-daub">
+      <div style="display:flex;gap:1.5rem;align-items:flex-start">
+        <!-- Main daubing board -->
+        <div style="flex:1;min-width:0">
       <div class="stats-row">
         <div class="stat"><div class="stat-val" id="h-played">0</div><div class="stat-label">Played</div></div>
         <div class="stat"><div class="stat-val" id="h-remain">0</div><div class="stat-label">Remaining</div></div>
@@ -275,7 +278,27 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
         <a onclick="openTiebreaker()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
           ⬡ Open Tie Breaker
         </a>
-      </div></div>
+      </div>
+        </div><!-- end main daubing board -->
+
+        <!-- SIDEBAR NUMBER CALLER — only visible in classic bingo mode -->
+        <div id="sidebar-caller" style="display:none;flex-shrink:0;width:160px;display:none;flex-direction:column;align-items:center;gap:10px;padding:14px 12px;background:var(--bg);border:.5px solid var(--gold-border);border-radius:var(--radius-lg);position:sticky;top:80px">
+          <div style="font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Number Caller</div>
+          <!-- Mini called ball display -->
+          <div id="sc-ball" style="width:100px;height:100px;border-radius:50%;background:var(--bg2);border:2px solid var(--gold-border);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .4s">
+            <div id="sc-letter" style="font-family:var(--cinzel);font-size:28px;font-weight:700;color:var(--text3);line-height:1">?</div>
+            <div id="sc-number" style="font-family:var(--cinzel);font-size:40px;font-weight:700;color:var(--text3);line-height:.9">—</div>
+          </div>
+          <!-- Last 3 mini balls -->
+          <div id="sc-history" style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:36px"></div>
+          <!-- Remaining count -->
+          <div id="sc-count" style="font-family:var(--cinzel);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)">75 left</div>
+          <!-- Call button -->
+          <button id="sc-call-btn" onclick="sidebarCallNumber()" style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--gold-shine);color:#000;border:none;border-radius:99px;padding:9px 0;width:100%;cursor:pointer;transition:opacity .15s;box-shadow:0 3px 12px rgba(201,168,76,.2)">Call</button>
+          <!-- Launch popup -->
+          <button onclick="openCaller()" style="font-family:var(--cinzel);font-size:9px;letter-spacing:.08em;text-transform:uppercase;background:none;border:.5px solid var(--border2);border-radius:var(--radius);padding:5px 0;width:100%;cursor:pointer;color:var(--text3);transition:all .15s" onmouseover="this.style.borderColor='var(--gold-border)'" onmouseout="this.style.borderColor='var(--border2)'">↗ Pop out</button>
+        </div>
+      </div><!-- end flex row -->
     </div>
     <div id="hpanel-print" style="display:none">
       <div class="btn-row" style="margin-bottom:1rem">
@@ -288,10 +311,10 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <div id="hpanel-caller" style="display:none">
       <div style="text-align:center;padding:2rem 0 1rem">
         <div style="font-family:var(--cinzel);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);margin-bottom:1.5rem">Classic Bingo — Number Caller</div>
-        <button onclick="openCaller()" style="font-family:var(--cinzel);font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--gold-shine);color:#000;border:none;border-radius:99px;padding:14px 40px;cursor:pointer;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background:#1a1714;color:var(--gold);border:1px solid var(--gold-border2)">
-          🎱 Open Number Caller
+        <button onclick="openCaller()" style="font-family:var(--cinzel);font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;background:var(--gold-shine);color:#000;border:none;border-radius:99px;padding:14px 44px;cursor:pointer;box-shadow:0 4px 20px rgba(201,168,76,.25)">
+          Launch
         </button>
-        <div style="font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text3);margin-top:12px">Opens as a draggable window — drag to your TV screen</div>
+        <div style="font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text3);margin-top:14px">Opens as a draggable window — drag to your TV screen</div>
       </div>
     </div>
   </div>
@@ -554,7 +577,22 @@ function loadCategory(data){
   document.getElementById('main-nav').style.display='';
   document.getElementById('back-link').style.display='';
   document.getElementById('page-host').style.display='';
-  if(CLASSIC_BINGO) document.getElementById('htab-caller').style.display='';
+  if(CLASSIC_BINGO){
+    document.getElementById('htab-caller').style.display='';
+    // Show sidebar caller
+    const sc=document.getElementById('sidebar-caller');
+    sc.style.display='flex';
+    // Init remaining list
+    callerRemaining=[];callerCalled=[];
+    CLASSIC_COLS.forEach((col,ci)=>{
+      const [lo,hi]=CLASSIC_RANGES[ci];
+      for(let n=lo;n<=hi;n++) callerRemaining.push({col,num:n,label:col+n});
+    });
+    for(let i=callerRemaining.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [callerRemaining[i],callerRemaining[j]]=[callerRemaining[j],callerRemaining[i]];
+    }
+  }
 
   // Route
   const params=new URLSearchParams(window.location.search);
@@ -1089,6 +1127,13 @@ function setupFirebaseListeners(){
     const c=snap.val();if(!c||c.dismissed)return;
     showBingoClaim(c.name,c.cardNum,snap.key,c.daubedSongs||[]);
   });
+  // Classic bingo caller sync
+  if(CLASSIC_BINGO){
+    db.ref(`sessions/${sessionKey}/caller`).on('value',snap=>{
+      const data=snap.val()||{};
+      updateSidebarCaller(data);
+    });
+  }
 }
 function fbWritePlayer(name,cardNum){
   if(!db)return;
@@ -1173,12 +1218,19 @@ function openCaller(){
     const j=Math.floor(Math.random()*(i+1));
     [callerRemaining[i],callerRemaining[j]]=[callerRemaining[j],callerRemaining[i]];
   }
-
+  // Sync remaining with Firebase state first
   const remaining=JSON.stringify(callerRemaining);
+  const fbConfig=JSON.stringify({
+    apiKey:"AIzaSyCu6aBUE8qJCCf5FRMipqQD-tGSPE78D3Y",
+    authDomain:"bellamusicbingo.firebaseapp.com",
+    databaseURL:"https://bellamusicbingo-default-rtdb.firebaseio.com",
+    projectId:"bellamusicbingo"
+  });
+  const fbSessionKey=sessionKey;
   const title=EVENT_TITLE||'Classic Bingo';
 
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>Number Caller — ${title}</title>
+<title>Number Caller</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;600;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1186,88 +1238,98 @@ function openCaller(){
   --bg:#080705;--s1:#121008;--s2:#1c1810;--s3:#2a2416;
   --gold:#c9a84c;--gold2:#e8c96a;--gold3:#f5df90;
   --shine:linear-gradient(135deg,#c9a84c 0%,#f5df90 45%,#c9a84c 70%,#e2b84a 100%);
-  --b1:rgba(201,168,76,.18);--b2:rgba(201,168,76,.38);--b3:rgba(201,168,76,.65);
+  --b1:rgba(201,168,76,.18);--b2:rgba(201,168,76,.38);
   --t1:#f0ede8;--t2:#a09070;--t3:#5a4e3c;
 }
 html,body{height:100%;background:var(--bg);color:var(--t1);overflow:hidden;font-family:'Cinzel',serif;user-select:none}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--b1);background:var(--s1);flex-shrink:0;height:46px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 18px;border-bottom:1px solid var(--b1);background:var(--s1);flex-shrink:0;height:42px}
 .topbar-title{font-size:11px;letter-spacing:.2em;text-transform:uppercase;background:var(--shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.topbar-right{display:flex;align-items:center;gap:12px}
-.count{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)}
 .fsbtn{background:none;border:1px solid var(--b2);border-radius:6px;color:var(--gold);font-size:11px;padding:5px 14px;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:.08em;transition:all .15s}
 .fsbtn:hover{background:var(--b1)}
+.count{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)}
 
-.main{display:flex;flex-direction:column;align-items:center;height:calc(100vh - 46px);padding:1.5rem 1rem 1rem;gap:1.5rem;overflow:hidden}
+/* NORMAL LAYOUT */
+.main{display:flex;flex-direction:column;align-items:center;height:calc(100vh - 42px);padding:1.25rem 1rem 1rem;gap:1.25rem;overflow:hidden}
 .center-row{display:flex;align-items:center;justify-content:center;gap:3rem;flex-wrap:wrap;flex-shrink:0}
 
-/* ── GLOBE CAGE ── */
-.globe-outer{position:relative;width:260px;height:260px;flex-shrink:0}
-.globe-outer canvas{position:absolute;top:0;left:0;width:260px;height:260px;border-radius:50%}
-/* axle top/bottom knobs */
+/* FULLSCREEN LAYOUT */
+body.fs .topbar{display:none}
+body.fs .main{height:100vh;padding:2rem 2rem 1rem;gap:1.5rem}
+body.fs .center-row{gap:4rem}
+body.fs .globe-outer{width:380px;height:380px}
+body.fs .globe-outer canvas{width:380px;height:380px}
+body.fs .current-ball{width:300px;height:300px}
+body.fs .ball-col-letter{font-size:80px}
+body.fs .ball-col-number{font-size:116px}
+body.fs .callbtn{font-size:18px;padding:16px 64px}
+body.fs .hball{width:90px;height:90px;min-width:90px}
+body.fs .hball .hl{font-size:20px}
+body.fs .hball .hn{font-size:32px}
+body.fs .hrow{gap:16px;justify-content:center}
+body.fs .divider{display:none}
+
+/* GLOBE */
+.globe-outer{position:relative;width:260px;height:260px;flex-shrink:0;transition:width .3s,height .3s}
+.globe-outer canvas{position:absolute;top:0;left:0;width:260px;height:260px;border-radius:50%;transition:width .3s,height .3s}
 .globe-outer::before,.globe-outer::after{content:'';position:absolute;left:50%;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;background:var(--shine);box-shadow:0 0 10px rgba(201,168,76,.4);z-index:10}
 .globe-outer::before{top:-9px}
 .globe-outer::after{bottom:-9px}
-/* axle shaft */
 .axle{position:absolute;left:50%;top:-16px;transform:translateX(-50%);width:4px;height:292px;background:linear-gradient(180deg,rgba(201,168,76,.8),rgba(201,168,76,.3),rgba(201,168,76,.8));border-radius:2px;z-index:2;pointer-events:none}
-/* stand */
-.stand{position:absolute;bottom:-38px;left:50%;transform:translateX(-50%);width:180px;text-align:center}
+.stand{position:absolute;bottom:-38px;left:50%;transform:translateX(-50%);width:180px}
 .stand-bar{height:10px;background:linear-gradient(90deg,transparent,var(--s3),var(--s3),transparent);border-radius:5px;border-top:1px solid var(--b2)}
 .stand-legs{display:flex;justify-content:space-between;padding:0 20px}
 .stand-leg{width:4px;height:22px;background:var(--s3);border:1px solid var(--b1);border-radius:2px}
+body.fs .globe-outer::before{width:24px;height:24px;top:-12px}
+body.fs .globe-outer::after{width:24px;height:24px;bottom:-12px}
 
-/* ── CURRENT BALL ── */
+/* BALL */
 .ball-col{display:flex;flex-direction:column;align-items:center;gap:14px}
-.current-ball{width:210px;height:210px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;background:radial-gradient(ellipse at 38% 32%,#2a2010,#0d0b06);border:2px solid var(--b2);box-shadow:0 0 40px rgba(201,168,76,.08),0 8px 32px rgba(0,0,0,.7);transition:box-shadow .4s,border-color .4s}
+.current-ball{width:210px;height:210px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;background:radial-gradient(ellipse at 38% 32%,#2a2010,#0d0b06);border:2px solid var(--b2);box-shadow:0 0 40px rgba(201,168,76,.08),0 8px 32px rgba(0,0,0,.7);transition:box-shadow .4s,border-color .4s,width .3s,height .3s}
 .current-ball::before{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(ellipse at 33% 23%,rgba(201,168,76,.1),transparent 55%);pointer-events:none}
 .current-ball.lit{border-color:var(--gold2);box-shadow:0 0 80px rgba(201,168,76,.45),0 0 24px rgba(201,168,76,.25)}
 .current-ball.lit::before{background:radial-gradient(ellipse at 33% 23%,rgba(201,168,76,.22),transparent 55%)}
-.ball-col-letter{font-family:'Bebas Neue',sans-serif;font-size:56px;line-height:1;color:var(--t3);transition:color .3s}
-.ball-col-number{font-family:'Bebas Neue',sans-serif;font-size:82px;line-height:.88;color:var(--t3);transition:color .3s}
+.ball-col-letter{font-family:'Bebas Neue',sans-serif;font-size:56px;line-height:1;color:var(--t3);transition:color .3s,font-size .3s}
+.ball-col-number{font-family:'Bebas Neue',sans-serif;font-size:82px;line-height:.88;color:var(--t3);transition:color .3s,font-size .3s}
 .current-ball.lit .ball-col-letter,.current-ball.lit .ball-col-number{color:var(--gold2)}
 .current-ball.pop{animation:pop .5s cubic-bezier(.17,.67,.3,1.4)}
 @keyframes pop{0%{transform:scale(.2);opacity:0}65%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
-
-.callbtn{font-family:'Cinzel',serif;font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;background:var(--shine);color:#000;border:none;border-radius:99px;padding:13px 50px;cursor:pointer;transition:opacity .15s;box-shadow:0 4px 20px rgba(201,168,76,.25)}
+.callbtn{font-family:'Cinzel',serif;font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;background:var(--shine);color:#000;border:none;border-radius:99px;padding:13px 50px;cursor:pointer;transition:opacity .15s,font-size .3s,padding .3s;box-shadow:0 4px 20px rgba(201,168,76,.25)}
 .callbtn:hover:not(:disabled){opacity:.82}
 .callbtn:disabled{opacity:.28;cursor:default}
 
-/* ── BALLS HISTORY ── */
+/* HISTORY */
 .divider{height:1px;width:88%;background:linear-gradient(90deg,transparent,var(--b2),transparent);flex-shrink:0}
 .history-section{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;flex:1;overflow:hidden;min-height:0}
 .hlabel{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);flex-shrink:0}
 .hrow{display:flex;gap:8px;align-items:center;justify-content:flex-start;width:100%;overflow-x:auto;padding:4px 2px 8px;flex-shrink:0;scrollbar-width:none}
 .hrow::-webkit-scrollbar{display:none}
-.hball{width:62px;height:62px;min-width:62px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 35% 30%,#2a2010,#0d0b06);border:1.5px solid var(--b2);box-shadow:0 3px 10px rgba(0,0,0,.5);position:relative;flex-shrink:0}
+.hball{width:62px;height:62px;min-width:62px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 35% 30%,#2a2010,#0d0b06);border:1.5px solid var(--b2);box-shadow:0 3px 10px rgba(0,0,0,.5);position:relative;flex-shrink:0;transition:width .3s,height .3s,min-width .3s}
 .hball::before{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(ellipse at 33% 25%,rgba(201,168,76,.12),transparent 55%);pointer-events:none}
-.hball .hl{font-family:'Bebas Neue',sans-serif;font-size:14px;line-height:1;color:var(--gold)}
-.hball .hn{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:.95;color:var(--gold2)}
+.hball .hl{font-family:'Bebas Neue',sans-serif;font-size:14px;line-height:1;color:var(--gold);transition:font-size .3s}
+.hball .hn{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:.95;color:var(--gold2);transition:font-size .3s}
 .hball.newest{border-color:var(--gold2);box-shadow:0 0 18px rgba(201,168,76,.4),0 3px 10px rgba(0,0,0,.5)}
-.hball.newest::before{background:radial-gradient(ellipse at 33% 25%,rgba(201,168,76,.2),transparent 55%)}
 </style>
 </head>
 <body>
 <div class="topbar">
-  <div class="topbar-title">${title} — Number Caller</div>
-  <div class="topbar-right">
+  <div class="topbar-title">${title}</div>
+  <div style="display:flex;align-items:center;gap:12px">
     <span class="count" id="cnt">75 remaining</span>
     <button class="fsbtn" id="fsbtn" onclick="toggleFS()">⛶ Fullscreen</button>
   </div>
 </div>
 <div class="main">
   <div class="center-row">
-    <!-- Globe -->
     <div style="display:flex;flex-direction:column;align-items:center;gap:0">
       <div class="globe-outer" id="globe-wrap">
         <div class="axle"></div>
-        <canvas id="gc" width="260" height="260"></canvas>
+        <canvas id="gc" width="520" height="520"></canvas>
       </div>
       <div class="stand">
         <div class="stand-bar"></div>
         <div class="stand-legs"><div class="stand-leg"></div><div class="stand-leg"></div></div>
       </div>
     </div>
-
-    <!-- Current ball -->
     <div class="ball-col">
       <div class="current-ball" id="cb">
         <div class="ball-col-letter" id="cl">?</div>
@@ -1276,9 +1338,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);overflow:hidden;font-
       <button class="callbtn" id="callbtn" onclick="callNext()">Call Number</button>
     </div>
   </div>
-
   <div class="divider"></div>
-
   <div class="history-section">
     <div class="hlabel" id="hlabel">Called numbers</div>
     <div class="hrow" id="hrow"></div>
@@ -1291,174 +1351,289 @@ var called=[];
 var spinning=false;
 var globeAngle=0;
 var lastTs=0;
+var isFull=false;
 
 var gc=document.getElementById('gc');
 var ctx=gc.getContext('2d');
-var R=128; // globe radius (canvas is 260, center 130,130)
-var CX=130,CY=130;
+// Canvas is 520x520 internally for sharpness, displayed at 260x260 via CSS
+var R=250,CX=260,CY=260;
 
-// Physics balls — 3D positions on unit sphere surface, projected
+// Physics balls — gravity model: each ball has angle position, rests at bottom when still
 var pballs=[];
 var NUM_BALLS=18;
 function initBalls(){
   pballs=[];
   for(var i=0;i<NUM_BALLS;i++){
-    // Random point on sphere surface
+    // Start clustered near bottom of globe
     var theta=Math.random()*Math.PI*2;
-    var phi=Math.acos(2*Math.random()-1);
-    var vtheta=(Math.random()-.5)*0.04;
-    var vphi=(Math.random()-.5)*0.03;
-    pballs.push({theta,phi,vtheta,vphi,r:13});
+    var phi=Math.PI*0.72+Math.random()*Math.PI*0.22; // near bottom
+    pballs.push({
+      theta:theta, phi:phi,
+      vtheta:0, vphi:0,
+      r:26 // radius in canvas units (520px canvas)
+    });
   }
 }
 initBalls();
 
+// Star/sparkle particles — only move when spinning
+var sparks=[];
+function initSparks(){
+  sparks=[];
+  for(var i=0;i<8;i++){
+    sparks.push({
+      angle:Math.random()*Math.PI*2,
+      radius:60+Math.random()*140,
+      speed:(Math.random()-.5)*0.05,
+      size:1.5+Math.random()*2.5,
+      alpha:Math.random()
+    });
+  }
+}
+initSparks();
+
 function drawGlobe(){
-  ctx.clearRect(0,0,260,260);
+  ctx.clearRect(0,0,520,520);
 
   // Clip to circle
   ctx.save();
   ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);ctx.clip();
 
-  // Background
-  var bg=ctx.createRadialGradient(CX-30,CY-30,10,CX,CY,R);
-  bg.addColorStop(0,'#2a2010');bg.addColorStop(.6,'#110e08');bg.addColorStop(1,'#060504');
-  ctx.fillStyle=bg;ctx.fillRect(0,0,260,260);
+  // Background gradient
+  var bg=ctx.createRadialGradient(CX-60,CY-60,20,CX,CY,R);
+  bg.addColorStop(0,'#2a2010');bg.addColorStop(.55,'#110e08');bg.addColorStop(1,'#040302');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,520,520);
 
-  // Latitude lines (spin with globeAngle)
-  var numLat=6;
-  for(var li=1;li<numLat;li++){
-    var latY=CY-R+li*(2*R/numLat);
-    var latR=Math.sqrt(Math.max(0,R*R-(latY-CY)*(latY-CY)));
-    ctx.beginPath();
-    ctx.ellipse(CX,latY,latR,latR*0.18,0,0,Math.PI*2);
-    ctx.strokeStyle='rgba(201,168,76,0.12)';ctx.lineWidth=1;ctx.stroke();
+  // Sparkles — only draw if spinning
+  if(spinning){
+    sparks.forEach(function(sp){
+      var sx=CX+Math.cos(sp.angle)*sp.radius;
+      var sy=CY+Math.sin(sp.angle)*sp.radius;
+      ctx.beginPath();
+      // 4-point star
+      for(var k=0;k<8;k++){
+        var a=k*Math.PI/4;
+        var sr=k%2===0?sp.size*2.5:sp.size*0.8;
+        if(k===0)ctx.moveTo(sx+Math.cos(a)*sr,sy+Math.sin(a)*sr);
+        else ctx.lineTo(sx+Math.cos(a)*sr,sy+Math.sin(a)*sr);
+      }
+      ctx.closePath();
+      ctx.fillStyle='rgba(201,168,76,'+sp.alpha*0.6+')';ctx.fill();
+    });
   }
-  // Longitude lines (rotate with globe)
-  var numLon=8;
-  for(var li2=0;li2<numLon;li2++){
-    var angle=globeAngle+li2*(Math.PI/numLon);
-    ctx.save();ctx.translate(CX,CY);ctx.rotate(angle);
-    ctx.beginPath();ctx.ellipse(0,0,R*0.18,R,0,0,Math.PI*2);
-    ctx.strokeStyle='rgba(201,168,76,0.1)';ctx.lineWidth=1;ctx.stroke();
+
+  // Single vertical line down the middle (not spinning — fixed)
+  ctx.beginPath();
+  ctx.moveTo(CX,CY-R);ctx.lineTo(CX,CY+R);
+  ctx.strokeStyle='rgba(201,168,76,0.18)';ctx.lineWidth=1.5;ctx.stroke();
+
+  // Longitude lines that rotate with globe spin (just 4, subtle)
+  for(var li=0;li<4;li++){
+    var lonAngle=globeAngle+li*(Math.PI/4);
+    ctx.save();ctx.translate(CX,CY);ctx.rotate(lonAngle);
+    ctx.beginPath();
+    ctx.ellipse(0,0,R*0.14,R,0,0,Math.PI*2);
+    ctx.strokeStyle='rgba(201,168,76,0.08)';ctx.lineWidth=1;ctx.stroke();
     ctx.restore();
   }
-  // Equator
-  ctx.beginPath();ctx.ellipse(CX,CY,R,R*0.18,0,0,Math.PI*2);
-  ctx.strokeStyle='rgba(201,168,76,0.25)';ctx.lineWidth=1.5;ctx.stroke();
 
-  // Sort balls by depth (z) for painter's algorithm
+  // Sort balls by depth (z) — painter's algorithm
   var projected=pballs.map(function(b,i){
     var x3=Math.sin(b.phi)*Math.cos(b.theta+globeAngle);
-    var y3=Math.cos(b.phi);
+    var y3=-Math.cos(b.phi); // y up
     var z3=Math.sin(b.phi)*Math.sin(b.theta+globeAngle);
-    var sx=CX+x3*(R-b.r-4);var sy=CY-y3*(R-b.r-4);
-    return{i,sx,sy,z:z3,r:b.r};
+    var depth=(z3+1)/2; // 0=back, 1=front
+    var sx=CX+x3*(R-b.r-6);
+    var sy=CY+y3*(R-b.r-6);
+    return{i,sx,sy,z:z3,depth,r:b.r};
   });
   projected.sort(function(a,bb){return a.z-bb.z;});
 
   projected.forEach(function(p){
-    var scale=0.75+0.25*((p.z+1)/2);
-    var alpha=0.35+0.65*((p.z+1)/2);
-    var r=p.r*scale;
-    // Ball body
-    var bg2=ctx.createRadialGradient(p.sx-r*0.3,p.sy-r*0.3,r*0.05,p.sx,p.sy,r);
-    bg2.addColorStop(0,'rgba(60,48,20,'+alpha+')');
-    bg2.addColorStop(1,'rgba(12,10,6,'+alpha+')');
-    ctx.beginPath();ctx.arc(p.sx,p.sy,r,0,Math.PI*2);
+    var scale=0.7+0.3*p.depth;
+    var alpha=0.3+0.7*p.depth;
+    var rad=p.r*scale;
+    var bg2=ctx.createRadialGradient(p.sx-rad*0.28,p.sy-rad*0.28,rad*0.04,p.sx,p.sy,rad);
+    bg2.addColorStop(0,'rgba(55,42,15,'+alpha+')');
+    bg2.addColorStop(1,'rgba(10,8,4,'+alpha+')');
+    ctx.beginPath();ctx.arc(p.sx,p.sy,rad,0,Math.PI*2);
     ctx.fillStyle=bg2;ctx.fill();
-    // Gold rim
-    ctx.strokeStyle='rgba(201,168,76,'+(alpha*0.7)+')';ctx.lineWidth=1.2*scale;ctx.stroke();
-    // Highlight
-    ctx.beginPath();ctx.arc(p.sx-r*0.28,p.sy-r*0.28,r*0.22,0,Math.PI*2);
-    ctx.fillStyle='rgba(201,168,76,'+(alpha*0.18)+')';ctx.fill();
+    ctx.strokeStyle='rgba(201,168,76,'+(alpha*0.65)+')';ctx.lineWidth=1.8*scale;ctx.stroke();
+    // Subtle highlight
+    ctx.beginPath();ctx.arc(p.sx-rad*0.26,p.sy-rad*0.26,rad*0.2,0,Math.PI*2);
+    ctx.fillStyle='rgba(201,168,76,'+(alpha*0.15)+')';ctx.fill();
   });
 
   ctx.restore();
 
   // Outer rim
   ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);
-  ctx.strokeStyle='rgba(201,168,76,0.55)';ctx.lineWidth=3;ctx.stroke();
-  // Inner rim highlight
-  ctx.beginPath();ctx.arc(CX,CY,R-2,0,Math.PI*2);
-  ctx.strokeStyle='rgba(201,168,76,0.15)';ctx.lineWidth=4;ctx.stroke();
-  // Glass highlight arc
-  ctx.beginPath();ctx.arc(CX-28,CY-28,R*0.55,Math.PI*1.1,Math.PI*1.7);
-  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=16;ctx.stroke();
+  ctx.strokeStyle='rgba(201,168,76,0.6)';ctx.lineWidth=5;ctx.stroke();
+  ctx.beginPath();ctx.arc(CX,CY,R-3,0,Math.PI*2);
+  ctx.strokeStyle='rgba(201,168,76,0.15)';ctx.lineWidth=6;ctx.stroke();
+  // Glass highlight
+  ctx.beginPath();ctx.arc(CX-55,CY-55,R*0.52,Math.PI*1.1,Math.PI*1.75);
+  ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=22;ctx.stroke();
 }
 
-var SPIN_SPEED=0.012;
-var curSpeed=SPIN_SPEED;
+var IDLE_SPEED=0.006;
+var SPIN_SPEED=0.055;
+var curSpeed=IDLE_SPEED;
 
 function tick(ts){
   if(ts-lastTs>=16){
     lastTs=ts;
-    var speed=spinning?SPIN_SPEED*4.5:SPIN_SPEED;
-    // Ease speed
-    curSpeed+=(speed-curSpeed)*0.08;
+    var target=spinning?SPIN_SPEED:IDLE_SPEED;
+    curSpeed+=(target-curSpeed)*0.07;
     globeAngle+=curSpeed;
 
-    // Update ball physics
+    // Ball physics
     pballs.forEach(function(b){
-      b.theta+=b.vtheta*(spinning?3.5:1);
-      b.phi+=b.vphi*(spinning?3.5:1);
-      // Gentle drift — keeps balls moving even when not spinning
-      b.vtheta+=(Math.random()-.5)*0.002;
-      b.vphi+=(Math.random()-.5)*0.002;
-      // Dampen & clamp velocity
-      b.vtheta*=0.995;b.vphi*=0.995;
-      b.vtheta=Math.max(-.06,Math.min(.06,b.vtheta));
-      b.vphi=Math.max(-.05,Math.min(.05,b.vphi));
-      // Bounce at poles
-      if(b.phi<0.1){b.phi=0.1;b.vphi=Math.abs(b.vphi);}
-      if(b.phi>Math.PI-.1){b.phi=Math.PI-.1;b.vphi=-Math.abs(b.vphi);}
+      if(spinning){
+        // Chaotic tumble when spinning
+        b.vtheta+=(Math.random()-.5)*0.008;
+        b.vphi+=(Math.random()-.5)*0.006;
+        b.vtheta=Math.max(-.12,Math.min(.12,b.vtheta));
+        b.vphi=Math.max(-.1,Math.min(.1,b.vphi));
+        b.theta+=b.vtheta;
+        b.phi+=b.vphi;
+        if(b.phi<0.08){b.phi=0.08;b.vphi=Math.abs(b.vphi)*0.6;}
+        if(b.phi>Math.PI-.08){b.phi=Math.PI-.08;b.vphi=-Math.abs(b.vphi)*0.6;}
+      } else {
+        // Gravity: settle toward bottom (phi = PI*0.8)
+        var gravTarget=Math.PI*0.78;
+        var gravForce=(gravTarget-b.phi)*0.015;
+        b.vphi+=gravForce;
+        b.vphi*=0.82; // dampen
+        b.vtheta*=0.88;
+        b.theta+=b.vtheta;
+        b.phi+=b.vphi;
+        if(b.phi<0.08){b.phi=0.08;b.vphi=Math.abs(b.vphi)*0.3;}
+        if(b.phi>Math.PI-.08){b.phi=Math.PI-.08;b.vphi=-Math.abs(b.vphi)*0.3;}
+      }
     });
+
+    // Sparkles animate only when spinning
+    if(spinning){
+      sparks.forEach(function(sp){
+        sp.angle+=sp.speed*3;
+        sp.alpha+=((Math.random()>.5?0.8:0.2)-sp.alpha)*0.1;
+      });
+    }
+
     drawGlobe();
   }
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
 
+// Firebase sync setup
+var fbDb=null;
+(function(){
+  var s1=document.createElement('script');
+  s1.src='https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js';
+  s1.onload=function(){
+    var s2=document.createElement('script');
+    s2.src='https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js';
+    s2.onload=function(){
+      try{
+        firebase.initializeApp(${fbConfig});
+        fbDb=firebase.database();
+        // Listen for caller updates from sidebar
+        fbDb.ref('sessions/${fbSessionKey}/caller').on('value',function(snap){
+          var data=snap.val();
+          if(!data||!data.current)return;
+          var ball=data.current;
+          // Sync remaining
+          var calledSet=new Set(data.called||[]);
+          remaining=remaining.filter(function(b){return !calledSet.has(b.col+b.num);});
+          called=data.called?data.called.map(function(lbl){
+            var col=lbl[0];var num=parseInt(lbl.slice(1));return{col:col,num:num,label:lbl};
+          }):[];
+          // Update display
+          showBall(ball.col,ball.num);
+          document.getElementById('cnt').textContent=(data.remaining||0)+' remaining';
+          document.getElementById('hlabel').textContent='Called: '+called.length+' of 75';
+          var btn=document.getElementById('callbtn');
+          if(btn){btn.disabled=(data.remaining||0)===0||!!data.spinning;if((data.remaining||0)===0)btn.textContent='All Called!';}
+        });
+      }catch(e){console.warn('Firebase not available',e);}
+    };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s1);
+})();
+
+function showBall(col,num){
+  var cbEl=document.getElementById('cb');
+  document.getElementById('cl').textContent=col;
+  document.getElementById('cn').textContent=num;
+  cbEl.classList.add('lit');cbEl.classList.remove('pop');void cbEl.offsetWidth;cbEl.classList.add('pop');
+  var row=document.getElementById('hrow');
+  var mb=document.createElement('div');mb.className='hball newest';
+  mb.innerHTML='<div class="hl">'+col+'</div><div class="hn">'+num+'</div>';
+  row.insertBefore(mb,row.firstChild);
+  if(row.children[1])row.children[1].classList.remove('newest');
+  while(row.children.length>5)row.removeChild(row.lastChild);
+}
+
 function callNext(){
   if(!remaining.length)return;
-  spinning=true;
-  document.getElementById('callbtn').disabled=true;
-  // Spin for 1.8s
-  setTimeout(function(){
-    spinning=false;
-    var ball=remaining.shift();
-    called.push(ball);
-    // Big ball reveal
-    var cbEl=document.getElementById('cb');
-    document.getElementById('cl').textContent=ball.col;
-    document.getElementById('cn').textContent=ball.num;
-    cbEl.classList.add('lit');
-    cbEl.classList.remove('pop');void cbEl.offsetWidth;cbEl.classList.add('pop');
-    // History row — newest first
-    var row=document.getElementById('hrow');
-    var mb=document.createElement('div');mb.className='hball newest';
-    mb.innerHTML='<div class="hl">'+ball.col+'</div><div class="hn">'+ball.num+'</div>';
-    row.insertBefore(mb,row.firstChild);
-    if(row.children[1])row.children[1].classList.remove('newest');
-    // Count
-    document.getElementById('cnt').textContent=remaining.length+' remaining';
-    document.getElementById('hlabel').textContent='Called: '+called.length+' of 75';
-    document.getElementById('callbtn').disabled=remaining.length===0;
-    if(remaining.length===0)document.getElementById('callbtn').textContent='All Called!';
-  },1800);
+  // Write to Firebase — both sidebar and popup will update via listener
+  if(fbDb){
+    fbDb.ref('sessions/${fbSessionKey}/caller/spinning').once('value',function(snap){
+      if(snap.val())return;
+      fbDb.ref('sessions/${fbSessionKey}/caller/spinning').set(true);
+      spinning=true;
+      document.getElementById('callbtn').disabled=true;
+      setTimeout(function(){
+        spinning=false;
+        var ball=remaining.shift();
+        called.push(ball);
+        fbDb.ref('sessions/${fbSessionKey}/caller').set({
+          current:{col:ball.col,num:ball.num},
+          called:called.map(function(b){return b.col+b.num;}),
+          remaining:remaining.length,
+          spinning:false,
+          ts:Date.now()
+        });
+      },1800);
+    });
+  } else {
+    // Fallback if Firebase not loaded
+    spinning=true;
+    document.getElementById('callbtn').disabled=true;
+    setTimeout(function(){
+      spinning=false;
+      var ball=remaining.shift();called.push(ball);
+      showBall(ball.col,ball.num);
+      document.getElementById('cnt').textContent=remaining.length+' remaining';
+      document.getElementById('hlabel').textContent='Called: '+called.length+' of 75';
+      document.getElementById('callbtn').disabled=remaining.length===0;
+      if(remaining.length===0)document.getElementById('callbtn').textContent='All Called!';
+    },1800);
+  }
 }
 
 function toggleFS(){
   var btn=document.getElementById('fsbtn');
   if(!document.fullscreenElement){
-    document.documentElement.requestFullscreen().then(function(){btn.textContent='✕ Exit Fullscreen';});
+    document.documentElement.requestFullscreen().then(function(){
+      document.body.classList.add('fs');
+      btn.textContent='✕ Exit Fullscreen';
+    });
   } else {
-    document.exitFullscreen().then(function(){btn.textContent='⛶ Fullscreen';});
+    document.exitFullscreen().then(function(){
+      document.body.classList.remove('fs');
+      btn.textContent='⛶ Fullscreen';
+    });
   }
 }
 document.addEventListener('fullscreenchange',function(){
-  if(document.getElementById('fsbtn'))
-    document.getElementById('fsbtn').textContent=document.fullscreenElement?'✕ Exit Fullscreen':'⛶ Fullscreen';
+  if(!document.fullscreenElement){
+    document.body.classList.remove('fs');
+    if(document.getElementById('fsbtn'))document.getElementById('fsbtn').textContent='⛶ Fullscreen';
+  }
 });
 <\/script>
 </body></html>`;
@@ -1467,7 +1642,66 @@ document.addEventListener('fullscreenchange',function(){
   w.document.write(html);w.document.close();
 }
 
-// ── TIEBREAKER ────────────────────────────────────────────────────────────────
+// ── SIDEBAR NUMBER CALLER ─────────────────────────────────────────────────────
+function sidebarCallNumber(){
+  if(!db||!sessionKey||!callerRemaining.length)return;
+  // Check lock
+  db.ref(`sessions/${sessionKey}/caller/spinning`).once('value',snap=>{
+    if(snap.val())return; // already spinning somewhere
+    // Lock
+    db.ref(`sessions/${sessionKey}/caller/spinning`).set(true);
+    setTimeout(()=>{
+      const ball=callerRemaining.shift();
+      callerCalled.push(ball);
+      // Write to Firebase — popup will sync
+      db.ref(`sessions/${sessionKey}/caller`).set({
+        current:{col:ball.col,num:ball.num},
+        called:callerCalled.map(b=>b.col+b.num),
+        remaining:callerRemaining.length,
+        spinning:false,
+        ts:firebase.database.ServerValue.TIMESTAMP
+      });
+    },1800);
+    // Animate sidebar ball during spin
+    document.getElementById('sc-call-btn').disabled=true;
+    document.getElementById('sc-letter').textContent='…';
+    document.getElementById('sc-number').textContent='';
+    document.getElementById('sc-ball').style.borderColor='var(--gold)';
+  });
+}
+
+function updateSidebarCaller(data){
+  if(!data||!data.current)return;
+  const ball=data.current;
+  const sbBtn=document.getElementById('sc-call-btn');
+  const rem=data.remaining||0;
+  // Update ball display
+  const ballEl=document.getElementById('sc-ball');
+  const letterEl=document.getElementById('sc-letter');
+  const numberEl=document.getElementById('sc-number');
+  letterEl.textContent=ball.col;
+  numberEl.textContent=ball.num;
+  letterEl.style.color='var(--gold)';
+  numberEl.style.color='var(--gold2)';
+  ballEl.style.borderColor='var(--gold)';
+  ballEl.style.background='var(--bg)';
+  // Update remaining count
+  document.getElementById('sc-count').textContent=rem+' left';
+  // Sync local remaining list
+  const calledSet=new Set(data.called||[]);
+  callerRemaining=callerRemaining.filter(b=>!calledSet.has(b.col+b.num));
+  // Update history — last 3
+  const hist=document.getElementById('sc-history');
+  const called=(data.called||[]).slice(-4,-1).reverse(); // last 3 before current
+  hist.innerHTML=called.map(lbl=>`<div style="width:30px;height:30px;border-radius:50%;border:1px solid var(--gold-border);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--cinzel);font-size:10px;font-weight:600;color:var(--text2)">${lbl}</div>`).join('');
+  // Re-enable button
+  if(sbBtn){
+    sbBtn.disabled=rem===0;
+    sbBtn.textContent=rem===0?'Done':'Call';
+  }
+}
+
+// ── NUMBER CALLER ─────────────────────────────────────────────────────────────
 var tbAngle=0,tbSpinning=false;
 function openTiebreaker(){
   var el=document.getElementById('tb-overlay');
