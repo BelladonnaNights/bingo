@@ -1203,7 +1203,7 @@ function dismissBingoClaim(){
 }
 function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2200);
+  setTimeout(()=>t.classList.remove('show'),1900);
 }
 // ── NUMBER CALLER ─────────────────────────────────────────────────────────────
 let callerRemaining=[], callerCalled=[], callerSpinning=false;
@@ -1249,7 +1249,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);overflow:hidden;font-
 .count{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)}
 
 /* NORMAL LAYOUT */
-.main{display:flex;flex-direction:column;align-items:center;height:calc(100vh - 42px);padding:1.25rem 1rem 1rem;gap:1.25rem;overflow:hidden}
+.main{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 42px);padding:1.25rem 1rem 1rem;gap:1.25rem;overflow:hidden}
 .center-row{display:flex;align-items:center;justify-content:center;gap:3rem;flex-wrap:wrap;flex-shrink:0}
 
 /* FULLSCREEN LAYOUT */
@@ -1258,13 +1258,13 @@ body.fs .main{height:100vh;padding:2rem 2rem 1rem;gap:1.5rem}
 body.fs .center-row{gap:4rem}
 body.fs .main{padding:1.5rem 2.5rem .75rem;gap:1rem}
 body.fs .center-row{gap:5rem}
-body.fs .globe-outer{width:480px;height:480px}
-body.fs .globe-outer canvas{width:480px;height:480px}
+body.fs .globe-outer{width:520px;height:520px}
+body.fs .globe-outer canvas{width:520px;height:520px}
 body.fs .globe-outer::before{width:28px;height:28px;top:-14px}
 body.fs .globe-outer::after{width:28px;height:28px;bottom:-14px}
-body.fs .current-ball{width:380px;height:380px}
-body.fs .ball-col-letter{font-size:100px}
-body.fs .ball-col-number{font-size:148px}
+body.fs .current-ball{width:420px;height:420px}
+body.fs .ball-col-letter{font-size:108px}
+body.fs .ball-col-number{font-size:160px}
 body.fs .callbtn{font-size:20px;padding:18px 72px}
 body.fs .hball{width:110px;height:110px;min-width:110px}
 body.fs .hball .hl{font-size:24px}
@@ -1274,8 +1274,8 @@ body.fs .divider{display:none}
 body.fs .count{font-size:13px}
 
 /* GLOBE */
-.globe-outer{position:relative;width:260px;height:260px;flex-shrink:0;transition:width .3s,height .3s}
-.globe-outer canvas{position:absolute;top:0;left:0;width:260px;height:260px;border-radius:50%;transition:width .3s,height .3s}
+.globe-outer{position:relative;width:290px;height:290px;flex-shrink:0;transition:width .3s,height .3s}
+.globe-outer canvas{position:absolute;top:0;left:0;width:290px;height:290px;border-radius:50%;transition:width .3s,height .3s}
 .globe-outer::before,.globe-outer::after{content:'';position:absolute;left:50%;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;background:var(--shine);box-shadow:0 0 10px rgba(201,168,76,.4);z-index:10}
 .globe-outer::before{top:-9px}
 .globe-outer::after{bottom:-9px}
@@ -1289,7 +1289,7 @@ body.fs .globe-outer::after{width:24px;height:24px;bottom:-12px}
 
 /* BALL */
 .ball-col{display:flex;flex-direction:column;align-items:center;gap:14px}
-.current-ball{width:210px;height:210px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;background:radial-gradient(ellipse at 38% 32%,#2a2010,#0d0b06);border:2px solid var(--b2);box-shadow:0 0 40px rgba(201,168,76,.08),0 8px 32px rgba(0,0,0,.7);transition:box-shadow .4s,border-color .4s,width .3s,height .3s}
+.current-ball{width:235px;height:235px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;background:radial-gradient(ellipse at 38% 32%,#2a2010,#0d0b06);border:2px solid var(--b2);box-shadow:0 0 40px rgba(201,168,76,.08),0 8px 32px rgba(0,0,0,.7);transition:box-shadow .4s,border-color .4s,width .3s,height .3s}
 .current-ball::before{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(ellipse at 33% 23%,rgba(201,168,76,.1),transparent 55%);pointer-events:none}
 .current-ball.lit{border-color:var(--gold2);box-shadow:0 0 80px rgba(201,168,76,.45),0 0 24px rgba(201,168,76,.25)}
 .current-ball.lit::before{background:radial-gradient(ellipse at 33% 23%,rgba(201,168,76,.22),transparent 55%)}
@@ -1570,7 +1570,7 @@ var fbDb=null;
                 document.getElementById('hlabel').textContent='Called: '+called.length+' of 75';
                 var btn=document.getElementById('callbtn');
                 if(btn){btn.disabled=(data.remaining||0)===0;if((data.remaining||0)===0)btn.textContent='All Called!';}
-              },2200);
+              },1900);
             }
           }
           var btn=document.getElementById('callbtn');
@@ -1598,41 +1598,31 @@ function showBall(col,num){
 
 function callNext(){
   if(!remaining.length)return;
-  // Write to Firebase — both sidebar and popup will update via listener
-  if(fbDb){
-    fbDb.ref('sessions/${fbSessionKey}/caller/spinning').once('value',function(snap){
-      if(snap.val())return;
-      fbDb.ref('sessions/${fbSessionKey}/caller/spinning').set(true);
-      spinning=true;
-      document.getElementById('callbtn').disabled=true;
-      setTimeout(function(){
-        spinning=false;
-        var ball=remaining.shift();
-        called.push(ball);
-        fbDb.ref('sessions/${fbSessionKey}/caller').set({
-          current:{col:ball.col,num:ball.num},
-          called:called.map(function(b){return b.col+b.num;}),
-          remaining:remaining.length,
-          spinning:false,
-          ts:Date.now()
-        });
-        // showBall is handled by the Firebase listener above — don't call here
-      },2200);
-    });
-  } else {
-    // Fallback if Firebase not loaded
-    spinning=true;
-    document.getElementById('callbtn').disabled=true;
-    setTimeout(function(){
-      spinning=false;
-      var ball=remaining.shift();called.push(ball);
-      showBall(ball.col,ball.num);
-      document.getElementById('cnt').textContent=remaining.length+' remaining';
-      document.getElementById('hlabel').textContent='Called: '+called.length+' of 75';
-      document.getElementById('callbtn').disabled=remaining.length===0;
-      if(remaining.length===0)document.getElementById('callbtn').textContent='All Called!';
-    },2200);
-  }
+  spinning=true;
+  document.getElementById('callbtn').disabled=true;
+  var ball=remaining.shift();
+  called.push(ball);
+  // Update lastCalledLabel so Firebase listener doesn't double-fire
+  lastCalledLabel=ball.col+ball.num;
+  setTimeout(function(){
+    spinning=false;
+    // Reveal immediately — don't wait for Firebase round-trip
+    showBall(ball.col,ball.num);
+    document.getElementById('cnt').textContent=remaining.length+' remaining';
+    document.getElementById('hlabel').textContent='Called: '+called.length+' of 75';
+    document.getElementById('callbtn').disabled=remaining.length===0;
+    if(remaining.length===0)document.getElementById('callbtn').textContent='All Called!';
+    // Write to Firebase in parallel for sidebar sync (fire and forget)
+    if(fbDb){
+      fbDb.ref('sessions/${fbSessionKey}/caller').set({
+        current:{col:ball.col,num:ball.num},
+        called:called.map(function(b){return b.col+b.num;}),
+        remaining:remaining.length,
+        spinning:false,
+        ts:Date.now()
+      });
+    }
+  },1900);
 }
 
 function toggleFS(){
@@ -1681,7 +1671,7 @@ function sidebarCallNumber(){
         spinning:false,
         ts:firebase.database.ServerValue.TIMESTAMP
       });
-    },2200);
+    },1900);
     // Animate sidebar ball during spin
     document.getElementById('sc-call-btn').disabled=true;
     document.getElementById('sc-letter').textContent='…';
