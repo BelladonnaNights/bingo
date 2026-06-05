@@ -1256,17 +1256,22 @@ html,body{height:100%;background:var(--bg);color:var(--t1);overflow:hidden;font-
 body.fs .topbar{display:none}
 body.fs .main{height:100vh;padding:2rem 2rem 1rem;gap:1.5rem}
 body.fs .center-row{gap:4rem}
-body.fs .globe-outer{width:380px;height:380px}
-body.fs .globe-outer canvas{width:380px;height:380px}
-body.fs .current-ball{width:300px;height:300px}
-body.fs .ball-col-letter{font-size:80px}
-body.fs .ball-col-number{font-size:116px}
-body.fs .callbtn{font-size:18px;padding:16px 64px}
-body.fs .hball{width:90px;height:90px;min-width:90px}
-body.fs .hball .hl{font-size:20px}
-body.fs .hball .hn{font-size:32px}
-body.fs .hrow{gap:16px;justify-content:center}
+body.fs .main{padding:1.5rem 2.5rem .75rem;gap:1rem}
+body.fs .center-row{gap:5rem}
+body.fs .globe-outer{width:480px;height:480px}
+body.fs .globe-outer canvas{width:480px;height:480px}
+body.fs .globe-outer::before{width:28px;height:28px;top:-14px}
+body.fs .globe-outer::after{width:28px;height:28px;bottom:-14px}
+body.fs .current-ball{width:380px;height:380px}
+body.fs .ball-col-letter{font-size:100px}
+body.fs .ball-col-number{font-size:148px}
+body.fs .callbtn{font-size:20px;padding:18px 72px}
+body.fs .hball{width:110px;height:110px;min-width:110px}
+body.fs .hball .hl{font-size:24px}
+body.fs .hball .hn{font-size:40px}
+body.fs .hrow{gap:20px;justify-content:center}
 body.fs .divider{display:none}
+body.fs .count{font-size:13px}
 
 /* GLOBE */
 .globe-outer{position:relative;width:260px;height:260px;flex-shrink:0;transition:width .3s,height .3s}
@@ -1540,22 +1545,36 @@ var fbDb=null;
         firebase.initializeApp(${fbConfig});
         fbDb=firebase.database();
         // Listen for caller updates from sidebar
+        var lastCalledLabel='';
         fbDb.ref('sessions/${fbSessionKey}/caller').on('value',function(snap){
           var data=snap.val();
           if(!data||!data.current)return;
           var ball=data.current;
-          // Sync remaining
+          var ballLabel=ball.col+ball.num;
+          // Sync remaining/called lists
           var calledSet=new Set(data.called||[]);
           remaining=remaining.filter(function(b){return !calledSet.has(b.col+b.num);});
           called=data.called?data.called.map(function(lbl){
             var col=lbl[0];var num=parseInt(lbl.slice(1));return{col:col,num:num,label:lbl};
           }):[];
-          // Update display
-          showBall(ball.col,ball.num);
-          document.getElementById('cnt').textContent=(data.remaining||0)+' remaining';
-          document.getElementById('hlabel').textContent='Called: '+called.length+' of 75';
+          // Only update display if this is a new ball (prevents double on self-call)
+          if(ballLabel!==lastCalledLabel){
+            lastCalledLabel=ballLabel;
+            // If sidebar triggered the call, trigger spin animation here too
+            if(!spinning){
+              spinning=true;
+              setTimeout(function(){
+                spinning=false;
+                showBall(ball.col,ball.num);
+                document.getElementById('cnt').textContent=(data.remaining||0)+' remaining';
+                document.getElementById('hlabel').textContent='Called: '+called.length+' of 75';
+                var btn=document.getElementById('callbtn');
+                if(btn){btn.disabled=(data.remaining||0)===0;if((data.remaining||0)===0)btn.textContent='All Called!';}
+              },2200);
+            }
+          }
           var btn=document.getElementById('callbtn');
-          if(btn){btn.disabled=(data.remaining||0)===0||!!data.spinning;if((data.remaining||0)===0)btn.textContent='All Called!';}
+          if(btn&&!spinning)btn.disabled=(data.remaining||0)===0||!!data.spinning;
         });
       }catch(e){console.warn('Firebase not available',e);}
     };
@@ -1597,7 +1616,8 @@ function callNext(){
           spinning:false,
           ts:Date.now()
         });
-      },1800);
+        // showBall is handled by the Firebase listener above — don't call here
+      },2200);
     });
   } else {
     // Fallback if Firebase not loaded
@@ -1611,7 +1631,7 @@ function callNext(){
       document.getElementById('hlabel').textContent='Called: '+called.length+' of 75';
       document.getElementById('callbtn').disabled=remaining.length===0;
       if(remaining.length===0)document.getElementById('callbtn').textContent='All Called!';
-    },1800);
+    },2200);
   }
 }
 
@@ -1653,7 +1673,7 @@ function sidebarCallNumber(){
     setTimeout(()=>{
       const ball=callerRemaining.shift();
       callerCalled.push(ball);
-      // Write to Firebase — popup will sync
+      // Write to Firebase — popup will sync and trigger its own spin animation
       db.ref(`sessions/${sessionKey}/caller`).set({
         current:{col:ball.col,num:ball.num},
         called:callerCalled.map(b=>b.col+b.num),
@@ -1661,7 +1681,7 @@ function sidebarCallNumber(){
         spinning:false,
         ts:firebase.database.ServerValue.TIMESTAMP
       });
-    },1800);
+    },2200);
     // Animate sidebar ball during spin
     document.getElementById('sc-call-btn').disabled=true;
     document.getElementById('sc-letter').textContent='…';
