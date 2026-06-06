@@ -216,11 +216,8 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
   <div class="container" style="padding-top:1.5rem">
     <div id="host-banner" class="banner-wrap" style="display:none"></div>
     <div class="page-title" id="host-title">Music Bingo — Host Tool</div>
-    <div class="page-sub">Tap a song when it plays. Check the played list to verify bingo calls.</div>
     <div class="host-tabs">
       <button class="host-tab active" id="htab-daub" onclick="switchHostTab('daub')">Live Daubing Board</button>
-      <button class="host-tab" id="htab-print" onclick="switchHostTab('print')">Printable Sheet</button>
-      <button class="host-tab" id="htab-caller" onclick="switchHostTab('caller')" style="display:none">🎱 Number Caller</button>
     </div>
     <div id="hpanel-daub">
       <div style="display:flex;gap:1.5rem;align-items:flex-start">
@@ -578,7 +575,6 @@ function loadCategory(data){
   document.getElementById('back-link').style.display='';
   document.getElementById('page-host').style.display='';
   if(CLASSIC_BINGO){
-    document.getElementById('htab-caller').style.display='';
     // Show sidebar caller
     const sc=document.getElementById('sidebar-caller');
     sc.style.display='flex';
@@ -661,8 +657,6 @@ function switchHostTab(tab){
   document.getElementById('hpanel-print').style.display=tab==='print'?'':'none';
   document.getElementById('hpanel-caller').style.display=tab==='caller'?'':'none';
   document.getElementById('htab-daub').classList.toggle('active',tab==='daub');
-  document.getElementById('htab-print').classList.toggle('active',tab==='print');
-  document.getElementById('htab-caller').classList.toggle('active',tab==='caller');
 }
 function hostFilter(){renderHostGrid(document.getElementById('host-search').value.toLowerCase());}
 function renderHostGrid(filter=''){
@@ -1154,6 +1148,19 @@ function setupFirebaseListeners(){
     db.ref(`sessions/${sessionKey}/caller`).on('value',snap=>{
       const data=snap.val()||{};
       updateSidebarCaller(data);
+      // Auto-daub: mark every called number as played on the host grid
+      if(data.called&&data.called.length){
+        const calledSet=new Set(data.called);
+        let changed=false;
+        allSongs.forEach(s=>{
+          const label=s.col+s.title;
+          if(calledSet.has(label)&&!s.played){s.played=true;changed=true;}
+        });
+        if(changed){
+          renderHostGrid(document.getElementById('host-search').value.toLowerCase());
+          updateHostStats();
+        }
+      }
     });
   }
 }
