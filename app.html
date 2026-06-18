@@ -1208,12 +1208,17 @@ function setupFirebaseListeners(){
     showBingoClaim(c.name,c.cardNum,snap.key,c.daubedSongs||[]);
   });
   // Player bridge: auto-tick when media player plays a song
-  console.log('[Bingo bridge] Listening on sessions/'+sessionKey+'/nowPlaying');
+  const listenPath = 'sessions/'+sessionKey+'/nowPlaying';
+  console.log('[Bingo bridge] Listening on:', listenPath);
+  // Write our session key so the player can verify it's using the right path
+  db.ref('sessions/'+sessionKey+'/bingoAppReady').set({at: Date.now(), sessionKey: sessionKey});
   db.ref(`sessions/${sessionKey}/nowPlaying`).on('value',snap=>{
     const np=snap.val();
-    console.log('[Bingo bridge] nowPlaying received:', np);
-    if(!np||!np.title)return;
-    if(Date.now()-np.at>30000){console.log('[Bingo bridge] Stale signal, skipping');return;}
+    if(!np)return;
+    console.log('[Bingo bridge] nowPlaying received:', JSON.stringify(np));
+    if(!np.title)return;
+    const age = Date.now()-np.at;
+    if(age>30000){console.log('[Bingo bridge] Stale ('+age+'ms), skipping');return;}
     autoTickFromPlayer(np.title,np.artist||'');
   });
   // Classic bingo caller sync — update sidebar when pop-out calls a number
@@ -1329,6 +1334,9 @@ const MEDIA_PLAYER_URL = 'https://belladonnanights.github.io/musicplayer/bellado
 function openMediaPlayer(){
   const url=`${MEDIA_PLAYER_URL}?bingo=${encodeURIComponent(categoryId)}&session=${encodeURIComponent(sessionKey)}`;
   window.open(url,'_blank');
+  // Show linked banner immediately — no need to wait for the player to respond
+  const ind = document.getElementById('player-link-indicator');
+  if (ind) ind.style.display = 'flex';
 }
 
 // ── TIEBREAKER ────────────────────────────────────────────────────────────────
