@@ -107,7 +107,13 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
 .banner-wrap img{width:100%;height:auto;display:block;aspect-ratio:1554/319;object-fit:cover}
 .banner-wrap.broken{aspect-ratio:1554/319;background:var(--bg);border:1.5px dashed var(--border2);display:flex;align-items:center;justify-content:center;border-radius:var(--radius-lg)}
 .top-bar{display:flex;gap:8px;margin-bottom:1rem;align-items:center;flex-wrap:wrap}
-.search-wrap{flex:1;min-width:140px}
+.search-wrap{flex:1;min-width:140px;position:relative;display:flex;align-items:center;gap:8px}
+.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px;display:none}
+.search-clear:hover{color:var(--text);background:var(--bg3)}
+.search-wrap input:not(:placeholder-shown) ~ .search-clear{display:block}
+.auto-clear-wrap{display:flex;align-items:center;gap:6px;white-space:nowrap;cursor:pointer;user-select:none}
+.auto-clear-cb{width:14px;height:14px;accent-color:var(--gold);cursor:pointer;flex-shrink:0}
+.auto-clear-label{font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)}
 .search-wrap input{padding:9px 13px;font-size:13px;border-radius:99px;border-color:var(--gold-border)}
 .search-wrap input:focus{border-color:var(--gold-border2)}
 .bingo-card-wrap{background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px}
@@ -216,13 +222,18 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
   <div class="container" style="padding-top:1.5rem">
     <div id="host-banner" class="banner-wrap" style="display:none"></div>
     <div class="page-title" id="host-title">Music Bingo — Host Tool</div>
+    <div class="page-sub">Tap a song when it plays. Check the played list to verify bingo calls.</div>
+    <div id="player-link-indicator" style="display:none;margin-bottom:1.25rem;padding:10px 16px;background:#fffbe6;border:1.5px solid var(--gold);border-radius:var(--radius);font-family:var(--cinzel);font-size:11px;letter-spacing:.08em;color:#7a5500;align-items:center;gap:10px">
+      <span style="font-size:18px">&#9835;</span>
+      <span><strong>Media Player Linked</strong> &mdash; songs will auto-tick when played</span>
+    </div>
     <div class="host-tabs">
       <button class="host-tab active" id="htab-daub" onclick="switchHostTab('daub')">Live Daubing Board</button>
+      <button class="host-tab" id="htab-log" onclick="switchHostTab('log')">Play Log</button>
+      <button class="host-tab" id="htab-caller" onclick="switchHostTab('caller')" style="display:none">🎱 Number Caller</button>
+      <button class="host-tab" id="htab-print" onclick="switchHostTab('print')">Printable Sheet</button>
     </div>
     <div id="hpanel-daub">
-      <div style="display:flex;gap:1.5rem;align-items:flex-start">
-        <!-- Main daubing board -->
-        <div style="flex:1;min-width:0">
       <div class="stats-row">
         <div class="stat"><div class="stat-val" id="h-played">0</div><div class="stat-label">Played</div></div>
         <div class="stat"><div class="stat-val" id="h-remain">0</div><div class="stat-label">Remaining</div></div>
@@ -254,8 +265,34 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
           <div id="bingo-claim-verify" style="display:none"></div>
         </div>
       </div>
+      <div id="sidebar-caller" style="display:none;flex-shrink:0;width:160px;display:none;flex-direction:column;align-items:center;gap:10px;padding:14px 12px;background:var(--bg);border:.5px solid var(--gold-border);border-radius:var(--radius-lg);position:sticky;top:80px">
+          <div style="font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Number Caller</div>
+          <!-- Mini called ball display -->
+          <div id="sc-ball" style="width:100px;height:100px;border-radius:50%;background:var(--bg2);border:2px solid var(--gold-border);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .4s">
+            <div id="sc-letter" style="font-family:var(--cinzel);font-size:28px;font-weight:700;color:var(--text3);line-height:1">?</div>
+            <div id="sc-number" style="font-family:var(--cinzel);font-size:40px;font-weight:700;color:var(--text3);line-height:.9">—</div>
+          </div>
+          <!-- Last 3 mini balls -->
+          <div id="sc-history" style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:36px"></div>
+          <!-- Remaining count -->
+          <div id="sc-count" style="font-family:var(--cinzel);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)">75 left</div>
+          <!-- Call button -->
+          <button id="sc-call-btn" onclick="sidebarCallNumber()" style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--gold-shine);color:#000;border:none;border-radius:99px;padding:9px 0;width:100%;cursor:pointer;transition:opacity .15s;box-shadow:0 3px 12px rgba(201,168,76,.2)">Call</button>
+          <!-- Launch popup -->
+          <button onclick="openCaller()" style="font-family:var(--cinzel);font-size:9px;letter-spacing:.08em;text-transform:uppercase;background:none;border:.5px solid var(--border2);border-radius:var(--radius);padding:5px 0;width:100%;cursor:pointer;color:var(--text3);transition:all .15s" onmouseover="this.style.borderColor='var(--gold-border)'" onmouseout="this.style.borderColor='var(--border2)'">↗ Pop out</button>
+        </div>
+      </div>
       <div class="top-bar">
-        <div class="search-wrap"><input type="text" id="host-search" placeholder="Search songs…" oninput="hostFilter()"></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%">
+          <div class="search-wrap">
+            <input type="text" id="host-search" placeholder="Search songs…" autocomplete="off" oninput="hostFilter()">
+            <button class="search-clear" id="host-search-clear" onclick="clearHostSearch()" title="Clear">✕</button>
+          </div>
+          <label class="auto-clear-wrap" title="Clear search after ticking a song">
+            <input type="checkbox" class="auto-clear-cb" id="auto-clear-cb">
+            <span class="auto-clear-label">Clear on tick</span>
+          </label>
+        </div>
       </div>
       <div class="song-grid" id="host-song-grid"></div>
       <div class="feed" id="host-feed" style="display:none">
@@ -275,36 +312,24 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
         <a onclick="openTiebreaker()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
           ⬡ Open Tie Breaker
         </a>
-      </div>
-        </div><!-- end main daubing board -->
-
-        <!-- SIDEBAR NUMBER CALLER — only visible in classic bingo mode -->
-        <div id="sidebar-caller" style="display:none;flex-shrink:0;width:160px;display:none;flex-direction:column;align-items:center;gap:10px;padding:14px 12px;background:var(--bg);border:.5px solid var(--gold-border);border-radius:var(--radius-lg);position:sticky;top:80px">
-          <div style="font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Number Caller</div>
-          <!-- Mini called ball display -->
-          <div id="sc-ball" style="width:100px;height:100px;border-radius:50%;background:var(--bg2);border:2px solid var(--gold-border);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .4s">
-            <div id="sc-letter" style="font-family:var(--cinzel);font-size:28px;font-weight:700;color:var(--text3);line-height:1">?</div>
-            <div id="sc-number" style="font-family:var(--cinzel);font-size:40px;font-weight:700;color:var(--text3);line-height:.9">—</div>
-          </div>
-          <!-- Last 3 mini balls -->
-          <div id="sc-history" style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:36px"></div>
-          <!-- Remaining count -->
-          <div id="sc-count" style="font-family:var(--cinzel);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)">75 left</div>
-          <!-- Call button -->
-          <button id="sc-call-btn" onclick="sidebarCallNumber()" style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--gold-shine);color:#000;border:none;border-radius:99px;padding:9px 0;width:100%;cursor:pointer;transition:opacity .15s;box-shadow:0 3px 12px rgba(201,168,76,.2)">Call</button>
-          <!-- Launch popup -->
-          <button onclick="openCaller()" style="font-family:var(--cinzel);font-size:9px;letter-spacing:.08em;text-transform:uppercase;background:none;border:.5px solid var(--border2);border-radius:var(--radius);padding:5px 0;width:100%;cursor:pointer;color:var(--text3);transition:all .15s" onmouseover="this.style.borderColor='var(--gold-border)'" onmouseout="this.style.borderColor='var(--border2)'">↗ Pop out</button>
+        <a onclick="openMediaPlayer()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
+          ♪ Open Media Player
+        </a>
+      </div></div>
+    </div>
+    <div id="hpanel-log" style="display:none">
+      <div id="log-played-section">
+        <div class="section-label" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+          <span>Played <span id="log-played-count" style="color:var(--gold);margin-left:4px">0</span></span>
+          <button class="btn btn-ghost btn-sm" onclick="hostCopyList()">Copy list</button>
         </div>
-      </div><!-- end flex row -->
-    </div>
-    <div id="hpanel-print" style="display:none">
-      <div class="btn-row" style="margin-bottom:1rem">
-        <button class="btn btn-primary" onclick="printHostSheet()">Print / Save as PDF</button>
-        <button class="btn btn-ghost" onclick="hostCopyTSV()">Copy as TSV</button>
+        <div id="log-played-list" style="display:flex;flex-direction:column;gap:4px"></div>
       </div>
-      <div class="print-card card"><div class="print-grid" id="host-print-grid"></div></div>
+      <div style="margin:1.25rem 0;border-top:.5px solid var(--border2);position:relative">
+        <span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--bg2);padding:0 10px;font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">not yet played</span>
+      </div>
+      <div id="log-remaining-list" style="display:flex;flex-direction:column;gap:4px"></div>
     </div>
-
     <div id="hpanel-caller" style="display:none">
       <div style="text-align:center;padding:2rem 0 1rem">
         <div style="font-family:var(--cinzel);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);margin-bottom:1.5rem">Classic Bingo — Number Caller</div>
@@ -313,6 +338,13 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
         </button>
         <div style="font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text3);margin-top:14px">Opens as a draggable window — drag to your TV screen</div>
       </div>
+    </div>
+    <div id="hpanel-print" style="display:none">
+      <div class="btn-row" style="margin-bottom:1rem">
+        <button class="btn btn-primary" onclick="printHostSheet()">Print / Save as PDF</button>
+        <button class="btn btn-ghost" onclick="hostCopyTSV()">Copy as TSV</button>
+      </div>
+      <div class="print-card card"><div class="print-grid" id="host-print-grid"></div></div>
     </div>
   </div>
 </div>
@@ -466,14 +498,12 @@ const FIREBASE_CONFIG={
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let EVENT_TITLE='Music Bingo', EVENT_IMAGE='', SONGS_RAW=[], SPOTIFY_QR_URL='';
+let CLASSIC_BINGO=false;
+const CLASSIC_COLS=['B','I','N','G','O'];
+const CLASSIC_RANGES=[[1,15],[16,30],[31,45],[46,60],[61,75]];
 let allSongs=[], hostPlayedOrder=[];
 let db=null, sessionKey=null, categoryId=null;
 let resetSnapshot=null;
-let CLASSIC_BINGO=false; // true when category is classic number bingo
-
-// Classic bingo column definitions
-const CLASSIC_COLS=['B','I','N','G','O'];
-const CLASSIC_RANGES=[[1,15],[16,30],[31,45],[46,60],[61,75]];
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
 function bootstrap(){
@@ -523,13 +553,12 @@ function loadCategory(data){
   const rawSongs=data.songs||'';
   const spotifyUrl=data.spotifyUrl||'';
   const spotifyQrUrl=data.spotifyQrUrl||'';
-  CLASSIC_BINGO=!!(data.classicBingo);
 
   SONGS_RAW=rawSongs.split('\n').map(s=>s.trim()).filter(Boolean);
   SPOTIFY_QR_URL=spotifyQrUrl;
+  CLASSIC_BINGO=!!(data.classicBingo);
 
   if(CLASSIC_BINGO){
-    // Generate all 75 classic bingo numbers as the "songs"
     allSongs=[];
     CLASSIC_COLS.forEach((col,ci)=>{
       const [lo,hi]=CLASSIC_RANGES[ci];
@@ -539,12 +568,23 @@ function loadCategory(data){
     });
   } else {
     if(SONGS_RAW.length<25){
-      showError(`This playlist only has ${SONGS_RAW.length} song${SONGS_RAW.length===1?'':'s'}. At least 25 are needed. Go to the Admin panel on the landing page and add more songs to this category.`);
+      showError(`This playlist only has ${SONGS_RAW.length} song${SONGS_RAW.length===1?'':'s'}. At least 25 are needed.`);
       return;
     }
     allSongs=parseSongs(SONGS_RAW);
   }
-  sessionKey=categoryId;
+
+  // Venue-scoped session key — two hosts on the same category don't clash
+  const urlSession = new URLSearchParams(window.location.search).get('session');
+  if (urlSession && urlSession.startsWith(categoryId + '_')) {
+    sessionKey = urlSession;
+    sessionStorage.setItem('bella_venue_token', urlSession.slice(categoryId.length + 1));
+    setTimeout(() => { const ind = document.getElementById('player-link-indicator'); if (ind) ind.style.display = 'flex'; }, 800);
+  } else {
+    let venueToken = sessionStorage.getItem('bella_venue_token');
+    if (!venueToken) { venueToken = Math.random().toString(36).slice(2, 8); sessionStorage.setItem('bella_venue_token', venueToken); }
+    sessionKey = categoryId + '_' + venueToken;
+  }
 
   document.getElementById('nav-brand').textContent=EVENT_TITLE;
   document.getElementById('host-title').textContent=EVENT_TITLE+' \u2014 Host Tool';
@@ -574,11 +614,17 @@ function loadCategory(data){
   document.getElementById('main-nav').style.display='';
   document.getElementById('back-link').style.display='';
   document.getElementById('page-host').style.display='';
+
+  // Route
+  const params=new URLSearchParams(window.location.search);
+  if(params.has('cards')) showPage('cards',true);
+  else if(params.has('play')||params.has('player')) showPage('player',true);
+  else showPage('host',true);
+
   if(CLASSIC_BINGO){
-    // Show sidebar caller
+    document.getElementById('htab-caller').style.display='';
     const sc=document.getElementById('sidebar-caller');
-    sc.style.display='flex';
-    // Init remaining list
+    if(sc) sc.style.display='flex';
     callerRemaining=[];callerCalled=[];
     CLASSIC_COLS.forEach((col,ci)=>{
       const [lo,hi]=CLASSIC_RANGES[ci];
@@ -588,14 +634,8 @@ function loadCategory(data){
       const j=Math.floor(Math.random()*(i+1));
       [callerRemaining[i],callerRemaining[j]]=[callerRemaining[j],callerRemaining[i]];
     }
+    updateSidebarCaller();
   }
-
-  // Route
-  const params=new URLSearchParams(window.location.search);
-  if(params.has('cards')) showPage('cards',true);
-  else if(params.has('play')||params.has('player')) showPage('player',true);
-  else showPage('host',true);
-
   renderHostGrid();renderPrintGrid();updateHostStats();
   setupFirebaseListeners();
 
@@ -654,43 +694,60 @@ function showPage(page,skipHistory){
 // ── HOST ──────────────────────────────────────────────────────────────────────
 function switchHostTab(tab){
   document.getElementById('hpanel-daub').style.display=tab==='daub'?'':'none';
-  document.getElementById('hpanel-print').style.display=tab==='print'?'':'none';
+  document.getElementById('hpanel-log').style.display=tab==='log'?'':'none';
   document.getElementById('hpanel-caller').style.display=tab==='caller'?'':'none';
+  document.getElementById('hpanel-print').style.display=tab==='print'?'':'none';
   document.getElementById('htab-daub').classList.toggle('active',tab==='daub');
+  document.getElementById('htab-log').classList.toggle('active',tab==='log');
+  document.getElementById('htab-caller').classList.toggle('active',tab==='caller');
+  document.getElementById('htab-print').classList.toggle('active',tab==='print');
+  if(tab==='log') renderPlayLog();
 }
-function hostFilter(){renderHostGrid(document.getElementById('host-search').value.toLowerCase());}
-function renderHostGrid(filter=''){
-  const grid=document.getElementById('host-song-grid');
-  if(CLASSIC_BINGO){
-    // Classic mode: show 5 column groups B I N G O
-    grid.style.gridTemplateColumns='repeat(5,1fr)';
-    let html='';
-    CLASSIC_COLS.forEach((col,ci)=>{
-      const [lo,hi]=CLASSIC_RANGES[ci];
-      html+=`<div style="display:flex;flex-direction:column;gap:4px">
-        <div style="font-family:var(--cinzel);font-size:18px;font-weight:700;text-align:center;color:var(--gold);padding:4px 0;border-bottom:2px solid var(--gold);margin-bottom:4px">${col}</div>`;
-      for(let n=lo;n<=hi;n++){
-        const s=allSongs.find(x=>x.title===String(n)&&x.col===col);
-        if(!s)continue;
-        html+=`<div class="song-card${s.played?' played':''}" onclick="hostToggle(${s.id})" style="text-align:center;padding:8px 4px;font-family:var(--cinzel);font-size:14px;font-weight:600">${n}</div>`;
-      }
-      html+=`</div>`;
-    });
-    grid.innerHTML=html;
-    return;
-  }
-  // Standard song mode
-  grid.style.gridTemplateColumns='';
-  const vis=filter?allSongs.filter(s=>s.title.toLowerCase().includes(filter)||s.artist.toLowerCase().includes(filter)):allSongs;
-  if(!vis.length){grid.innerHTML='<div class="no-results">No songs match.</div>';return;}
-  grid.innerHTML=vis.map(s=>`<div class="song-card${s.played?' played':''}" onclick="hostToggle(${s.id})"><div class="song-label">${fmtLabel(s)}</div></div>`).join('');
+
+function renderPlayLog(){
+  const played = hostPlayedOrder.map((id,i)=>{
+    const s=allSongs.find(x=>x.id===id); if(!s) return '';
+    const n=i+1;
+    const tsHTML=s.ts?` <span class="song-ts">${s.ts}</span>`:'';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--green-bg);border:.5px solid var(--green-border);border-radius:var(--radius)">
+      <span style="font-size:11px;color:var(--green-sub);min-width:24px;font-family:var(--cinzel);font-weight:600">#${n}</span>
+      <span style="flex:1;font-size:13px;color:var(--green-text)">${fmtLabel(s)}${tsHTML}</span>
+      <button onclick="hostToggle(${s.id})" style="font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">undo</button>
+    </div>`;
+  }).join('');
+
+  const remaining = allSongs.filter(s=>!s.played).map(s=>{
+    const tsHTML=s.ts?` <span class="song-ts">${s.ts}</span>`:'';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);cursor:pointer" onclick="hostToggle(${s.id});renderPlayLog()">
+      <span style="flex:1;font-size:13px;color:var(--text)">${fmtLabel(s)}${tsHTML}</span>
+      <span style="font-size:11px;color:var(--text3);font-family:var(--cinzel);letter-spacing:.06em">tap to play</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('log-played-count').textContent=hostPlayedOrder.length;
+  document.getElementById('log-played-list').innerHTML=played||'<div style="font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);padding:4px 0">No songs played yet.</div>';
+  document.getElementById('log-remaining-list').innerHTML=remaining||'<div style="font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);padding:4px 0">All songs have been played!</div>';
+}
+function hostFilter(){
+  var raw = document.getElementById('host-search').value;
+  var q = raw.toLowerCase().replace(/[‘’`´ʼ]/g, "'");
+  renderHostGrid(q);
+  var clr = document.getElementById('host-search-clear');
+  if (clr) clr.style.display = raw.length ? 'block' : 'none';
+}
+function clearHostSearch(){
+  document.getElementById('host-search').value = '';
+  hostFilter();
 }
 function hostToggle(id){
   const s=allSongs.find(x=>x.id===id);if(!s)return;
   if(!s.played){s.played=true;hostPlayedOrder.push(id);}
   else{s.played=false;hostPlayedOrder=hostPlayedOrder.filter(x=>x!==id);}
+  const autoClear=document.getElementById('auto-clear-cb');
+  if(autoClear&&autoClear.checked&&s.played) clearHostSearch();
   renderHostGrid(document.getElementById('host-search').value.toLowerCase());
   updateHostStats();renderHostFeed();
+  if(document.getElementById('hpanel-log')&&document.getElementById('hpanel-log').style.display!=='none') renderPlayLog();
 }
 function updateHostStats(){
   const p=allSongs.filter(s=>s.played).length;
@@ -730,36 +787,10 @@ function hostReset(){
   document.getElementById('host-feed').style.display='none';
   document.getElementById('bingo-claim-banner').classList.remove('show');
 
-  // Clear Firebase players, claims, and caller session
+  // Clear Firebase players and claims
   if(db&&sessionKey){
     db.ref(`sessions/${sessionKey}/players`).remove();
     db.ref(`sessions/${sessionKey}/bingoClaims`).remove();
-    db.ref(`sessions/${sessionKey}/caller`).remove();
-  }
-  // Reset caller remaining list
-  if(CLASSIC_BINGO){
-    callerRemaining=[];callerCalled=[];
-    CLASSIC_COLS.forEach((col,ci)=>{
-      const [lo,hi]=CLASSIC_RANGES[ci];
-      for(let n=lo;n<=hi;n++) callerRemaining.push({col,num:n,label:col+n});
-    });
-    for(let i=callerRemaining.length-1;i>0;i--){
-      const j=Math.floor(Math.random()*(i+1));
-      [callerRemaining[i],callerRemaining[j]]=[callerRemaining[j],callerRemaining[i]];
-    }
-    // Reset sidebar display
-    const scLetter=document.getElementById('sc-letter');
-    const scNumber=document.getElementById('sc-number');
-    const scBall=document.getElementById('sc-ball');
-    const scCount=document.getElementById('sc-count');
-    const scBtn=document.getElementById('sc-call-btn');
-    const scHist=document.getElementById('sc-history');
-    if(scLetter) scLetter.textContent='?';
-    if(scNumber) scNumber.textContent='—';
-    if(scBall){scBall.style.borderColor='var(--gold-border)';scBall.style.background='var(--bg2)';}
-    if(scCount) scCount.textContent='75 left';
-    if(scBtn){scBtn.disabled=false;scBtn.textContent='Call';}
-    if(scHist) scHist.innerHTML='';
   }
 
   // Show undo button
@@ -873,13 +904,10 @@ function printCards(){
     const imgHTML=EVENT_IMAGE
       ?`<img style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block" src="${EVENT_IMAGE}" onerror="this.style.display='none'">`:'';
 
-    const printHeaderHTML=CLASSIC_BINGO?`<div class="bingo-header">${CLASSIC_COLS.map((l)=>`<div style="color:#c9a84c">${l}</div>`).join('')}</div>`:'';
-
     const cellsHTML=cells.map(s=>{
-      if(s.free) return`<div class="bc free" style="display:flex;align-items:center;justify-content:center;padding:8%"><svg viewBox="-12 -12 24 24" width="70%" height="70%" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="-10" x2="0" y2="10" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="-10" y1="0" x2="10" y2="0" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="-7.07" y1="-7.07" x2="7.07" y2="7.07" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="7.07" y1="-7.07" x2="-7.07" y2="7.07" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><circle cx="0" cy="0" r="2.2" fill="#000"/></svg></div>`;
-      const art=s.artist&&!CLASSIC_BINGO?`<span class="ca" style="font-size:${scaledArtist}px">${s.artist}</span>`:'';
-      const numFontSize=CLASSIC_BINGO?`${Math.round(scaledFont*1.4)}px`:scaledFont+'px';
-      return`<div class="bc"><div class="ct" style="font-size:${numFontSize};font-weight:${CLASSIC_BINGO?'700':'500'}"><span class="cs">${s.title}</span>${art}</div></div>`;
+      if(s.free) return`<div class="bc free"><div class="fsi"><div class="frt"><div class="fr" style="transform:rotate(-35deg)"></div><div class="fr" style="transform:rotate(-12deg)"></div><div class="fr"></div><div class="fr" style="transform:rotate(12deg)"></div><div class="fr" style="transform:rotate(35deg)"></div></div><div class="fw"><span class="fword">FREE</span><span class="fword">SPACE</span></div><div class="frb"><div class="fr" style="transform:rotate(35deg)"></div><div class="fr" style="transform:rotate(12deg)"></div><div class="fr"></div><div class="fr" style="transform:rotate(-12deg)"></div><div class="fr" style="transform:rotate(-35deg)"></div></div></div></div>`;
+      const art=s.artist?`<span class="ca" style="font-size:${scaledArtist}px">${s.artist}</span>`:'';
+      return`<div class="bc"><div class="ct" style="font-size:${scaledFont}px"><span class="cs">${s.title}</span>${art}</div></div>`;
     }).join('');
 
     const qr=SPOTIFY_QR_URL
@@ -900,9 +928,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fr{width:2px;height:8px;border-radius:1px;background:#000}
 .fw{display:flex;flex-direction:column;align-items:center;line-height:1.05}
 .fword{font-size:9px;font-weight:900;letter-spacing:.01em;text-transform:uppercase;color:#000}
-.bingo-header{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:3px 4px 0;font-family:'Cinzel',Georgia,serif;font-size:18px;font-weight:700;text-align:center}
 </style></head><body>
-<div class="card">${imgHTML}${printHeaderHTML}<div class="grid">${cellsHTML}</div>${qr}</div>
+<div class="card">${imgHTML}<div class="grid">${cellsHTML}</div>${qr}</div>
 </body></html>`;
   });
 
@@ -929,56 +956,29 @@ function hostCopyTSV(){
 
 // ── CARD GENERATOR ────────────────────────────────────────────────────────────
 let generatedCards=[];
+// sessionOffset is randomised fresh every page load so card #1 always looks
+// different — but stays stable within a single session so digital and printed
+// cards generated in the same run stay in sync.
+const sessionOffset=Math.floor(Math.random()*2147483647);
 function seededRng(seed){let s=seed;return()=>{s=(s*1664525+1013904223)&0xffffffff;return(s>>>0)/0xffffffff;};}
 function generateCard(num){
-  if(CLASSIC_BINGO){
-    const rng=seededRng(num*31337+17);
-    const cells=[];
-    CLASSIC_COLS.forEach((col,ci)=>{
-      const [lo,hi]=CLASSIC_RANGES[ci];
-      // Shuffle numbers in this column range
-      const pool=[];
-      for(let n=lo;n<=hi;n++) pool.push(n);
-      for(let i=pool.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
-      // Take 5 per column
-      for(let k=0;k<5;k++) cells.push({id:ci*5+k+num*1000,title:String(pool[k]),artist:'',col,num:pool[k]});
-    });
-    // Insert free space at position 12 (center of 5x5)
-    // cells is 25 items in column-major order — convert to row-major for display
-    // Column-major: B0,B1,B2,B3,B4, I0..., N0..., G0..., O0...
-    // We want row-major: B0,I0,N0,G0,O0, B1,I1,N1,G1,O1, ...
-    const rowMajor=[];
-    for(let row=0;row<5;row++){
-      for(let col=0;col<5;col++){
-        rowMajor.push(cells[col*5+row]);
-      }
-    }
-    // Free space at index 12 (row 2, col 2 = N column, middle)
-    rowMajor[12]={id:-1,title:'FREE',artist:'',col:'N',free:true};
-    return rowMajor;
-  }
-  // Standard song card
-  const rng=seededRng(num*31337+17),pool=[...allSongs];
+  const rng=seededRng((num*31337+17+sessionOffset)&0x7fffffff),pool=[...allSongs];
   for(let i=pool.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
   const cells=pool.slice(0,24);
   cells.splice(12,0,{id:-1,title:'FREE',artist:'',free:true});
   return cells;
 }
 function buildFreeCell(){
-  return`<div class="bingo-cell free" style="display:flex;align-items:center;justify-content:center;padding:10%"><svg viewBox="-12 -12 24 24" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;max-width:52px;max-height:52px;margin:auto"><line x1="0" y1="-10" x2="0" y2="10" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="-10" y1="0" x2="10" y2="0" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="-7.07" y1="-7.07" x2="7.07" y2="7.07" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="7.07" y1="-7.07" x2="-7.07" y2="7.07" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><circle cx="0" cy="0" r="2.2" fill="#000"/></svg></div>`;
+  return`<div class="bingo-cell free"><div class="free-space-inner"><div class="free-rays-top"><div class="free-ray" style="transform:rotate(-35deg)"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray" style="transform:rotate(35deg)"></div></div><div class="free-words"><span class="free-word">FREE</span><span class="free-word">SPACE</span></div><div class="free-rays-bottom"><div class="free-ray" style="transform:rotate(35deg)"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray" style="transform:rotate(-35deg)"></div></div></div></div>`;
 }
 function renderCardHTML(cells,cardNum){
   const imgHTML=EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" onerror="this.style.display='none'">`: '';
-  const headerHTML=CLASSIC_BINGO?`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:4px 7px 0">
-    ${CLASSIC_COLS.map((l)=>`<div style="text-align:center;font-family:var(--cinzel);font-size:18px;font-weight:700;color:var(--gold);line-height:1.2;padding:2px 0">${l}</div>`).join('')}
-  </div>`:'';
   const cellsHTML=cells.map(s=>{
     if(s.free)return buildFreeCell();
     const artistHTML=s.artist?`<span class="cell-artist">${s.artist}</span>`:'';
-    const numStyle=CLASSIC_BINGO?'font-size:1.4em;font-weight:700;font-family:var(--cinzel)':'';
-    return`<div class="bingo-cell" data-id="${s.id}"><div class="cell-text" style="${numStyle}"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
+    return`<div class="bingo-cell" data-id="${s.id}"><div class="cell-text"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
   }).join('');
-  return`<div class="bingo-card-wrap">${imgHTML}${headerHTML}<div class="bingo-grid" data-card="${cardNum}">${cellsHTML}</div></div>`;
+  return`<div class="bingo-card-wrap">${imgHTML}<div class="bingo-grid" data-card="${cardNum}">${cellsHTML}</div></div>`;
 }
 function generateCards(){
   const count=Math.min(100,Math.max(1,parseInt(document.getElementById('card-count').value)||30));
@@ -1082,21 +1082,17 @@ function loadPlayerCard(){
 function renderPlayerCard(){
   const wrap=document.getElementById('player-bingo-card');
   const bannerHTML=EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" onerror="this.style.display='none'">`: '';
-  const headerHTML=CLASSIC_BINGO?`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:4px 7px 0">
-    ${CLASSIC_COLS.map((l)=>`<div style="text-align:center;font-family:var(--cinzel);font-size:clamp(16px,5vw,22px);font-weight:700;color:var(--gold);line-height:1.2;padding:2px 0">${l}</div>`).join('')}
-  </div>`:'';
   const cellsHTML=playerCells.map((s,idx)=>{
     if(s.free){
       const isDaubed=playerDaubed.has('free');
-      return`<div class="bingo-cell free${isDaubed?' daubed':''}" onclick="playerDaubFree()" style="display:flex;align-items:center;justify-content:center;padding:10%"><svg viewBox="-12 -12 24 24" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;max-width:52px;max-height:52px;margin:auto"><line x1="0" y1="-10" x2="0" y2="10" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="-10" y1="0" x2="10" y2="0" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="-7.07" y1="-7.07" x2="7.07" y2="7.07" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><line x1="7.07" y1="-7.07" x2="-7.07" y2="7.07" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><circle cx="0" cy="0" r="2.2" fill="#000"/></svg></div>`;
+      return`<div class="bingo-cell free${isDaubed?' daubed':''}" onclick="playerDaubFree()"><div class="free-space-inner"><div class="free-rays-top"><div class="free-ray" style="transform:rotate(-35deg)"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray" style="transform:rotate(35deg)"></div></div><div class="free-words"><span class="free-word">FREE</span><span class="free-word">SPACE</span></div><div class="free-rays-bottom"><div class="free-ray" style="transform:rotate(35deg)"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray" style="transform:rotate(-35deg)"></div></div></div></div>`;
     }
     const isDaubed=playerDaubed.has(s.id);
-    const numStyle=CLASSIC_BINGO?'font-size:clamp(16px,5vw,24px);font-weight:700;font-family:var(--cinzel)':'';
     const artistHTML=s.artist?`<span class="cell-artist">${s.artist}</span>`:'';
-    return`<div class="bingo-cell${isDaubed?' daubed':''}" onclick="playerDaub(${s.id})"><div class="cell-text" style="${numStyle}"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
+    return`<div class="bingo-cell${isDaubed?' daubed':''}" onclick="playerDaub(${s.id})"><div class="cell-text"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
   }).join('');
-  wrap.innerHTML=`${bannerHTML}${headerHTML}<div class="bingo-grid" id="player-grid">${cellsHTML}</div>`;
-  if(!CLASSIC_BINGO) requestAnimationFrame(()=>sizeCellText(wrap));
+  wrap.innerHTML=`${bannerHTML}<div class="bingo-grid" id="player-grid">${cellsHTML}</div>`;
+  requestAnimationFrame(()=>sizeCellText(wrap));
   updatePlayerStatus();
 }
 function playerDaub(id){
@@ -1143,26 +1139,33 @@ function setupFirebaseListeners(){
     const c=snap.val();if(!c||c.dismissed)return;
     showBingoClaim(c.name,c.cardNum,snap.key,c.daubedSongs||[]);
   });
-  // Classic bingo caller sync
-  if(CLASSIC_BINGO){
-    db.ref(`sessions/${sessionKey}/caller`).on('value',snap=>{
-      const data=snap.val()||{};
-      updateSidebarCaller(data);
-      // Auto-daub: mark every called number as played on the host grid
-      if(data.called&&data.called.length){
-        const calledSet=new Set(data.called);
-        let changed=false;
-        allSongs.forEach(s=>{
-          const label=s.col+s.title;
-          if(calledSet.has(label)&&!s.played){s.played=true;changed=true;}
-        });
-        if(changed){
-          renderHostGrid(document.getElementById('host-search').value.toLowerCase());
-          updateHostStats();
-        }
-      }
-    });
-  }
+  // Player bridge: auto-tick when media player plays a song
+  db.ref(`sessions/${sessionKey}/nowPlaying`).on('value',snap=>{
+    const np=snap.val();
+    if(!np||!np.title)return;
+    if(Date.now()-np.at>30000)return;
+    autoTickFromPlayer(np.title,np.artist||'');
+  });
+}
+
+function normStr(s){
+  return s.toLowerCase()
+    .replace(/^(the|a|an)\s+/,'')
+    .replace(/[\u2018\u2019\u0060\u00b4\u02bc]/g,"'")
+    .replace(/[^a-z0-9'\s]/g,'')
+    .replace(/\s+/g,' ').trim();
+}
+
+function autoTickFromPlayer(title,artist){
+  const nt=normStr(title),na=normStr(artist);
+  let match=allSongs.find(s=>!s.played&&normStr(s.title)===nt&&normStr(s.artist)===na);
+  if(!match&&na) match=allSongs.find(s=>!s.played&&normStr(s.title)===nt);
+  if(!match)return;
+  match.played=true;
+  hostPlayedOrder.push(match.id);
+  renderHostGrid(document.getElementById('host-search').value.toLowerCase());
+  updateHostStats();renderHostFeed();
+  showToast('\u266a Auto-ticked: '+fmtPlain(match));
 }
 function fbWritePlayer(name,cardNum){
   if(!db)return;
@@ -1232,9 +1235,177 @@ function dismissBingoClaim(){
 }
 function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),1900);
+  setTimeout(()=>t.classList.remove('show'),2200);
 }
-// ── NUMBER CALLER ─────────────────────────────────────────────────────────────
+// ── MEDIA PLAYER URL ─────────────────────────────────────────────
+const MEDIA_PLAYER_URL = 'https://belladonnanights.github.io/musicplayer/belladonna-player.html';
+
+function openMediaPlayer(){
+  const url=`${MEDIA_PLAYER_URL}?bingo=${encodeURIComponent(categoryId)}&session=${encodeURIComponent(sessionKey)}`;
+  window.open(url,'_blank');
+}
+
+// ── TIEBREAKER ────────────────────────────────────────────────────────────────
+var tbAngle=0,tbSpinning=false;
+function openTiebreaker(){
+  var el=document.getElementById('tb-overlay');
+  el.style.display='block';
+  el.style.transform='translateX(-50%)';
+  el.style.left='50%';
+  el.style.top='80px';
+  document.fonts.ready.then(function(){tbDraw(tbAngle);});
+  // Set up drag
+  var handle=document.getElementById('tb-drag-handle');
+  var dragging=false,ox=0,oy=0;
+  handle.onmousedown=function(e){
+    if(e.target.tagName==='BUTTON')return;
+    dragging=true;
+    var rect=el.getBoundingClientRect();
+    ox=e.clientX-rect.left; oy=e.clientY-rect.top;
+    el.style.transform='none';
+    el.style.cursor='grabbing';
+    handle.style.cursor='grabbing';
+    e.preventDefault();
+  };
+  document.onmousemove=function(e){
+    if(!dragging)return;
+    el.style.left=(e.clientX-ox)+'px';
+    el.style.top=(e.clientY-oy)+'px';
+  };
+  document.onmouseup=function(){
+    dragging=false;
+    el.style.cursor='';
+    handle.style.cursor='grab';
+  };
+}
+var tbIsFullscreen=false, tbSavedStyle={};
+function tbToggleFullscreen(){
+  var el=document.getElementById('tb-overlay');
+  if(!tbIsFullscreen){
+    // Save current position/size
+    tbSavedStyle={top:el.style.top,left:el.style.left,width:el.style.width,height:el.style.height,transform:el.style.transform,borderRadius:el.style.borderRadius,resize:el.style.resize};
+    el.style.top='0';el.style.left='0';el.style.width='100vw';el.style.height='100vh';
+    el.style.transform='none';el.style.borderRadius='0';el.style.resize='none';
+    tbIsFullscreen=true;
+  } else {
+    tbExitFullscreen();
+  }
+}
+function tbExitFullscreen(){
+  if(!tbIsFullscreen)return;
+  var el=document.getElementById('tb-overlay');
+  el.style.top=tbSavedStyle.top||'80px';
+  el.style.left=tbSavedStyle.left||'50%';
+  el.style.width=tbSavedStyle.width||'460px';
+  el.style.height=tbSavedStyle.height||'';
+  el.style.transform=tbSavedStyle.transform||'none';
+  el.style.borderRadius=tbSavedStyle.borderRadius||'var(--radius-lg)';
+  el.style.resize='both';
+  tbIsFullscreen=false;
+}
+function closeTiebreaker(){
+  tbIsFullscreen=false;
+  document.getElementById('tb-overlay').style.display='none';
+}
+function tbDraw(angle){
+  var cv=document.getElementById('tb-wheel');if(!cv)return;
+  var ctx=cv.getContext('2d'),cx=130,cy=130,r=123,seg=20,arc=Math.PI*2/seg;
+  ctx.clearRect(0,0,260,260);
+  for(var i=0;i<seg;i++){
+    var s=angle+i*arc,e=s+arc,gold=i%2===0;
+    var grad=ctx.createLinearGradient(cx+Math.cos(s+arc/2)*(r*.3),cy+Math.sin(s+arc/2)*(r*.3),cx+Math.cos(s+arc/2)*r,cy+Math.sin(s+arc/2)*r);
+    if(gold){grad.addColorStop(0,'#d4a835');grad.addColorStop(.5,'#c9a030');grad.addColorStop(1,'#8a6010');}
+    else{grad.addColorStop(0,'#f8f3e8');grad.addColorStop(1,'#d8cfa8');}
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,s,e);ctx.closePath();
+    ctx.fillStyle=grad;ctx.fill();
+    ctx.strokeStyle='rgba(20,10,0,.6)';ctx.lineWidth=1;ctx.stroke();
+    ctx.save();
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r-3,s,e);ctx.closePath();ctx.clip();
+    ctx.translate(cx,cy);ctx.rotate(s+arc/2);ctx.transform(1,0,-0.42,1,0,0);
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    ctx.font='bold 22px "Bebas Neue",Impact,sans-serif';
+    ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=3;ctx.shadowOffsetX=1;ctx.shadowOffsetY=1;
+    ctx.strokeStyle='rgba(0,0,0,.95)';ctx.lineWidth=4;ctx.lineJoin='round';
+    ctx.strokeText(String(i+1),r-13,0);
+    ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+    ctx.fillStyle='#ffffff';ctx.fillText(String(i+1),r-13,0);
+    ctx.restore();
+  }
+  for(var j=0;j<seg;j++){var sa=angle+j*arc;ctx.beginPath();ctx.moveTo(cx+Math.cos(sa)*15,cy+Math.sin(sa)*15);ctx.lineTo(cx+Math.cos(sa)*(r-1),cy+Math.sin(sa)*(r-1));ctx.strokeStyle='rgba(20,8,0,.55)';ctx.lineWidth=1.5;ctx.stroke();}
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='#1a0a00';ctx.lineWidth=7;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,r-3.5,0,Math.PI*2);
+  var rimG=ctx.createLinearGradient(cx-r,cy-r,cx+r,cy+r);
+  rimG.addColorStop(0,'rgba(245,223,144,.9)');rimG.addColorStop(.5,'rgba(201,168,76,.6)');rimG.addColorStop(1,'rgba(245,223,144,.9)');
+  ctx.strokeStyle=rimG;ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,18,0,Math.PI*2);ctx.fillStyle='#0e0a06';ctx.fill();
+  ctx.beginPath();ctx.arc(cx,cy,15,0,Math.PI*2);
+  var hub=ctx.createRadialGradient(cx-5,cy-5,1,cx,cy,15);
+  hub.addColorStop(0,'#f9e87a');hub.addColorStop(.4,'#d4a835');hub.addColorStop(1,'#5a3800');
+  ctx.fillStyle=hub;ctx.fill();
+  ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.fillStyle='rgba(255,245,180,.9)';ctx.fill();
+}
+function tbLanded(angle){
+  var seg=20,arc=Math.PI*2/seg,ptr=-Math.PI/2;
+  var a=((ptr-angle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+  return Math.floor(a/arc)%seg+1;
+}
+function tbSpin(){
+  if(tbSpinning)return;
+  var aVal=document.getElementById('tb-a').value.trim();
+  var bVal=document.getElementById('tb-b').value.trim();
+  if(!aVal||!bVal){document.getElementById('tb-result').textContent='Enter both numbers first';return;}
+  var a=parseInt(aVal),b=parseInt(bVal);
+  if(isNaN(a)||isNaN(b)||a<1||a>9999||b<1||b>9999){document.getElementById('tb-result').textContent='Numbers must be 1–9999';return;}
+  tbSpinning=true;
+  document.getElementById('tb-spin-btn').disabled=true;
+  document.getElementById('tb-result').textContent='';
+  tbClearHighlights();
+  var tot=(6+Math.random()*6)*Math.PI*2+Math.random()*Math.PI*2;
+  var dur=3000+Math.random()*1000,sa=tbAngle,st=performance.now();
+  function eo(t){return 1-Math.pow(1-t,4);}
+  function fr(now){
+    var t=Math.min((now-st)/dur,1);
+    tbAngle=sa+tot*eo(t);tbDraw(tbAngle);
+    if(t<1){requestAnimationFrame(fr);}
+    else{tbSpinning=false;document.getElementById('tb-spin-btn').disabled=false;tbShowResult(a,b,tbLanded(tbAngle));}
+  }
+  requestAnimationFrame(fr);
+}
+function tbShowResult(a,b,landed){
+  var da=Math.abs(a-landed),db=Math.abs(b-landed);
+  var elA=document.getElementById('tb-a'),elB=document.getElementById('tb-b');
+  var res=document.getElementById('tb-result');
+  if(da===db){
+    elA.style.borderColor=elB.style.borderColor='var(--gold-border2)';
+    elA.style.boxShadow=elB.style.boxShadow='0 0 0 3px rgba(201,168,76,.25)';
+    res.innerHTML='<span style="color:var(--gold)">Landed on '+landed+' — still a tie! Spin again.</span>';
+  } else {
+    var w=da<db?'A':'B',we=w==='A'?elA:elB,le=w==='A'?elB:elA;
+    we.style.borderColor='var(--gold)';
+    we.style.boxShadow='0 0 0 3px rgba(201,168,76,.35),0 0 18px rgba(201,168,76,.3)';
+    we.style.color='var(--gold)';
+    le.style.opacity='.35';
+    res.innerHTML='Wheel: <strong style="color:var(--gold);font-family:var(--cinzel);font-size:15px">'+landed+'</strong><br>'
+      +'<span style="color:var(--gold);font-weight:600;font-family:var(--cinzel)">Player '+w+' wins!</span><br>'
+      +'<span style="font-size:11px;color:var(--text3)">'+(w==='A'?da:db)+' away vs '+(w==='A'?db:da)+' away</span>';
+  }
+}
+function tbClear(){tbClearHighlights();document.getElementById('tb-result').textContent='';}
+function tbClearHighlights(){
+  ['tb-a','tb-b'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.style.borderColor='';el.style.boxShadow='';el.style.color='';el.style.opacity='';
+  });
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    closeQRFullscreen();
+    if(tbIsFullscreen){tbExitFullscreen();}
+    else{closeTiebreaker();}
+  }
+});
+// ── BINGO NUMBER CALLER ─────────────────────────────────────────────────────
 let callerRemaining=[], callerCalled=[], callerSpinning=false;
 
 function openCaller(){
@@ -1386,7 +1557,6 @@ var spinning=false;
 var globeAngle=0;
 var lastTs=0;
 var isFull=false;
-var lastCalledLabel='';  // module-scope so both callNext and Firebase listener share it
 
 var gc=document.getElementById('gc');
 var ctx=gc.getContext('2d');
@@ -1574,26 +1744,11 @@ var fbDb=null;
       try{
         firebase.initializeApp(${fbConfig});
         fbDb=firebase.database();
-        // Listen for caller updates from sidebar — uses module-scope lastCalledLabel
+        // Listen for caller updates from sidebar
+        var lastCalledLabel='';
         fbDb.ref('sessions/${fbSessionKey}/caller').on('value',function(snap){
           var data=snap.val();
-          // Reset: if caller cleared, reset popup state
-          if(!data||!data.current){
-            if(data===null){
-              // Full reset — reshuffle remaining
-              remaining=${remaining};
-              called=[];lastCalledLabel='';
-              document.getElementById('cl').textContent='?';
-              document.getElementById('cn').textContent='\u2014';
-              document.getElementById('cb').classList.remove('lit');
-              document.getElementById('hrow').innerHTML='';
-              document.getElementById('cnt').textContent='75 remaining';
-              document.getElementById('hlabel').textContent='Called numbers';
-              var btn2=document.getElementById('callbtn');
-              if(btn2){btn2.disabled=false;btn2.textContent='Call Number';}
-            }
-            return;
-          }
+          if(!data||!data.current)return;
           var ball=data.current;
           var ballLabel=ball.col+ball.num;
           // Sync remaining/called lists
@@ -1726,186 +1881,37 @@ function sidebarCallNumber(){
 }
 
 function updateSidebarCaller(data){
-  const sbBtn=document.getElementById('sc-call-btn');
-  // Handle reset (null data)
-  if(!data||!data.current){
-    const scLetter=document.getElementById('sc-letter');
-    const scNumber=document.getElementById('sc-number');
-    const scBall=document.getElementById('sc-ball');
-    const scCount=document.getElementById('sc-count');
-    const scHist=document.getElementById('sc-history');
-    if(scLetter)scLetter.textContent='?';
-    if(scNumber)scNumber.textContent='—';
-    if(scBall){scBall.style.borderColor='var(--gold-border)';scBall.style.background='var(--bg2)';}
-    if(scCount)scCount.textContent='75 left';
-    if(sbBtn){sbBtn.disabled=false;sbBtn.textContent='Call';}
-    if(scHist)scHist.innerHTML='';
-    return;
-  }
+  if(!data||!data.current)return;
   const ball=data.current;
+  const sbBtn=document.getElementById('sc-call-btn');
   const rem=data.remaining||0;
-  const allCalled=data.called||[];
   // Update ball display
   const ballEl=document.getElementById('sc-ball');
   const letterEl=document.getElementById('sc-letter');
   const numberEl=document.getElementById('sc-number');
-  if(letterEl){letterEl.textContent=ball.col;letterEl.style.color='var(--gold)';}
-  if(numberEl){numberEl.textContent=ball.num;numberEl.style.color='var(--gold2)';}
-  if(ballEl){ballEl.style.borderColor='var(--gold)';ballEl.style.background='var(--bg)';}
-  // Count uses Firebase as source of truth
+  letterEl.textContent=ball.col;
+  numberEl.textContent=ball.num;
+  letterEl.style.color='var(--gold)';
+  numberEl.style.color='var(--gold2)';
+  ballEl.style.borderColor='var(--gold)';
+  ballEl.style.background='var(--bg)';
+  // Update remaining count
   document.getElementById('sc-count').textContent=rem+' left';
-  // Sync local callerRemaining against Firebase called list
-  const calledSet=new Set(allCalled);
+  // Sync local remaining list
+  const calledSet=new Set(data.called||[]);
   callerRemaining=callerRemaining.filter(b=>!calledSet.has(b.col+b.num));
-  // History — last 3 before current (Firebase is source of truth)
+  // Update history — last 3
   const hist=document.getElementById('sc-history');
-  if(hist){
-    const prev=allCalled.slice(-4,-1).reverse();
-    hist.innerHTML=prev.map(lbl=>'<div style="width:30px;height:30px;border-radius:50%;border:1px solid var(--gold-border);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--cinzel);font-size:10px;font-weight:600;color:var(--text2)">'+lbl+'</div>').join('');
+  const called=(data.called||[]).slice(-4,-1).reverse(); // last 3 before current
+  hist.innerHTML=called.map(lbl=>`<div style="width:30px;height:30px;border-radius:50%;border:1px solid var(--gold-border);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--cinzel);font-size:10px;font-weight:600;color:var(--text2)">${lbl}</div>`).join('');
+  // Re-enable button
+  if(sbBtn){
+    sbBtn.disabled=rem===0;
+    sbBtn.textContent=rem===0?'Done':'Call';
   }
-  if(sbBtn){sbBtn.disabled=rem===0;sbBtn.textContent=rem===0?'Done':'Call';}
 }
 
-// ── NUMBER CALLER ─────────────────────────────────────────────────────────────
-var tbAngle=0,tbSpinning=false;
-function openTiebreaker(){
-  var el=document.getElementById('tb-overlay');
-  el.style.display='block';
-  el.style.transform='translateX(-50%)';
-  el.style.left='50%';
-  el.style.top='80px';
-  document.fonts.ready.then(function(){tbDraw(tbAngle);});
-  var handle=document.getElementById('tb-drag-handle');
-  var dragging=false,ox=0,oy=0;
-  handle.onmousedown=function(e){
-    if(e.target.tagName==='BUTTON')return;
-    dragging=true;
-    var rect=el.getBoundingClientRect();
-    ox=e.clientX-rect.left;oy=e.clientY-rect.top;
-    el.style.transform='none';
-    handle.style.cursor='grabbing';
-    e.preventDefault();
-  };
-  document.onmousemove=function(e){if(!dragging)return;el.style.left=(e.clientX-ox)+'px';el.style.top=(e.clientY-oy)+'px';};
-  document.onmouseup=function(){dragging=false;handle.style.cursor='grab';};
-}
-var tbIsFullscreen=false,tbSavedStyle={};
-function tbToggleFullscreen(){
-  var el=document.getElementById('tb-overlay');
-  if(!tbIsFullscreen){
-    tbSavedStyle={top:el.style.top,left:el.style.left,width:el.style.width,height:el.style.height,transform:el.style.transform,borderRadius:el.style.borderRadius,resize:el.style.resize};
-    el.style.top='0';el.style.left='0';el.style.width='100vw';el.style.height='100vh';
-    el.style.transform='none';el.style.borderRadius='0';el.style.resize='none';
-    tbIsFullscreen=true;
-  } else {tbExitFullscreen();}
-}
-function tbExitFullscreen(){
-  if(!tbIsFullscreen)return;
-  var el=document.getElementById('tb-overlay');
-  el.style.top=tbSavedStyle.top||'80px';el.style.left=tbSavedStyle.left||'50%';
-  el.style.width=tbSavedStyle.width||'460px';el.style.height=tbSavedStyle.height||'';
-  el.style.transform=tbSavedStyle.transform||'none';el.style.borderRadius=tbSavedStyle.borderRadius||'var(--radius-lg)';
-  el.style.resize='both';tbIsFullscreen=false;
-}
-function closeTiebreaker(){
-  tbIsFullscreen=false;
-  document.getElementById('tb-overlay').style.display='none';
-}
-function tbDraw(angle){
-  var cv=document.getElementById('tb-wheel');if(!cv)return;
-  var ctx=cv.getContext('2d'),cx=130,cy=130,r=123,seg=20,arc=Math.PI*2/seg;
-  ctx.clearRect(0,0,260,260);
-  for(var i=0;i<seg;i++){
-    var s=angle+i*arc,e=s+arc,gold=i%2===0;
-    var grad=ctx.createLinearGradient(cx+Math.cos(s+arc/2)*(r*.3),cy+Math.sin(s+arc/2)*(r*.3),cx+Math.cos(s+arc/2)*r,cy+Math.sin(s+arc/2)*r);
-    if(gold){grad.addColorStop(0,'#d4a835');grad.addColorStop(.5,'#c9a030');grad.addColorStop(1,'#8a6010');}
-    else{grad.addColorStop(0,'#f8f3e8');grad.addColorStop(1,'#d8cfa8');}
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,s,e);ctx.closePath();
-    ctx.fillStyle=grad;ctx.fill();ctx.strokeStyle='rgba(20,10,0,.6)';ctx.lineWidth=1;ctx.stroke();
-    ctx.save();
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r-3,s,e);ctx.closePath();ctx.clip();
-    ctx.translate(cx,cy);ctx.rotate(s+arc/2);ctx.transform(1,0,-0.42,1,0,0);
-    ctx.textAlign='right';ctx.textBaseline='middle';
-    ctx.font='bold 22px "Bebas Neue",Impact,sans-serif';
-    ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=3;ctx.shadowOffsetX=1;ctx.shadowOffsetY=1;
-    ctx.strokeStyle='rgba(0,0,0,.95)';ctx.lineWidth=4;ctx.lineJoin='round';ctx.strokeText(String(i+1),r-13,0);
-    ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
-    ctx.fillStyle='#ffffff';ctx.fillText(String(i+1),r-13,0);ctx.restore();
-  }
-  for(var j=0;j<seg;j++){var sa=angle+j*arc;ctx.beginPath();ctx.moveTo(cx+Math.cos(sa)*15,cy+Math.sin(sa)*15);ctx.lineTo(cx+Math.cos(sa)*(r-1),cy+Math.sin(sa)*(r-1));ctx.strokeStyle='rgba(20,8,0,.55)';ctx.lineWidth=1.5;ctx.stroke();}
-  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='#1a0a00';ctx.lineWidth=7;ctx.stroke();
-  ctx.beginPath();ctx.arc(cx,cy,r-3.5,0,Math.PI*2);
-  var rimG=ctx.createLinearGradient(cx-r,cy-r,cx+r,cy+r);
-  rimG.addColorStop(0,'rgba(245,223,144,.9)');rimG.addColorStop(.5,'rgba(201,168,76,.6)');rimG.addColorStop(1,'rgba(245,223,144,.9)');
-  ctx.strokeStyle=rimG;ctx.lineWidth=2;ctx.stroke();
-  ctx.beginPath();ctx.arc(cx,cy,18,0,Math.PI*2);ctx.fillStyle='#0e0a06';ctx.fill();
-  ctx.beginPath();ctx.arc(cx,cy,15,0,Math.PI*2);
-  var hub=ctx.createRadialGradient(cx-5,cy-5,1,cx,cy,15);
-  hub.addColorStop(0,'#f9e87a');hub.addColorStop(.4,'#d4a835');hub.addColorStop(1,'#5a3800');
-  ctx.fillStyle=hub;ctx.fill();
-  ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.fillStyle='rgba(255,245,180,.9)';ctx.fill();
-}
-function tbLanded(angle){
-  var seg=20,arc=Math.PI*2/seg,ptr=-Math.PI/2;
-  var a=((ptr-angle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
-  return Math.floor(a/arc)%seg+1;
-}
-function tbSpin(){
-  if(tbSpinning)return;
-  var aVal=document.getElementById('tb-a').value.trim();
-  var bVal=document.getElementById('tb-b').value.trim();
-  if(!aVal||!bVal){document.getElementById('tb-result').textContent='Enter both numbers first';return;}
-  var a=parseInt(aVal),b=parseInt(bVal);
-  if(isNaN(a)||isNaN(b)||a<1||a>9999||b<1||b>9999){document.getElementById('tb-result').textContent='Numbers must be 1-9999';return;}
-  tbSpinning=true;
-  document.getElementById('tb-spin-btn').disabled=true;
-  document.getElementById('tb-result').textContent='';
-  tbClearHighlights();
-  var tot=(6+Math.random()*6)*Math.PI*2+Math.random()*Math.PI*2;
-  var dur=3000+Math.random()*1000,sa=tbAngle,st=performance.now();
-  function eo(t){return 1-Math.pow(1-t,4);}
-  function fr(now){
-    var t=Math.min((now-st)/dur,1);
-    tbAngle=sa+tot*eo(t);tbDraw(tbAngle);
-    if(t<1){requestAnimationFrame(fr);}
-    else{tbSpinning=false;document.getElementById('tb-spin-btn').disabled=false;tbShowResult(a,b,tbLanded(tbAngle));}
-  }
-  requestAnimationFrame(fr);
-}
-function tbShowResult(a,b,landed){
-  var da=Math.abs(a-landed),db=Math.abs(b-landed);
-  var elA=document.getElementById('tb-a'),elB=document.getElementById('tb-b');
-  var res=document.getElementById('tb-result');
-  if(da===db){
-    elA.style.borderColor=elB.style.borderColor='var(--gold-border2)';
-    elA.style.boxShadow=elB.style.boxShadow='0 0 0 3px rgba(201,168,76,.25)';
-    res.innerHTML='<span style="color:var(--gold)">Landed on '+landed+' - still a tie! Spin again.</span>';
-  } else {
-    var w=da<db?'A':'B',we=w==='A'?elA:elB,le=w==='A'?elB:elA;
-    we.style.borderColor='var(--gold)';
-    we.style.boxShadow='0 0 0 3px rgba(201,168,76,.35),0 0 18px rgba(201,168,76,.3)';
-    we.style.color='var(--gold)';le.style.opacity='.35';
-    res.innerHTML='Wheel: <strong style="color:var(--gold);font-family:var(--cinzel);font-size:15px">'+landed+'</strong><br>'
-      +'<span style="color:var(--gold);font-weight:600;font-family:var(--cinzel)">Player '+w+' wins!</span><br>'
-      +'<span style="font-size:11px;color:var(--text3)">'+(w==='A'?da:db)+' away vs '+(w==='A'?db:da)+' away</span>';
-  }
-}
-function tbClear(){tbClearHighlights();document.getElementById('tb-result').textContent='';}
-function tbClearHighlights(){
-  ['tb-a','tb-b'].forEach(function(id){
-    var el=document.getElementById(id);if(!el)return;
-    el.style.borderColor='';el.style.boxShadow='';el.style.color='';el.style.opacity='';
-  });
-}
-
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){
-    closeQRFullscreen();
-    if(tbIsFullscreen){tbExitFullscreen();}else{closeTiebreaker();}
-  }
-});
 bootstrap();
-
 </script>
 </body>
 </html>
