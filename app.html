@@ -1208,10 +1208,12 @@ function setupFirebaseListeners(){
     showBingoClaim(c.name,c.cardNum,snap.key,c.daubedSongs||[]);
   });
   // Player bridge: auto-tick when media player plays a song
+  console.log('[Bingo bridge] Listening on sessions/'+sessionKey+'/nowPlaying');
   db.ref(`sessions/${sessionKey}/nowPlaying`).on('value',snap=>{
     const np=snap.val();
+    console.log('[Bingo bridge] nowPlaying received:', np);
     if(!np||!np.title)return;
-    if(Date.now()-np.at>30000)return;
+    if(Date.now()-np.at>30000){console.log('[Bingo bridge] Stale signal, skipping');return;}
     autoTickFromPlayer(np.title,np.artist||'');
   });
   // Classic bingo caller sync — update sidebar when pop-out calls a number
@@ -1233,12 +1235,15 @@ function normStr(s){
 
 function autoTickFromPlayer(title,artist){
   const nt=normStr(title),na=normStr(artist);
+  console.log('[Bingo bridge] autoTick called. title='+title+' artist='+artist+' nt='+nt+' na='+na);
+  console.log('[Bingo bridge] allSongs count='+allSongs.length+', unplayed='+allSongs.filter(s=>!s.played).length);
   // Try exact match first (title + artist)
   let match=allSongs.find(s=>!s.played&&normStr(s.title)===nt&&normStr(s.artist)===na);
   // Then title-only exact
   if(!match) match=allSongs.find(s=>!s.played&&normStr(s.title)===nt);
   // Then title substring (handles slight wording differences)
   if(!match) match=allSongs.find(s=>!s.played&&(normStr(s.title).includes(nt)||nt.includes(normStr(s.title))));
+  console.log('[Bingo bridge] match=', match?match.title:'NO MATCH');
   if(!match)return;
   match.played=true;
   hostPlayedOrder.push(match.id);
