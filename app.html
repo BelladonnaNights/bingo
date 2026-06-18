@@ -234,6 +234,8 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
       <button class="host-tab" id="htab-print" onclick="switchHostTab('print')">Printable Sheet</button>
     </div>
     <div id="hpanel-daub">
+      <div style="display:flex;gap:1.5rem;align-items:flex-start">
+        <div style="flex:1;min-width:0">
       <div class="stats-row">
         <div class="stat"><div class="stat-val" id="h-played">0</div><div class="stat-label">Played</div></div>
         <div class="stat"><div class="stat-val" id="h-remain">0</div><div class="stat-label">Remaining</div></div>
@@ -263,23 +265,6 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
             <button class="btn btn-ghost btn-sm" onclick="dismissBingoClaim()">Dismiss</button>
           </div>
           <div id="bingo-claim-verify" style="display:none"></div>
-        </div>
-      </div>
-      <div id="sidebar-caller" style="display:none;flex-shrink:0;width:160px;display:none;flex-direction:column;align-items:center;gap:10px;padding:14px 12px;background:var(--bg);border:.5px solid var(--gold-border);border-radius:var(--radius-lg);position:sticky;top:80px">
-          <div style="font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Number Caller</div>
-          <!-- Mini called ball display -->
-          <div id="sc-ball" style="width:100px;height:100px;border-radius:50%;background:var(--bg2);border:2px solid var(--gold-border);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .4s">
-            <div id="sc-letter" style="font-family:var(--cinzel);font-size:28px;font-weight:700;color:var(--text3);line-height:1">?</div>
-            <div id="sc-number" style="font-family:var(--cinzel);font-size:40px;font-weight:700;color:var(--text3);line-height:.9">—</div>
-          </div>
-          <!-- Last 3 mini balls -->
-          <div id="sc-history" style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:36px"></div>
-          <!-- Remaining count -->
-          <div id="sc-count" style="font-family:var(--cinzel);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)">75 left</div>
-          <!-- Call button -->
-          <button id="sc-call-btn" onclick="sidebarCallNumber()" style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--gold-shine);color:#000;border:none;border-radius:99px;padding:9px 0;width:100%;cursor:pointer;transition:opacity .15s;box-shadow:0 3px 12px rgba(201,168,76,.2)">Call</button>
-          <!-- Launch popup -->
-          <button onclick="openCaller()" style="font-family:var(--cinzel);font-size:9px;letter-spacing:.08em;text-transform:uppercase;background:none;border:.5px solid var(--border2);border-radius:var(--radius);padding:5px 0;width:100%;cursor:pointer;color:var(--text3);transition:all .15s" onmouseover="this.style.borderColor='var(--gold-border)'" onmouseout="this.style.borderColor='var(--border2)'">↗ Pop out</button>
         </div>
       </div>
       <div class="top-bar">
@@ -316,6 +301,25 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
           ♪ Open Media Player
         </a>
       </div></div>
+        </div><!-- end main daubing board -->
+        <!-- SIDEBAR NUMBER CALLER — only visible in classic bingo mode -->
+        <div id="sidebar-caller" style="display:none;flex-shrink:0;width:160px;flex-direction:column;align-items:center;gap:10px;padding:14px 12px;background:var(--bg);border:.5px solid var(--gold-border);border-radius:var(--radius-lg);position:sticky;top:80px">
+          <div style="font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Number Caller</div>
+          <!-- Mini called ball display -->
+          <div id="sc-ball" style="width:100px;height:100px;border-radius:50%;background:var(--bg2);border:2px solid var(--gold-border);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .4s">
+            <div id="sc-letter" style="font-family:var(--cinzel);font-size:28px;font-weight:700;color:var(--text3);line-height:1">?</div>
+            <div id="sc-number" style="font-family:var(--cinzel);font-size:40px;font-weight:700;color:var(--text3);line-height:.9">—</div>
+          </div>
+          <!-- Last called history -->
+          <div id="sc-history" style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:36px"></div>
+          <!-- Remaining count -->
+          <div id="sc-count" style="font-family:var(--cinzel);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)">75 left</div>
+          <!-- Call button -->
+          <button id="sc-call-btn" onclick="sidebarCallNumber()" style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--gold-shine);color:#000;border:none;border-radius:99px;padding:9px 0;width:100%;cursor:pointer;transition:opacity .15s;box-shadow:0 3px 12px rgba(201,168,76,.2)">Call</button>
+          <!-- Launch popup -->
+          <button onclick="openCaller()" style="font-family:var(--cinzel);font-size:9px;letter-spacing:.08em;text-transform:uppercase;background:none;border:.5px solid var(--border2);border-radius:var(--radius);padding:5px 0;width:100%;cursor:pointer;color:var(--text3);transition:all .15s" onmouseover="this.style.borderColor='var(--gold-border)'" onmouseout="this.style.borderColor='var(--border2)'">↗ Pop out</button>
+        </div>
+      </div><!-- end flex row -->
     </div>
     <div id="hpanel-log" style="display:none">
       <div id="log-played-section">
@@ -622,7 +626,14 @@ function loadCategory(data){
   else showPage('host',true);
 
   if(CLASSIC_BINGO){
+    // Show caller tab, hide music-only tabs
     document.getElementById('htab-caller').style.display='';
+    document.getElementById('htab-log').style.display='none';
+    document.getElementById('htab-print').style.display='none';
+    // Update search placeholder
+    const hs = document.getElementById('host-search');
+    if(hs) hs.placeholder='Search numbers…';
+    // Show sidebar caller
     const sc=document.getElementById('sidebar-caller');
     if(sc) sc.style.display='flex';
     callerRemaining=[];callerCalled=[];
