@@ -234,7 +234,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
       <button class="host-tab" id="htab-print" onclick="switchHostTab('print')">Printable Sheet</button>
     </div>
     <div id="hpanel-daub">
-      <div style="display:flex;gap:1.5rem;align-items:flex-start">
+      <div style="display:flex;flex-wrap:nowrap;gap:1.5rem;align-items:flex-start">
         <div style="flex:1;min-width:0">
       <div class="stats-row">
         <div class="stat"><div class="stat-val" id="h-played">0</div><div class="stat-label">Played</div></div>
@@ -303,7 +303,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
       </div></div>
         </div><!-- end main daubing board -->
         <!-- SIDEBAR NUMBER CALLER — only visible in classic bingo mode -->
-        <div id="sidebar-caller" style="display:none;flex-shrink:0;width:160px;flex-direction:column;align-items:center;gap:10px;padding:14px 12px;background:var(--bg);border:.5px solid var(--gold-border);border-radius:var(--radius-lg);position:sticky;top:80px">
+        <div id="sidebar-caller" style="display:none;flex-shrink:0;width:160px;flex-direction:column;align-items:center;gap:10px;padding:14px 12px;background:var(--bg);border:.5px solid var(--gold-border);border-radius:var(--radius-lg);align-self:flex-start;position:sticky;top:80px">
           <div style="font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Number Caller</div>
           <!-- Mini called ball display -->
           <div id="sc-ball" style="width:100px;height:100px;border-radius:50%;background:var(--bg2);border:2px solid var(--gold-border);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .4s">
@@ -583,7 +583,8 @@ function loadCategory(data){
   if (urlSession && urlSession.startsWith(categoryId + '_')) {
     sessionKey = urlSession;
     sessionStorage.setItem('bella_venue_token', urlSession.slice(categoryId.length + 1));
-    setTimeout(() => { const ind = document.getElementById('player-link-indicator'); if (ind) ind.style.display = 'flex'; }, 800);
+    // Show linked banner — set a flag and apply when host page renders
+    window._playerLinked = true;
   } else {
     let venueToken = sessionStorage.getItem('bella_venue_token');
     if (!venueToken) { venueToken = Math.random().toString(36).slice(2, 8); sessionStorage.setItem('bella_venue_token', venueToken); }
@@ -635,7 +636,7 @@ function loadCategory(data){
     if(hs) hs.placeholder='Search numbers…';
     // Show sidebar caller
     const sc=document.getElementById('sidebar-caller');
-    if(sc) sc.style.display='flex';
+    if(sc){ sc.style.display='flex'; sc.style.flexDirection='column'; }
     callerRemaining=[];callerCalled=[];
     CLASSIC_COLS.forEach((col,ci)=>{
       const [lo,hi]=CLASSIC_RANGES[ci];
@@ -699,6 +700,11 @@ function showPage(page,skipHistory){
   if(!skipHistory&&window.history){
     const base=window.location.pathname+'?id='+categoryId;
     window.history.pushState({},'',page==='host'?base:base+'&'+page);
+  }
+  // Show linked banner when host page is shown and player opened this
+  if(page==='host'&&window._playerLinked){
+    const ind=document.getElementById('player-link-indicator');
+    if(ind) ind.style.display='flex';
   }
 }
 
@@ -1208,6 +1214,13 @@ function setupFirebaseListeners(){
     if(Date.now()-np.at>30000)return;
     autoTickFromPlayer(np.title,np.artist||'');
   });
+  // Classic bingo caller sync — update sidebar when pop-out calls a number
+  if(CLASSIC_BINGO){
+    db.ref(`sessions/${sessionKey}/caller`).on('value',snap=>{
+      const d=snap.val();
+      if(d) updateSidebarCaller(d);
+    });
+  }
 }
 
 function normStr(s){
@@ -1220,13 +1233,19 @@ function normStr(s){
 
 function autoTickFromPlayer(title,artist){
   const nt=normStr(title),na=normStr(artist);
+  // Try exact match first (title + artist)
   let match=allSongs.find(s=>!s.played&&normStr(s.title)===nt&&normStr(s.artist)===na);
-  if(!match&&na) match=allSongs.find(s=>!s.played&&normStr(s.title)===nt);
+  // Then title-only exact
+  if(!match) match=allSongs.find(s=>!s.played&&normStr(s.title)===nt);
+  // Then title substring (handles slight wording differences)
+  if(!match) match=allSongs.find(s=>!s.played&&(normStr(s.title).includes(nt)||nt.includes(normStr(s.title))));
   if(!match)return;
   match.played=true;
   hostPlayedOrder.push(match.id);
-  renderHostGrid(document.getElementById('host-search').value.toLowerCase());
+  const q=document.getElementById('host-search');
+  renderHostGrid(q?q.value.toLowerCase():'');
   updateHostStats();renderHostFeed();
+  if(document.getElementById('hpanel-log')&&document.getElementById('hpanel-log').style.display!=='none') renderPlayLog();
   showToast('\u266a Auto-ticked: '+fmtPlain(match));
 }
 function fbWritePlayer(name,cardNum){
@@ -1471,16 +1490,18 @@ document.addEventListener('keydown',e=>{
 let callerRemaining=[], callerCalled=[], callerSpinning=false;
 
 function openCaller(){
-  callerRemaining=[];callerCalled=[];
-  CLASSIC_COLS.forEach((col,ci)=>{
-    const [lo,hi]=CLASSIC_RANGES[ci];
-    for(let n=lo;n<=hi;n++) callerRemaining.push({col,num:n,label:col+n});
-  });
-  for(let i=callerRemaining.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [callerRemaining[i],callerRemaining[j]]=[callerRemaining[j],callerRemaining[i]];
+  // Use current state — don't reshuffle if already calling
+  if(!callerRemaining.length&&!callerCalled.length){
+    CLASSIC_COLS.forEach((col,ci)=>{
+      const [lo,hi]=CLASSIC_RANGES[ci];
+      for(let n=lo;n<=hi;n++) callerRemaining.push({col,num:n,label:col+n});
+    });
+    for(let i=callerRemaining.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [callerRemaining[i],callerRemaining[j]]=[callerRemaining[j],callerRemaining[i]];
+    }
   }
-  // Sync remaining with Firebase state first
+  // Pass current state to pop-out
   const remaining=JSON.stringify(callerRemaining);
   const fbConfig=JSON.stringify({
     apiKey:"AIzaSyCu6aBUE8qJCCf5FRMipqQD-tGSPE78D3Y",
@@ -1859,24 +1880,22 @@ function showBall(col,num){
 }
 
 function callNext(){
-  if(!remaining.length)return;
+  if(!remaining.length||spinning)return;
   spinning=true;
   document.getElementById('callbtn').disabled=true;
   var ball=remaining.shift();
   called.push(ball);
-  // Update lastCalledLabel so Firebase listener doesn't double-fire
   lastCalledLabel=ball.col+ball.num;
   setTimeout(function(){
     spinning=false;
-    // Reveal immediately — don't wait for Firebase round-trip
     showBall(ball.col,ball.num);
     document.getElementById('cnt').textContent=remaining.length+' remaining';
     document.getElementById('hlabel').textContent='Called: '+called.length+' of 75';
     document.getElementById('callbtn').disabled=remaining.length===0;
     if(remaining.length===0)document.getElementById('callbtn').textContent='All Called!';
-    // Write to Firebase in parallel for sidebar sync (fire and forget)
-    if(fbDb){
-      fbDb.ref('sessions/${fbSessionKey}/caller').set({
+    // Sync to Firebase so sidebar updates (template literal fixed)
+    if(fbDb&&fbSessionKey){
+      fbDb.ref('sessions/'+fbSessionKey+'/caller').set({
         current:{col:ball.col,num:ball.num},
         called:called.map(function(b){return b.col+b.num;}),
         remaining:remaining.length,
@@ -1916,16 +1935,25 @@ document.addEventListener('fullscreenchange',function(){
 
 // ── SIDEBAR NUMBER CALLER ─────────────────────────────────────────────────────
 function sidebarCallNumber(){
-  if(!db||!sessionKey||!callerRemaining.length)return;
-  // Check lock
-  db.ref(`sessions/${sessionKey}/caller/spinning`).once('value',snap=>{
-    if(snap.val())return; // already spinning somewhere
-    // Lock
-    db.ref(`sessions/${sessionKey}/caller/spinning`).set(true);
-    setTimeout(()=>{
-      const ball=callerRemaining.shift();
-      callerCalled.push(ball);
-      // Write to Firebase — popup will sync and trigger its own spin animation
+  if(!callerRemaining.length)return;
+  const btn=document.getElementById('sc-call-btn');
+  if(btn&&btn.disabled)return; // prevent double-tap
+  // Animate immediately
+  if(btn) btn.disabled=true;
+  document.getElementById('sc-letter').textContent='…';
+  document.getElementById('sc-number').textContent='';
+  document.getElementById('sc-ball').style.borderColor='var(--gold)';
+  setTimeout(()=>{
+    const ball=callerRemaining.shift();
+    callerCalled.push(ball);
+    // Update sidebar display directly
+    updateSidebarCaller({
+      current:{col:ball.col,num:ball.num},
+      called:callerCalled.map(b=>b.col+b.num),
+      remaining:callerRemaining.length
+    });
+    // Write to Firebase so pop-out stays in sync
+    if(db&&sessionKey){
       db.ref(`sessions/${sessionKey}/caller`).set({
         current:{col:ball.col,num:ball.num},
         called:callerCalled.map(b=>b.col+b.num),
@@ -1933,17 +1961,16 @@ function sidebarCallNumber(){
         spinning:false,
         ts:firebase.database.ServerValue.TIMESTAMP
       });
-    },1900);
-    // Animate sidebar ball during spin
-    document.getElementById('sc-call-btn').disabled=true;
-    document.getElementById('sc-letter').textContent='…';
-    document.getElementById('sc-number').textContent='';
-    document.getElementById('sc-ball').style.borderColor='var(--gold)';
-  });
+    }
+  },600);
 }
 
+let _lastSidebarLabel='';
 function updateSidebarCaller(data){
   if(!data||!data.current)return;
+  const newLabel=data.current.col+data.current.num;
+  if(newLabel===_lastSidebarLabel)return; // already rendered this ball
+  _lastSidebarLabel=newLabel;
   const ball=data.current;
   const sbBtn=document.getElementById('sc-call-btn');
   const rem=data.remaining||0;
