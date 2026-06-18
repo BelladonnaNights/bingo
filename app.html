@@ -739,6 +739,57 @@ function clearHostSearch(){
   document.getElementById('host-search').value = '';
   hostFilter();
 }
+function renderHostGrid(filter=''){
+  const grid=document.getElementById('host-song-grid');
+  const normQ=s=>s.toLowerCase().replace(/[\u2018\u2019\u0060\u00b4\u02bc]/g,"'");
+  const vis=filter?allSongs.filter(s=>normQ(s.title).includes(filter)||normQ(s.artist||'').includes(filter)):allSongs;
+  if(!vis.length){grid.innerHTML='<div class="no-results">No songs match.</div>';return;}
+  grid.innerHTML=vis.map(s=>`<div class="song-card${s.played?' played':''}" onclick="hostToggle(${s.id})"><div class="song-label">${fmtLabel(s)}</div></div>`).join('');
+}
+function hostReset(){
+  resetSnapshot={
+    playedIds:allSongs.filter(s=>s.played).map(s=>s.id),
+    playedOrder:[...hostPlayedOrder],
+    claimVisible:document.getElementById('bingo-claim-banner').classList.contains('show'),
+    activeBingoClaimKey,
+    claimNameText:document.getElementById('bingo-claim-name').textContent,
+    claimVerifyHTML:document.getElementById('bingo-claim-verify').innerHTML,
+    claimVerifyVisible:document.getElementById('bingo-claim-verify').style.display!=='none',
+  };
+  allSongs.forEach(s=>s.played=false);
+  hostPlayedOrder=[];
+  document.getElementById('host-search').value='';
+  renderHostGrid();updateHostStats();
+  document.getElementById('host-feed').style.display='none';
+  document.getElementById('bingo-claim-banner').classList.remove('show');
+  if(db&&sessionKey){
+    db.ref(`sessions/${sessionKey}/players`).remove();
+    db.ref(`sessions/${sessionKey}/bingoClaims`).remove();
+  }
+  document.getElementById('reset-undo-btn').style.display='';
+  showToast('Session reset');
+}
+function undoReset(){
+  if(!resetSnapshot)return;
+  allSongs.forEach(s=>s.played=resetSnapshot.playedIds.includes(s.id));
+  hostPlayedOrder=resetSnapshot.playedOrder;
+  renderHostGrid(document.getElementById('host-search').value.toLowerCase());
+  updateHostStats();renderHostFeed();
+  if(resetSnapshot.claimVisible){
+    document.getElementById('bingo-claim-name').textContent=resetSnapshot.claimNameText;
+    document.getElementById('bingo-claim-verify').innerHTML=resetSnapshot.claimVerifyHTML;
+    document.getElementById('bingo-claim-verify').style.display=resetSnapshot.claimVerifyVisible?'':' none';
+    document.getElementById('bingo-claim-banner').classList.add('show');
+    activeBingoClaimKey=resetSnapshot.activeBingoClaimKey;
+  }
+  resetSnapshot=null;
+  document.getElementById('reset-undo-btn').style.display='none';
+  showToast('Reset undone!');
+}
+function renderPrintGrid(){
+  document.getElementById('host-print-grid').innerHTML=
+    allSongs.map((s,i)=>`<div class="print-cell"><span class="cell-num">${i+1}.</span><div class="cell-label">${fmtLabel(s)}</div></div>`).join('');
+}
 function hostToggle(id){
   const s=allSongs.find(x=>x.id===id);if(!s)return;
   if(!s.played){s.played=true;hostPlayedOrder.push(id);}
