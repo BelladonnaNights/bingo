@@ -1246,8 +1246,10 @@ function autoTickFromPlayer(title,artist){
   let match=allSongs.find(s=>!s.played&&normStr(s.title)===nt&&normStr(s.artist)===na);
   // Then title-only exact
   if(!match) match=allSongs.find(s=>!s.played&&normStr(s.title)===nt);
-  // Then title substring (handles slight wording differences)
-  if(!match) match=allSongs.find(s=>!s.played&&(normStr(s.title).includes(nt)||nt.includes(normStr(s.title))));
+  // Then artist-only match with title substring (player strips ft. so artist may differ)
+  if(!match&&na) match=allSongs.find(s=>!s.played&&normStr(s.artist).startsWith(na)&&(normStr(s.title).includes(nt)||nt.includes(normStr(s.title))));
+  // Then title substring — guard against short titles causing false positives
+  if(!match&&nt.length>=5) match=allSongs.find(s=>!s.played&&(normStr(s.title).includes(nt)||nt.includes(normStr(s.title))));
   console.log('[Bingo bridge] match=', match?match.title:'NO MATCH');
   if(!match)return;
   match.played=true;
