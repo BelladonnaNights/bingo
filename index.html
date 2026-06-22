@@ -579,7 +579,16 @@ function renderActiveSessions(data) {
   }
   var sessions = Object.entries(data);
   // Only show sessions that have a nowPlaying entry (i.e. a song has been played)
-  var active = sessions.filter(function(e) { return e[1] && e[1].nowPlaying && e[1].nowPlaying.title; });
+  var FOUR_HOURS = 4 * 60 * 60 * 1000;
+  var now = Date.now();
+  var active = sessions.filter(function(e) {
+    if (!e[1] || !e[1].nowPlaying || !e[1].nowPlaying.title) return false;
+    // Ignore stale sessions — covers the case where beforeunload didn't fire
+    // (hard crash, force-kill, power loss). Any session silent for 4+ hours
+    // is treated as gone, no server-side cleanup needed.
+    var lastSeen = e[1].nowPlaying.at || e[1].at || 0;
+    return (now - lastSeen) < FOUR_HOURS;
+  });
   if (active.length === 0) {
     banner.classList.remove('active');
     banner.innerHTML = '';
