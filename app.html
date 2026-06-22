@@ -1793,9 +1793,6 @@ html, body {
         <div class="nav-item active" id="nav-player" onclick="showView('player')">
           <span class="nav-icon">♪</span> Now Playing
         </div>
-        <div class="nav-item" id="nav-playlists" onclick="showView('playlists')">
-          <span class="nav-icon">⊞</span> Playlists
-        </div>
         <div class="nav-item" id="nav-library" onclick="showView('library')">
           <span class="nav-icon">◫</span> Library
         </div>
@@ -3058,9 +3055,13 @@ async function selectPL(id) {
   S.plSearch=''; S.plSort='index'; S.plSortDir=1;
   const ps = document.getElementById('pl-search');
   if (ps) ps.value='';
+  // Force-sync this playlist's tracks with the latest library art before rendering
+  S.playlists.forEach(syncPlaylistTracksFromLibrary);
   renderSidePlaylists();
   renderTrackList();
   showView('playlist');
+  // Re-render after a short delay to pick up any art still arriving from background fetch
+  setTimeout(() => { if (S.currentPL?.id === pl.id) { syncPlaylistTracksFromLibrary(pl); renderTrackList(); } }, 1500);
 }
 
 function getFilteredPlaylist() {
@@ -3636,21 +3637,24 @@ async function tryRestoreFolder() {
   if (!('showDirectoryPicker' in window)) return;
   const handle = await loadDirectoryHandle();
   if (!handle) return;
-  // Show quick-load button since we have a saved handle
-  const qb = document.getElementById('btn-quick-folder'); if (qb) { qb.style.opacity='1'; qb.style.cursor='pointer'; qb.disabled=false; }  // Check if we already have permission, or can get it without a gesture
   try {
-    const perm = await handle.queryPermission({ mode: 'read' });
+    // First check if permission is already granted (no prompt needed)
+    let perm = await handle.queryPermission({ mode: 'read' });
+    if (perm !== 'granted') {
+      // Try requesting silently — Chrome often grants this without a visible
+      // prompt if the user previously granted permission in the same browser.
+      // If it truly needs a user gesture it will return 'prompt' not throw.
+      try { perm = await handle.requestPermission({ mode: 'read' }); } catch(e) {}
+    }
     if (perm === 'granted') {
-      // Clear library first — mountFolder appends, and S.library may already
-      // hold cached entries from localStorage, which caused duplicates.
       S.library = [];
       S.fileHandles = {};
       await mountFolder(handle);
       return;
     }
-    // Permission lapsed — show a one-click prompt in the UI
+    // Still not granted — browser requires a click; show the reconnect banner
     showReconnectBanner(handle);
-  } catch(e) { /* handle stale/invalid, ignore */ }
+  } catch(e) { /* stale/invalid handle, ignore */ }
 }
 
 function showReconnectBanner(handle) {
@@ -3893,6 +3897,7 @@ async function enrichTracksInBackground(ids) {
   S.playlists.forEach(syncPlaylistTracksFromLibrary); // push fresh tags/art into every playlist, not just the open one
   renderLibrary();
   if (S.currentPL) renderTrackList();
+  renderUpNext();
   toast('Library refined ✓');
 
   if (artQueue.length) {
@@ -3999,7 +4004,9 @@ async function fetchArtInBackground(ids) {
     renderLibrary();
   }
   S.playlists.forEach(syncPlaylistTracksFromLibrary); // newly-fetched iTunes art reaches every playlist too
+  // Re-render the playlist detail view if it's currently showing
   if (S.currentPL) renderTrackList();
+  renderUpNext(); // also refresh the Now Playing queue thumbnails
   if (ids.length) hideLoadProgress();
   artFetchRunning = false;
   if (S._pendingArt?.length) {
