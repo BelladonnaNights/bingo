@@ -19,6 +19,47 @@
   --serif:'EB Garamond',serif;--cinzel:'Cinzel',serif;
 }
 html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var(--text)}
+
+/* ── Now Playing banner — only visible when linked to a host session ── */
+@keyframes npb-fadein { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+#now-playing-banner {
+  display: none; /* hidden until a session is active */
+  position: sticky; top: 64px; z-index: 190;
+  background: linear-gradient(90deg, rgba(10,10,10,.97), rgba(20,18,14,.97));
+  border-bottom: 1px solid var(--gold-border);
+  padding: 10px 2rem;
+  align-items: center; gap: 14px;
+  animation: npb-fadein .4s ease forwards;
+}
+#now-playing-banner.active { display: flex; }
+.npb-label {
+  font-family: var(--cinzel); font-size: 9px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--gold); flex-shrink: 0;
+  white-space: nowrap;
+}
+.npb-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold); flex-shrink: 0;
+  box-shadow: 0 0 6px var(--gold);
+  animation: blink 1.4s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+.npb-song {
+  font-family: var(--cinzel); font-size: 13px;
+  color: var(--gold2); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; font-weight: 600;
+}
+.npb-artist {
+  font-family: var(--serif); font-size: 12px; font-style: italic;
+  color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+.npb-separator { color: var(--text3); flex-shrink: 0; }
+.npb-board {
+  margin-left: auto; font-family: var(--cinzel); font-size: 9px;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--text3); flex-shrink: 0; white-space: nowrap;
+}
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-thumb{background:rgba(201,168,76,.25);border-radius:3px}
 .nav{position:sticky;top:0;z-index:200;background:rgba(10,10,10,.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px}
@@ -153,6 +194,16 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <button class="nav-btn nav-btn-sched" onclick="openScheduleBtn()">Schedule</button>
   </div>
 </nav>
+
+<!-- Now Playing banner — shown when this page is linked to a host's media player -->
+<div id="now-playing-banner" role="status" aria-live="polite">
+  <div class="npb-dot"></div>
+  <div class="npb-label">Now Playing</div>
+  <div class="npb-song" id="npb-song">—</div>
+  <div class="npb-separator">·</div>
+  <div class="npb-artist" id="npb-artist"></div>
+  <div class="npb-board" id="npb-board"></div>
+</div>
 
 <div class="hero">
   <div class="hero-logo-wrap">
@@ -505,6 +556,34 @@ function initFirebase() {
         document.getElementById('logo-url-input').value = url;
         if (url) { var pi = document.getElementById('logo-preview-img'); pi.src = url; pi.classList.add('show'); }
       });
+
+      // ── Now Playing bridge: listen for the host's current track ──────────────
+      // The media player writes to sessions/{sessionKey}/nowPlaying when it
+      // cues a song. If this page was opened via the player's link, the
+      // ?session= URL param tells us which path to watch.
+      var params = new URLSearchParams(window.location.search);
+      var sessionKey = params.get('session');
+      var categoryId = params.get('id');
+      if (sessionKey) {
+        var npPath = 'sessions/' + sessionKey + '/nowPlaying';
+        db.ref(npPath).on('value', function(snap) {
+          var data = snap.val();
+          var banner = document.getElementById('now-playing-banner');
+          if (!banner) return;
+          if (!data || !data.title) {
+            banner.classList.remove('active');
+            return;
+          }
+          document.getElementById('npb-song').textContent = data.title || '—';
+          document.getElementById('npb-artist').textContent = data.artist || '';
+          // Show which board this is linked to, helpful when admin is monitoring
+          if (categoryId) {
+            var cat = categories.find(function(c) { return c.id === categoryId; });
+            document.getElementById('npb-board').textContent = cat ? '⊞ ' + cat.title : '';
+          }
+          banner.classList.add('active');
+        });
+      }
     };
     document.head.appendChild(s2);
   };
