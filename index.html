@@ -674,9 +674,9 @@ function renderGrid() {
       : '<div class="cat-banner-placeholder"><span>' + c.title + '</span></div>';
     var genreHTML = c.classicBingo ? '<span class="cat-genre" style="background:rgba(201,168,76,.2);border-color:var(--gold-border2);color:var(--gold2)">Classic Bingo</span>' : (genres.length ? '<span class="cat-genre">' + genres[0] + '</span>' : '');
     var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
-    var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
+    var arrowHTML = isLive ? '<div class="cat-arrow">→</div>' : '';
     var href = isLive ? 'app.html?id=' + c.id : '#';
-    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
+    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '">' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
   });
   grid.innerHTML = html;
 }
