@@ -2,500 +2,486 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Music Bingo — Belladonna Audio Alchemies</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>Music Bingo</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0a0a0a;--surface:#131313;--surface2:#1c1c1c;--surface3:#252525;
-  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);--border3:rgba(255,255,255,.22);
-  --text:#f0ede8;--text2:#b0a898;--text3:#5a5248;
-  --gold:#c9a84c;--gold2:#e8c96a;--gold3:#f5df90;
+  --bg:#ffffff;--bg2:#f8f6f2;--bg3:#ede9e2;
+  --text:#1a1714;--text2:#6b6460;--text3:#a09890;
+  --border:rgba(0,0,0,.09);--border2:rgba(0,0,0,.16);--border3:rgba(0,0,0,.28);
+  --green-bg:#EAF3DE;--green-border:#97C459;--green-text:#27500A;--green-sub:#3B6D11;
+  --gold:#c9a84c;--gold2:#e2c068;--gold3:#f5df90;
   --gold-shine:linear-gradient(135deg,#c9a84c 0%,#f5df90 45%,#c9a84c 70%,#e2b84a 100%);
-  --gold-dim:rgba(201,168,76,.10);--gold-border:rgba(201,168,76,.28);--gold-border2:rgba(201,168,76,.5);
-  --radius:8px;--radius-lg:14px;
-  --font:'DM Sans',sans-serif;--display:'Bebas Neue',sans-serif;
-  --serif:'EB Garamond',serif;--cinzel:'Cinzel',serif;
+  --gold-dim:rgba(201,168,76,.10);--gold-border:rgba(201,168,76,.35);--gold-border2:rgba(201,168,76,.6);
+  --radius:8px;--radius-lg:12px;
+  --font:'DM Sans',sans-serif;--cinzel:'Cinzel',serif;--serif:'EB Garamond',serif;
+  --mono:'SF Mono','Fira Code',monospace;
 }
-html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var(--text)}
+html,body{height:100%;font-family:var(--font);background:var(--bg2);color:var(--text)}
 
-/* ── Now Playing banner — only visible when linked to a host session ── */
-@keyframes npb-fadein { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-#now-playing-banner {
-  display: none; /* hidden until a session is active */
-  position: sticky; top: 64px; z-index: 190;
-  background: linear-gradient(90deg, rgba(10,10,10,.97), rgba(20,18,14,.97));
-  border-bottom: 1px solid var(--gold-border);
-  padding: 10px 2rem;
-  align-items: center; gap: 14px;
-  animation: npb-fadein .4s ease forwards;
-}
-#now-playing-banner.active { display: flex; }
-.npb-label {
-  font-family: var(--cinzel); font-size: 9px; letter-spacing: .18em;
-  text-transform: uppercase; color: var(--gold); flex-shrink: 0;
-  white-space: nowrap;
-}
-.npb-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--gold); flex-shrink: 0;
-  box-shadow: 0 0 6px var(--gold);
-  animation: blink 1.4s ease-in-out infinite;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
-.npb-song {
-  font-family: var(--cinzel); font-size: 13px;
-  color: var(--gold2); white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis; font-weight: 600;
-}
-.npb-artist {
-  font-family: var(--serif); font-size: 12px; font-style: italic;
-  color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  flex-shrink: 0;
-}
-.npb-separator { color: var(--text3); flex-shrink: 0; }
-.npb-board {
-  margin-left: auto; font-family: var(--cinzel); font-size: 9px;
-  letter-spacing: .12em; text-transform: uppercase;
-  color: var(--text3); flex-shrink: 0; white-space: nowrap;
-}
-::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-thumb{background:rgba(201,168,76,.25);border-radius:3px}
-.nav{position:sticky;top:0;z-index:200;background:rgba(10,10,10,.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px}
-.nav-left{display:flex;align-items:center;gap:14px}
-.nav-logo-img{height:40px;width:auto;object-fit:contain;display:none}
-.nav-title{font-family:var(--display);font-size:22px;letter-spacing:.06em;color:var(--text);line-height:1}
-.nav-title span{background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;justify-content:center}
-.nav-btn{background:none;border:1px solid var(--gold-border);border-radius:var(--radius);padding:7px 16px;font-size:11px;font-weight:500;font-family:var(--cinzel);letter-spacing:.1em;text-transform:uppercase;color:var(--gold);cursor:pointer;transition:all .2s;white-space:nowrap}
-.nav-btn:hover{background:var(--gold);color:#000;border-color:var(--gold)}
-.nav-btn-sched{font-size:12px;padding:5px 14px;letter-spacing:.06em}
-.hero{position:relative;padding:4rem 2rem 3rem;max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:3rem;flex-wrap:wrap;overflow:hidden}
-.hero::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:800px;height:360px;background:radial-gradient(ellipse at 50% 0%,rgba(201,168,76,.06) 0%,transparent 68%);pointer-events:none}
-.hero-logo-wrap{flex-shrink:0;position:relative;z-index:1}
-.hero-logo-img{width:160px;height:160px;object-fit:contain;display:none}
-.hero-logo-placeholder{width:130px;height:130px;border-radius:var(--radius-lg);border:1px dashed var(--gold-border);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;cursor:pointer;background:var(--surface);transition:border-color .2s}
-.hero-logo-placeholder:hover{border-color:var(--gold-border2)}
-.hero-logo-placeholder span{font-size:11px;color:var(--text3);text-align:center;padding:0 10px;line-height:1.4}
-.hero-text{flex:1;min-width:240px;position:relative;z-index:1}
-.hero-eyebrow{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--gold);margin-bottom:8px;letter-spacing:.04em}
-.hero-title{font-family:var(--display);font-size:clamp(52px,8vw,100px);line-height:.92;letter-spacing:.03em;color:var(--text);margin-bottom:14px}
-.hero-title span{background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero-sub{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--text2);max-width:420px;line-height:1.6;letter-spacing:.02em}
-.ornament{display:flex;align-items:center;gap:10px;max-width:1100px;margin:0 auto;padding:0 2rem}
-.ornament-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.35),transparent)}
-.ornament-diamond{width:6px;height:6px;background:var(--gold);transform:rotate(45deg);flex-shrink:0;box-shadow:0 0 5px rgba(201,168,76,.45)}
-.toolbar{max-width:1100px;margin:0 auto;padding:1.75rem 2rem .75rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.search-box{flex:1;min-width:200px;position:relative}
-.search-box input{width:100%;background:var(--surface);border:1px solid var(--gold-border);border-radius:99px;padding:11px 18px 11px 42px;font-size:14px;font-family:var(--serif);font-style:italic;color:var(--text);transition:border-color .2s,box-shadow .2s;letter-spacing:.02em}
-.search-box input:focus{outline:none;border-color:var(--gold-border2);box-shadow:0 0 0 3px rgba(201,168,76,.07)}
-.search-box input::placeholder{color:var(--text3);font-style:italic}
-.search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:15px;pointer-events:none;opacity:.7}
-.filter-pills{display:flex;gap:6px;flex-wrap:wrap}
-.pill{background:transparent;border:1px solid var(--border2);border-radius:99px;padding:7px 16px;font-size:11px;font-weight:500;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap}
-.pill:hover{border-color:var(--gold-border);color:var(--gold2)}
-.pill.active{background:var(--gold-dim);border-color:var(--gold-border2);color:var(--gold2)}
-.cat-count{max-width:1100px;margin:0 auto;padding:0 2rem .5rem;font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text3)}
-.grid{max-width:1100px;margin:0 auto;padding:0 2rem 5rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:18px}
-.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;transition:border-color .25s,transform .2s,box-shadow .25s;text-decoration:none;display:block;position:relative}
-.cat-card:hover{border-color:var(--gold-border2);transform:translateY(-3px);box-shadow:0 10px 36px rgba(201,168,76,.1),0 2px 10px rgba(0,0,0,.5)}
-.cat-card.coming-soon{opacity:.45;cursor:default;pointer-events:none}
-.cat-banner{width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;background:var(--surface2)}
-.cat-banner-placeholder{width:100%;aspect-ratio:1554/319;background:var(--surface2);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border)}
-.cat-banner-placeholder span{font-family:var(--display);font-size:22px;letter-spacing:.1em;color:var(--text3)}
-.cat-body{padding:12px 16px 14px;border-top:1px solid var(--border)}
-.cat-title{font-family:var(--cinzel);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text);margin-bottom:5px}
-.cat-meta{display:flex;align-items:center;gap:8px}
-.cat-genre{font-size:10px;background:var(--gold-dim);border-radius:99px;padding:2px 10px;border:1px solid var(--gold-border);font-family:var(--cinzel);letter-spacing:.06em;text-transform:uppercase;color:var(--gold2)}
-.cat-coming{font-size:11px;color:var(--text3);font-family:var(--serif);font-style:italic}
-.cat-arrow{position:absolute;top:10px;right:10px;background:rgba(10,10,10,.8);border:1px solid var(--gold-border);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--gold2);opacity:0;transition:opacity .2s}
-.cat-card:hover .cat-arrow{opacity:1}
-.empty{grid-column:1/-1;text-align:center;padding:5rem 1rem}
-.empty-icon{font-size:36px;margin-bottom:14px;display:block;color:var(--text3)}
-.empty-text{font-family:var(--serif);font-style:italic;color:var(--text3);font-size:16px}
-.footer{padding:3rem 2rem;text-align:center;border-top:1px solid var(--border);background:var(--surface)}
-.footer-logo{font-family:var(--cinzel);font-size:14px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
-.footer-tagline{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);margin-bottom:1.25rem}
-.footer-links{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-bottom:1.25rem}
-.footer-links a{font-family:var(--cinzel);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);text-decoration:none;transition:color .15s}
-.footer-links a:hover{color:var(--gold2)}
-.ornament-footer{display:flex;align-items:center;gap:8px;max-width:300px;margin:0 auto 16px}
-.ornament-footer .ornament-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.3),transparent)}
-.ornament-footer .ornament-diamond{width:5px;height:5px;background:var(--gold);transform:rotate(45deg);flex-shrink:0}
-.footer-copy{font-size:11px;color:var(--text3);letter-spacing:.03em}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
-.overlay.show{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);width:min(680px,95vw);max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
-.modal-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.modal-title{font-family:var(--cinzel);font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2)}
-.modal-close{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px}
-.modal-close:hover{background:var(--surface2);color:var(--text)}
-.modal-body{padding:1.5rem;overflow-y:auto;flex:1}
-.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
-.form-group{margin-bottom:1.25rem}
-.form-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:6px;font-family:var(--cinzel)}
-.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 13px;font-size:14px;font-family:var(--font);color:var(--text);transition:border-color .15s}
-.form-input:focus{outline:none;border-color:var(--gold-border)}
-.form-input::placeholder{color:var(--text3)}
-.form-row{display:flex;gap:12px}
-.form-row .form-group{flex:1;margin-bottom:0}
-.form-hint{font-size:11px;color:var(--text3);margin-top:4px;font-style:italic}
-.banner-preview{width:100%;aspect-ratio:1554/319;object-fit:cover;border-radius:var(--radius);background:var(--surface2);display:block;margin-top:8px;border:1px solid var(--border)}
-.btn{border-radius:var(--radius);padding:9px 18px;font-size:12px;font-family:var(--cinzel);font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s;white-space:nowrap;border:1px solid}
-.btn-primary{background:var(--gold);color:#000;border-color:var(--gold)}
-.btn-primary:hover{background:var(--gold2);border-color:var(--gold2)}
-.btn-ghost{background:none;border-color:var(--border2);color:var(--text2)}
-.btn-ghost:hover{background:var(--surface2);color:var(--text)}
-.btn-danger{background:none;border-color:rgba(220,60,60,.3);color:#e05050}
-.btn-danger:hover{background:rgba(220,60,60,.1)}
-.btn-sm{padding:5px 12px;font-size:10px}
-.btn-accent{background:var(--gold-dim);border:1px solid var(--gold-border);color:var(--gold2);font-size:10px;padding:5px 12px;border-radius:var(--radius);font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s}
-.btn-accent:hover{background:var(--gold);color:#000;border-color:var(--gold)}
-.admin-list{display:flex;flex-direction:column;gap:8px;margin-bottom:1.5rem}
-.admin-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;gap:12px}
-.admin-item-thumb{width:72px;aspect-ratio:1554/319;object-fit:cover;border-radius:3px;background:var(--surface3);flex-shrink:0}
-.admin-item-info{flex:1;min-width:0}
-.admin-item-title{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--cinzel);letter-spacing:.04em}
-.admin-item-meta{font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.admin-item-actions{display:flex;gap:6px;flex-shrink:0}
-.password-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2.5rem;width:min(400px,100%);text-align:center}
-.password-box h2{font-family:var(--display);font-size:34px;letter-spacing:.06em;margin-bottom:6px;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.password-box p{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);margin-bottom:1.5rem}
-.logo-field{display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px}
-.logo-preview{width:56px;height:56px;object-fit:contain;border-radius:var(--radius);background:var(--surface3);flex-shrink:0;display:none}
-.logo-preview.show{display:block}
-.logo-field-inputs{flex:1}
-.sched-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.25rem}
-.sched-tab{padding:8px 16px;font-size:10px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;transition:all .15s}
-.sched-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--gold);color:#000;font-size:12px;font-weight:700;padding:9px 22px;border-radius:99px;transition:transform .22s;pointer-events:none;z-index:9999;white-space:nowrap;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase}
+/* LOADING */
+.loading-screen{position:fixed;inset:0;background:var(--bg2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999}
+.loading-screen.hide{display:none}
+.loading-title{font-family:var(--cinzel);font-size:20px;letter-spacing:.1em;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.loading-sub{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--text2)}
+.loading-spinner{width:36px;height:36px;border:3px solid var(--gold-dim);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-screen{position:fixed;inset:0;background:var(--bg2);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:2rem}
+.error-screen.show{display:flex}
+.error-title{font-family:var(--cinzel);font-size:18px;letter-spacing:.08em;color:var(--text);margin-bottom:4px}
+.error-sub{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--text2);max-width:400px}
+
+/* NAV */
+.nav{background:var(--bg);border-bottom:1px solid var(--border2);padding:0 1.5rem;display:flex;align-items:center;position:sticky;top:0;z-index:100;height:60px}
+.nav-brand{display:flex;align-items:center;gap:10px;margin-right:1.5rem;white-space:nowrap;text-decoration:none}
+.nav-brand-logo{height:32px;width:auto;object-fit:contain;display:none}
+.nav-brand-text{font-family:var(--cinzel);font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.nav-tabs{display:flex;overflow-x:auto}
+.nav-tab{padding:14px 18px;font-size:12px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;font-family:var(--cinzel);letter-spacing:.07em;text-transform:uppercase;transition:all .15s;white-space:nowrap}
+.nav-tab.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:600}
+.nav-tab:hover:not(.active){color:var(--text)}
+.player-mode .nav-tabs{display:none}
+.player-mode .nav-brand{pointer-events:none}
+
+/* BACK LINK */
+.back-link{display:inline-flex;align-items:center;gap:6px;font-family:var(--cinzel);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;padding:0 1.5rem;height:36px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:60px;z-index:99;width:100%;transition:opacity .15s}
+.back-link:hover{opacity:.75}
+.back-link.hidden{display:none}
+
+/* PAGES */
+.page{display:none;min-height:100vh;padding:2rem 1rem 4rem}
+.page.active{display:block}
+.container{max-width:980px;margin:0 auto}
+.page-title{font-family:var(--cinzel);font-size:18px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.page-sub{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--text2);margin-bottom:1.5rem}
+.section-label{font-family:var(--cinzel);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin-bottom:1rem}
+label.field-label{font-size:13px;color:var(--text2);display:block;margin-bottom:5px}
+input[type=text],input[type=number]{width:100%;background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius);padding:10px 13px;font-size:14px;font-family:var(--font);color:var(--text);transition:border-color .15s}
+input:focus{outline:none;border-color:var(--gold-border2)}
+input::placeholder{color:var(--text3)}
+.field-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1rem}
+.field-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:180px}
+button{cursor:pointer;font-family:var(--font);font-size:13px}
+.btn{border-radius:var(--radius);padding:9px 18px;transition:all .15s;font-size:13px;white-space:nowrap}
+.btn-primary{background:var(--text);color:var(--bg);border:none;font-weight:500}
+.btn-primary:hover{opacity:.82}
+.btn-ghost{background:none;border:.5px solid var(--border2);color:var(--text2)}
+.btn-ghost:hover{background:var(--bg2);color:var(--text)}
+.btn-accent{background:#1a7a3c;color:#fff;border:none;font-weight:500}
+.btn-accent:hover{background:#155f2f}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.stats-row{display:flex;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap}
+.stat{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:10px 14px;flex:1;min-width:70px;border-left:3px solid var(--gold)}
+.stat-val{font-family:var(--cinzel);font-size:22px;font-weight:600;line-height:1.1;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{font-size:11px;color:var(--text2);margin-top:2px;font-family:var(--cinzel);letter-spacing:.06em;text-transform:uppercase}
+.host-tabs{display:flex;border-bottom:.5px solid var(--border2);margin-bottom:1.25rem}
+.host-tab{padding:10px 18px;font-size:11px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;transition:all .15s}
+.host-tab.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:600}
+.host-tab:hover:not(.active){color:var(--text)}
+.song-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px}
+.song-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:11px 13px;cursor:pointer;user-select:none;position:relative;transition:border-color .12s,background .12s}
+.song-card:hover{border-color:var(--gold-border)}
+.song-card.played{background:var(--green-bg);border-color:var(--green-border)}
+.song-card.played::after{content:'✓';position:absolute;top:7px;right:9px;font-size:13px;color:var(--green-sub);font-weight:700}
+.song-label{font-size:13px;font-weight:500;line-height:1.4;padding-right:18px}
+.song-card.played .song-label{color:var(--green-text)}
+.artist-part{font-weight:400;color:var(--text2)}
+.song-card.played .artist-part{color:var(--green-sub)}
+.feed{margin-top:1.5rem}
+.feed-header{font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--text2);font-weight:500;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.feed-list{list-style:none;display:flex;flex-direction:column;gap:5px;max-height:300px;overflow-y:auto}
+.feed-item{display:flex;align-items:center;gap:9px;background:var(--bg2);border-radius:var(--radius);padding:8px 11px}
+.feed-num{font-size:11px;color:var(--text3);min-width:22px;font-family:var(--cinzel)}
+.feed-label{font-size:13px;flex:1}
+.feed-undo{font-size:11px;color:var(--text3);border:none;background:none;cursor:pointer;padding:2px 6px;border-radius:4px}
+.feed-undo:hover{background:var(--bg3);color:var(--text)}
+.print-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:7px;margin-bottom:1.25rem}
+.print-cell{border:.5px solid var(--border2);border-radius:var(--radius);padding:9px 11px;background:var(--bg);display:flex;align-items:flex-start;gap:7px}
+.cell-num{font-size:11px;color:var(--text3);min-width:18px;margin-top:1px;flex-shrink:0}
+.cell-label{font-size:12px;font-weight:500;line-height:1.4}
+.banner-wrap{width:100%;margin-bottom:1.25rem;border-radius:var(--radius-lg);overflow:hidden;line-height:0}
+.banner-wrap img{width:100%;height:auto;display:block;aspect-ratio:1554/319;object-fit:cover}
+.banner-wrap.broken{aspect-ratio:1554/319;background:var(--bg);border:1.5px dashed var(--border2);display:flex;align-items:center;justify-content:center;border-radius:var(--radius-lg)}
+.top-bar{display:flex;gap:8px;margin-bottom:1rem;align-items:center;flex-wrap:wrap}
+.search-wrap{flex:1;min-width:140px;position:relative;display:flex;align-items:center;gap:8px}
+.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px;display:none}
+.search-clear:hover{color:var(--text);background:var(--bg3)}
+.search-wrap input:not(:placeholder-shown) ~ .search-clear{display:block}
+.auto-clear-wrap{display:flex;align-items:center;gap:6px;white-space:nowrap;cursor:pointer;user-select:none}
+.auto-clear-cb{width:14px;height:14px;accent-color:var(--gold);cursor:pointer;flex-shrink:0}
+.auto-clear-label{font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)}
+.search-wrap input{padding:9px 13px;font-size:13px;border-radius:99px;border-color:var(--gold-border)}
+.search-wrap input:focus{border-color:var(--gold-border2)}
+.bingo-card-wrap{background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px}
+.bingo-card-banner{width:100%;aspect-ratio:1554/319;object-fit:cover;display:block}
+.bingo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:5px 7px 7px}
+.bingo-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;text-align:center;border:.5px solid var(--border2);border-radius:5px;padding:4px;font-weight:500;color:var(--text);background:var(--bg2);cursor:pointer;user-select:none;transition:background .1s;position:relative;overflow:hidden}
+.bingo-cell:hover{border-color:var(--gold-border)}
+.bingo-cell.daubed::before{content:'';position:absolute;inset:8%;border-radius:50%;background:rgba(210,65,30,.52);pointer-events:none;z-index:1}
+.bingo-cell.daubed .cell-text{position:relative;z-index:2;opacity:.7}
+.bingo-cell.free{background:#fff;border:.5px solid #bbb;color:#000}
+.bingo-cell.free.daubed{background:#fff}
+.bingo-cell.free.daubed::before{background:rgba(210,65,30,.40)}
+.free-space-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:1px;pointer-events:none}
+.free-rays-top,.free-rays-bottom{display:flex;gap:2px;align-items:center;justify-content:center}
+.free-ray{width:2px;height:7px;border-radius:1px;background:#000}
+.free-words{display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.free-word{font-size:clamp(6px,1.1vw,10px);font-weight:900;letter-spacing:.01em;text-transform:uppercase;color:#000}
+.cell-text{line-height:1.25;text-align:center;pointer-events:none;overflow-wrap:break-word;word-break:normal;hyphens:none;white-space:normal}
+.cell-title{display:block}
+.cell-artist{display:block;opacity:.6;margin-top:1px}
+.song-ts{display:inline-block;font-size:10px;font-weight:500;color:var(--bg);background:var(--text2);border-radius:4px;padding:1px 5px;margin-left:4px;font-family:var(--mono);letter-spacing:.02em;vertical-align:middle;opacity:.75}
+.song-card.played .song-ts{background:var(--green-sub);color:#fff;opacity:1}
+.feed-ts{display:inline-block;font-size:10px;font-weight:500;color:var(--bg);background:var(--text2);border-radius:4px;padding:1px 5px;margin-left:4px;font-family:var(--mono);vertical-align:middle}
+.cards-preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:1rem}
+.no-results{grid-column:1/-1;text-align:center;padding:2rem;color:var(--text3);font-size:13px}
+.player-page{max-width:480px;margin:0 auto;padding:1.5rem 1rem}
+.player-entry-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:1rem}
+.player-entry-banner{width:100%;aspect-ratio:1554/319;object-fit:cover;display:block}
+.player-entry-body{padding:1.25rem 1.5rem}
+.player-entry-body p{font-size:13px;color:var(--text2);margin-bottom:1.25rem}
+.bingo-shout{display:none;text-align:center;padding:1rem;background:var(--green-bg);border:2px solid var(--green-border);border-radius:var(--radius-lg);margin-bottom:1rem}
+.bingo-shout.show{display:block}
+.bingo-shout-text{font-size:32px;font-weight:800;color:var(--green-text);letter-spacing:.05em}
+.bingo-shout-sub{font-size:13px;color:var(--green-sub);margin-top:4px}
+.player-controls{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.player-back{display:none;padding:10px 16px;background:none;border:.5px solid var(--border2);border-radius:var(--radius);color:var(--text2);font-size:13px;margin-bottom:1rem;cursor:pointer;font-family:var(--font)}
+.player-back:hover{background:var(--bg2);color:var(--text)}
+.player-mode-host .player-back{display:block}
+.qr-wrap{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;text-align:center;margin-top:1rem}
+.qr-label{font-size:12px;color:var(--text2);margin-top:8px}
+.qr-url{font-size:11px;color:var(--text3);margin-top:3px;word-break:break-all;font-family:var(--mono)}
+.qr-fullscreen{display:none;position:fixed;inset:0;background:#000;z-index:2000;align-items:center;justify-content:center;flex-direction:column;gap:20px}
+.qr-fullscreen.show{display:flex}
+.qr-fullscreen-inner{background:#fff;border-radius:16px;padding:20px;line-height:0}
+.qr-fullscreen-label{color:#fff;font-size:18px;font-weight:500;opacity:.85}
+.qr-fullscreen-close{position:absolute;top:20px;right:24px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.bingo-claim-banner{display:none;margin-bottom:1rem;background:#fffbe6;border:2px solid var(--gold);border-radius:var(--radius-lg);padding:14px 18px;align-items:center;gap:12px}
+.bingo-claim-banner.show{display:flex}
+.winner-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center}
+.winner-overlay.show{display:flex}
+.winner-box{background:var(--bg);border-radius:var(--radius-lg);padding:2rem 2.5rem;text-align:center;max-width:340px;border:2px solid var(--gold-border)}
+.winner-emoji{font-size:48px;margin-bottom:12px}
+.winner-title{font-family:var(--cinzel);font-size:24px;font-weight:600;letter-spacing:.1em;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+.winner-sub{font-size:14px;color:var(--text2);margin-bottom:1.25rem;font-family:var(--serif);font-style:italic}
+.bingo-status{text-align:center;padding:8px;font-size:13px;color:var(--text2)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--gold);color:#000;font-size:11px;font-weight:700;padding:9px 20px;border-radius:99px;transition:transform .22s;pointer-events:none;z-index:9999;white-space:nowrap;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase}
 .toast.show{transform:translateX(-50%) translateY(0)}
-@media(max-width:640px){
-  .nav{padding:0 1rem}
-  .hero{padding:2.5rem 1rem 2rem;gap:1.5rem;flex-direction:column}
-  .hero-logo-img,.hero-logo-placeholder{width:120px;height:120px}
-  .hero-title{font-size:56px}
-  .toolbar,.cat-count,.grid,.ornament{padding-left:1rem;padding-right:1rem}
-  .grid{grid-template-columns:1fr}
-  .form-row{flex-direction:column}
+@media(max-width:600px){
+  .page{padding:1rem .75rem 3rem}
+  .song-grid,.print-grid{grid-template-columns:1fr 1fr}
+  .cards-preview{grid-template-columns:1fr}
+  .nav-brand-text{font-size:11px}
 }
+/* print handled by printCards() function — opens a dedicated clean window */
 </style>
 </head>
 <body>
 
-<nav class="nav">
-  <div class="nav-left">
-    <img class="nav-logo-img" id="nav-logo-img" src="" alt="Logo" onerror="this.style.display='none'">
-    <div class="nav-title">MUSIC<span>BINGO</span></div>
+<!-- LOADING -->
+<div class="loading-screen" id="loading-screen">
+  <div class="loading-spinner"></div>
+  <div class="loading-title">Music Bingo</div>
+  <div class="loading-sub">Loading your playlist…</div>
+</div>
+
+<!-- ERROR -->
+<div class="error-screen" id="error-screen">
+  <div style="font-size:40px">🎵</div>
+  <div class="error-title">Playlist not found</div>
+  <div class="error-sub">This bingo category doesn't exist or may have been removed. Head back to the main page to choose a playlist.</div>
+  <a href="index.html" style="margin-top:1rem;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none">← Back to playlists</a>
+</div>
+
+<!-- NAV -->
+<nav class="nav" id="main-nav" style="display:none">
+  <div class="nav-brand">
+    <img class="nav-brand-logo" id="nav-brand-logo" src="" alt="Logo" onerror="this.style.display='none'">
+    <span class="nav-brand-text" id="nav-brand">Music Bingo</span>
   </div>
-  <div class="nav-right">
-    <button class="nav-btn" onclick="openAdmin()">Admin ⚙</button>
-    <button class="nav-btn nav-btn-sched" onclick="openScheduleBtn()">Schedule</button>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+    <button onclick="location.reload()" style="background:none;border:.5px solid var(--border2);border-radius:var(--radius);padding:5px 12px;font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--text3);cursor:pointer;transition:all .15s" title="Reload to get latest category data">↺ Reload</button>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-host" onclick="showPage('host')">Host Tool</button>
+    <button class="nav-tab" id="tab-cards" onclick="showPage('cards')">Card Generator</button>
+    <button class="nav-tab" id="tab-player" onclick="showPage('player')">Player Card</button>
+    <a class="nav-tab" id="tab-tiebreaker" onclick="openTiebreaker()" style="text-decoration:none;cursor:pointer">Tie Breaker</a>
   </div>
 </nav>
 
-<!-- Now Playing banner — shown when this page is linked to a host's media player -->
-<div id="now-playing-banner" role="status" aria-live="polite">
-  <div class="npb-dot"></div>
-  <div class="npb-label">Now Playing</div>
-  <div class="npb-song" id="npb-song">—</div>
-  <div class="npb-separator">·</div>
-  <div class="npb-artist" id="npb-artist"></div>
-  <div class="npb-board" id="npb-board"></div>
-</div>
+<!-- BACK LINK -->
+<a class="back-link" id="back-link" href="index.html" style="display:none">← All playlists</a>
 
-<div class="hero">
-  <div class="hero-logo-wrap">
-    <img class="hero-logo-img" id="hero-logo-img" src="" alt="Belladonna Audio Alchemies" onerror="this.style.display='none'">
-    <div class="hero-logo-placeholder" id="hero-logo-placeholder" onclick="openAdmin()" title="Add logo in Admin">
-      <span style="font-size:22px;color:var(--text3)">+</span>
-      <span>Add logo<br>in Admin</span>
+<!-- HOST -->
+<div class="page active" id="page-host" style="display:none">
+  <div class="container" style="padding-top:1.5rem">
+    <div id="host-banner" class="banner-wrap" style="display:none"></div>
+    <div class="page-title" id="host-title">Music Bingo — Host Tool</div>
+    <div class="page-sub">Tap a song when it plays. Check the played list to verify bingo calls.</div>
+    <div id="player-link-indicator" style="display:none;margin-bottom:1.25rem;padding:10px 16px;background:#fffbe6;border:1.5px solid var(--gold);border-radius:var(--radius);font-family:var(--cinzel);font-size:11px;letter-spacing:.08em;color:#7a5500;align-items:center;gap:10px">
+      <span style="font-size:18px">&#9835;</span>
+      <span><strong>Media Player Linked</strong> &mdash; songs will auto-tick when played</span>
     </div>
-  </div>
-  <div class="hero-text">
-    <div class="hero-eyebrow">Belladonna Audio Alchemies presents</div>
-    <div class="hero-title">MUSIC<br><span>BINGO</span></div>
-    <div class="hero-sub">Choose your playlist. Your host will take it from there.</div>
-  </div>
-</div>
-
-<div class="ornament" style="margin-bottom:.5rem">
-  <div class="ornament-line"></div>
-  <div class="ornament-diamond"></div>
-  <div class="ornament-diamond"></div>
-  <div class="ornament-diamond"></div>
-  <div class="ornament-line"></div>
-</div>
-
-<div class="toolbar">
-  <div class="search-box">
-    <span class="search-icon">♪</span>
-    <input type="text" id="search-input" placeholder="Search playlists…" oninput="renderGrid()">
-  </div>
-  <div class="filter-pills" id="filter-pills"></div>
-</div>
-<div class="cat-count" id="cat-count"></div>
-<div class="grid" id="cat-grid"></div>
-
-<footer class="footer">
-  <div class="footer-logo">Belladonna Audio Alchemies</div>
-  <div class="footer-tagline">Live entertainment for bars, breweries &amp; events — Seattle–Tacoma</div>
-  <div class="footer-links">
-    <a href="https://www.belladonnanights.com" target="_blank">Main Site</a>
-    <a href="https://www.belladonnanights.com/calendar" target="_blank">Event Calendar</a>
-    <a href="https://www.instagram.com/belladonnaaudioalchemies" target="_blank">Instagram</a>
-    <a href="https://www.facebook.com/belladonnaaudioalchemies" target="_blank">Facebook</a>
-    <a href="mailto:contact@belladonnanights.com">Contact HQ</a>
-  </div>
-  <div class="ornament-footer">
-    <div class="ornament-line"></div>
-    <div class="ornament-diamond"></div>
-    <div class="ornament-line"></div>
-  </div>
-  <div class="footer-copy">© 2026 Belladonna Entertainment LLC — All Rights Reserved</div>
-</footer>
-
-<!-- ADMIN OVERLAY -->
-<div class="overlay" id="admin-overlay">
-  <div id="pw-screen" class="password-box">
-    <h2>ADMIN</h2>
-    <p>Enter your password to manage categories.</p>
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <input class="form-input" type="password" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkPW()" style="flex:1">
-      <button class="btn btn-primary" onclick="checkPW()">Enter</button>
+    <div class="host-tabs">
+      <button class="host-tab active" id="htab-daub" onclick="switchHostTab('daub')">Live Daubing Board</button>
+      <button class="host-tab" id="htab-log" onclick="switchHostTab('log')">Play Log</button>
+      <button class="host-tab" id="htab-caller" onclick="switchHostTab('caller')" style="display:none">🎱 Number Caller</button>
+      <button class="host-tab" id="htab-print" onclick="switchHostTab('print')">Printable Sheet</button>
     </div>
-    <div id="pw-error" style="font-size:12px;color:#e05050;min-height:18px"></div>
-    <button class="btn btn-ghost btn-sm" onclick="closeAdmin()" style="margin-top:12px;width:100%">Cancel</button>
-  </div>
-  <div class="modal" id="admin-panel" style="display:none">
-    <div class="modal-header">
-      <div class="modal-title">Manage Categories</div>
-      <button class="modal-close" onclick="closeAdmin()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div style="margin-bottom:1.5rem">
-        <div class="form-label">Site logo</div>
-        <div class="logo-field">
-          <img class="logo-preview" id="logo-preview-img" src="" alt="">
-          <div class="logo-field-inputs">
-            <input class="form-input" type="text" id="logo-url-input" placeholder="https://yoursite.com/logo.png" oninput="previewLogo()" style="margin-bottom:6px">
-            <div style="font-size:11px;color:var(--text3);font-style:italic">Paste your logo URL — appears in the nav and hero.</div>
-          </div>
+    <div id="hpanel-daub">
+      <div style="display:flex;flex-wrap:nowrap;gap:1.5rem;align-items:flex-start">
+        <div style="flex:1;min-width:0">
+      <div class="stats-row">
+        <div class="stat"><div class="stat-val" id="h-played">0</div><div class="stat-label">Played</div></div>
+        <div class="stat"><div class="stat-val" id="h-remain">0</div><div class="stat-label">Remaining</div></div>
+        <div class="stat"><div class="stat-val" id="h-total">0</div><div class="stat-label">Total</div></div>
+        <div class="stat" style="cursor:pointer" onclick="togglePlayerList()">
+          <div class="stat-val" id="h-players">0</div>
+          <div class="stat-label">Players in ▾</div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="saveLogo()">Save logo</button>
       </div>
-      <div style="border-top:1px solid var(--border);margin-bottom:1.5rem"></div>
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.5rem" id="cat-form-wrap">
-        <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:1rem;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase" id="form-mode-label">Add New Category</div>
-        <input type="hidden" id="edit-id">
-        <div class="form-group">
-          <label class="form-label">Category title</label>
-          <input class="form-input" type="text" id="f-title" placeholder="e.g. 90s Hip Hop">
+      <div id="player-list-panel" style="display:none;margin-bottom:1rem">
+        <div class="card" style="padding:1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div class="section-label" style="margin-bottom:0">Signed-in players</div>
+            <button class="btn btn-ghost btn-sm" onclick="clearAllPlayers()">Clear all</button>
+          </div>
+          <div id="player-list-items" style="display:flex;flex-wrap:wrap;gap:6px"></div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Genre tags <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(comma separated)</span></label>
-          <input class="form-input" type="text" id="f-genre" placeholder="e.g. Hip Hop, R&B">
+      </div>
+      <div class="bingo-claim-banner" id="bingo-claim-banner">
+        <div style="width:100%">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+            <div style="font-size:22px">🎉</div>
+            <div style="flex:1">
+              <div style="font-size:15px;font-weight:700;color:#7a5500" id="bingo-claim-name"></div>
+              <div style="font-size:12px;color:#a07020;margin-top:2px">claimed BINGO — verify their card below!</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="dismissBingoClaim()">Dismiss</button>
+          </div>
+          <div id="bingo-claim-verify" style="display:none"></div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Status</label>
-          <select class="form-input" id="f-status">
-            <option value="live">Live</option>
-            <option value="coming">Coming soon</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)">
-            <input type="checkbox" id="f-classic-bingo" style="accent-color:var(--gold);width:15px;height:15px">
-            Classic Bingo (B-I-N-G-O numbers instead of songs)
+      </div>
+      <div class="top-bar">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%">
+          <div class="search-wrap">
+            <input type="text" id="host-search" placeholder="Search songs…" autocomplete="off" oninput="hostFilter()">
+            <button class="search-clear" id="host-search-clear" onclick="clearHostSearch()" title="Clear">✕</button>
+          </div>
+          <label class="auto-clear-wrap" title="Clear search after ticking a song">
+            <input type="checkbox" class="auto-clear-cb" id="auto-clear-cb">
+            <span class="auto-clear-label">Clear on tick</span>
           </label>
-          <div class="form-hint">Check this for a traditional numbered bingo card. No song list needed — numbers 1–75 are generated automatically.</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Spotify playlist URL <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-          <input class="form-input" type="text" id="f-spotify" placeholder="https://open.spotify.com/playlist/...">
-          <div class="form-hint">Players see a Spotify button on their card screen.</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Spotify QR code image URL <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-          <input class="form-input" type="text" id="f-spotify-qr" placeholder="https://yoursite.com/spotify-qr.png">
-          <div class="form-hint">Appears on printed host sheets and player cards.</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Banner image URL</label>
-          <input class="form-input" type="text" id="f-image" placeholder="https://yoursite.com/banner.jpg" oninput="previewBanner()">
-          <div class="form-hint">Use your Wix published image URL (1554×319px)</div>
-          <img class="banner-preview" id="banner-preview-img" src="" alt="" style="display:none">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Song list</label>
-          <textarea class="form-input" id="f-songs" rows="8" placeholder="Song Name – Artist&#10;Song Name – Artist&#10;(one per line, minimum 25)" style="resize:vertical;font-family:var(--mono,monospace);font-size:12px;line-height:1.5" oninput="updateSongCount()"></textarea>
-          <div id="song-count-label" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:.5rem">
-          <button class="btn btn-primary" onclick="saveCategory()">Save Category</button>
-          <button class="btn btn-ghost btn-sm" onclick="resetForm()" id="cancel-edit-btn" style="display:none">Cancel Edit</button>
         </div>
       </div>
-      <div class="form-label">Your categories</div>
-      <div class="admin-list" id="admin-list"></div>
+      <div class="song-grid" id="host-song-grid"></div>
+      <div class="feed" id="host-feed" style="display:none">
+        <div class="feed-header">
+          <span id="host-feed-title">Played order</span>
+          <button class="btn btn-ghost btn-sm" onclick="hostCopyList()">Copy list</button>
+        </div>
+        <ul class="feed-list" id="host-feed-list"></ul>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:1.5rem;padding-top:1rem;border-top:.5px solid var(--border)">
+        <button class="btn btn-ghost btn-sm" onclick="hostReset()" style="color:var(--text3)">Reset session</button>
+        <button class="btn btn-ghost btn-sm" id="reset-undo-btn" onclick="undoReset()" style="display:none;border-color:var(--gold-border);color:var(--gold)">↩ Undo reset</button>
+      </div>
+
+      <!-- TIEBREAKER LINK -->
+      <div style="margin-top:2rem;padding-top:1.5rem;border-top:.5px solid var(--border);text-align:center">
+        <a onclick="openTiebreaker()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
+          ⬡ Open Tie Breaker
+        </a>
+        <a onclick="openMediaPlayer()" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--cinzel);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-decoration:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:8px 20px;transition:all .15s;cursor:pointer" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='none'">
+          ♪ Open Media Player
+        </a>
+      </div></div>
+        </div><!-- end main daubing board -->
+        <!-- SIDEBAR NUMBER CALLER — only visible in classic bingo mode -->
+        <div id="sidebar-caller" style="display:none;flex-shrink:0;width:160px;flex-direction:column;align-items:center;gap:10px;padding:14px 12px;background:var(--bg);border:.5px solid var(--gold-border);border-radius:var(--radius-lg);align-self:flex-start;position:sticky;top:80px">
+          <div style="font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Number Caller</div>
+          <!-- Mini called ball display -->
+          <div id="sc-ball" style="width:100px;height:100px;border-radius:50%;background:var(--bg2);border:2px solid var(--gold-border);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .4s">
+            <div id="sc-letter" style="font-family:var(--cinzel);font-size:28px;font-weight:700;color:var(--text3);line-height:1">?</div>
+            <div id="sc-number" style="font-family:var(--cinzel);font-size:40px;font-weight:700;color:var(--text3);line-height:.9">—</div>
+          </div>
+          <!-- Last called history -->
+          <div id="sc-history" style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:36px"></div>
+          <!-- Remaining count -->
+          <div id="sc-count" style="font-family:var(--cinzel);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)">75 left</div>
+          <!-- Call button -->
+          <button id="sc-call-btn" onclick="sidebarCallNumber()" style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--gold-shine);color:#000;border:none;border-radius:99px;padding:9px 0;width:100%;cursor:pointer;transition:opacity .15s;box-shadow:0 3px 12px rgba(201,168,76,.2)">Call</button>
+          <!-- Launch popup -->
+          <button onclick="openCaller()" style="font-family:var(--cinzel);font-size:9px;letter-spacing:.08em;text-transform:uppercase;background:none;border:.5px solid var(--border2);border-radius:var(--radius);padding:5px 0;width:100%;cursor:pointer;color:var(--text3);transition:all .15s" onmouseover="this.style.borderColor='var(--gold-border)'" onmouseout="this.style.borderColor='var(--border2)'">↗ Pop out</button>
+        </div>
+      </div><!-- end flex row -->
     </div>
-    <div class="modal-footer">
-      <div style="flex:1;display:flex;align-items:center;gap:8px">
-        <input class="form-input" type="password" id="new-pw-input" placeholder="New password" style="max-width:180px;font-size:12px;padding:6px 10px">
-        <button class="btn btn-ghost btn-sm" onclick="changePassword()">Change Password</button>
-        <span id="pw-change-msg" style="font-size:11px;color:var(--gold);min-width:60px"></span>
+    <div id="hpanel-log" style="display:none">
+      <div id="log-played-section">
+        <div class="section-label" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+          <span>Played <span id="log-played-count" style="color:var(--gold);margin-left:4px">0</span></span>
+          <button class="btn btn-ghost btn-sm" onclick="hostCopyList()">Copy list</button>
+        </div>
+        <div id="log-played-list" style="display:flex;flex-direction:column;gap:4px"></div>
       </div>
-      <button class="btn btn-ghost" onclick="closeAdmin()">Done</button>
+      <div style="margin:1.25rem 0;border-top:.5px solid var(--border2);position:relative">
+        <span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--bg2);padding:0 10px;font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">not yet played</span>
+      </div>
+      <div id="log-remaining-list" style="display:flex;flex-direction:column;gap:4px"></div>
+    </div>
+    <div id="hpanel-caller" style="display:none">
+      <div style="text-align:center;padding:2rem 0 1rem">
+        <div style="font-family:var(--cinzel);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);margin-bottom:1.5rem">Classic Bingo — Number Caller</div>
+        <button onclick="openCaller()" style="font-family:var(--cinzel);font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;background:var(--gold-shine);color:#000;border:none;border-radius:99px;padding:14px 44px;cursor:pointer;box-shadow:0 4px 20px rgba(201,168,76,.25)">
+          Launch
+        </button>
+        <div style="font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text3);margin-top:14px">Opens as a draggable window — drag to your TV screen</div>
+      </div>
+    </div>
+    <div id="hpanel-print" style="display:none">
+      <div class="btn-row" style="margin-bottom:1rem">
+        <button class="btn btn-primary" onclick="printHostSheet()">Print / Save as PDF</button>
+        <button class="btn btn-ghost" onclick="hostCopyTSV()">Copy as TSV</button>
+      </div>
+      <div class="print-card card"><div class="print-grid" id="host-print-grid"></div></div>
     </div>
   </div>
 </div>
 
-<!-- DELETE CONFIRM -->
-<div class="overlay" id="delete-confirm-overlay">
-  <div class="modal" style="max-width:380px">
-    <div class="modal-header">
-      <div class="modal-title">Remove Category?</div>
-      <button class="modal-close" onclick="cancelDelete()">✕</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:14px;color:var(--text2);font-family:var(--serif);font-style:italic;line-height:1.6">This will permanently remove <strong id="delete-name" style="color:var(--gold2)"></strong> from the landing page.</p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="cancelDelete()">Cancel</button>
-      <button class="btn btn-danger" onclick="confirmDelete()">Remove</button>
-    </div>
-  </div>
-</div>
-
-<!-- ADMIN SCHEDULE OVERLAY -->
-<div class="overlay" id="admin-sched-overlay">
-  <div class="modal" style="max-width:720px">
-    <div class="modal-header">
-      <div style="display:flex;align-items:center;gap:12px;flex:1">
-        <div class="modal-title">Schedule Manager</div>
-        <select class="form-input" id="sched-venue-filter" onchange="renderTimeline()" style="max-width:180px;font-size:12px;padding:5px 10px"></select>
-      </div>
-      <button class="modal-close" onclick="closeAdminSched()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="sched-tabs">
-        <button class="sched-tab active" id="stab-timeline" onclick="switchSchedTab('timeline')">Timeline</button>
-        <button class="sched-tab" id="stab-add" onclick="switchSchedTab('add')">Add Entry</button>
-        <button class="sched-tab" id="stab-bulk" onclick="switchSchedTab('bulk')">Bulk Add</button>
-        <button class="sched-tab" id="stab-venues" onclick="switchSchedTab('venues')">Venues</button>
-      </div>
-      <div id="spanel-timeline"><div id="sched-timeline-content"></div></div>
-      <div id="spanel-add" style="display:none">
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem">
-          <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:1rem;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase" id="sched-form-label">Add Schedule Entry</div>
-          <input type="hidden" id="sched-edit-id">
-          <div class="form-row" style="margin-bottom:1rem">
-            <div class="form-group">
-              <label class="form-label">Date</label>
-              <input class="form-input" type="date" id="sched-date" onchange="updateRecentHint()">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Venue</label>
-              <select class="form-input" id="sched-venue-select" onchange="updateRecentHint()">
-                <option value="">— select venue —</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group" style="margin-bottom:1rem">
-            <label class="form-label">Rounds for this night</label>
-            <div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:8px">Assign a category to each round. Round 3 is optional.</div>
-            <div style="display:flex;flex-direction:column;gap:8px" id="sched-rounds-wrap">
-              <div style="display:flex;align-items:center;gap:8px">
-                <div style="font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);min-width:56px">Round 1</div>
-                <select class="form-input" id="sched-round-1" style="flex:1"><option value="">— pick a category —</option></select>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <div style="font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);min-width:56px">Round 2</div>
-                <select class="form-input" id="sched-round-2" style="flex:1"><option value="">— pick a category —</option></select>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <div style="font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);min-width:56px">Round 3</div>
-                <select class="form-input" id="sched-round-3" style="flex:1"><option value="">(none)</option></select>
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Notes <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-            <input class="form-input" type="text" id="sched-notes" placeholder="e.g. Private event, double session…">
-          </div>
-          <div style="display:flex;gap:8px;margin-top:.75rem">
-            <button class="btn btn-primary" onclick="saveSchedEntry()">Save Entry</button>
-            <button class="btn btn-ghost btn-sm" onclick="resetSchedForm()" id="sched-cancel-btn" style="display:none">Cancel Edit</button>
-          </div>
+<!-- CARD GENERATOR -->
+<div class="page" id="page-cards" style="display:none">
+  <div class="container" style="padding-top:1.5rem">
+    <div class="page-title">Card Generator</div>
+    <div class="page-sub">Generate unique randomized bingo cards. Print them or share the player link.</div>
+    <div class="card cards-card">
+      <div class="section-label">Settings</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Number of unique cards</label>
+          <input type="number" id="card-count" value="30" min="1" max="100" style="max-width:120px">
         </div>
-        <div id="recent-hint-wrap" style="display:none">
-          <div class="form-label" style="margin-bottom:8px">Recent history at this venue</div>
-          <div id="recent-hint-list"></div>
+        <div class="field-group" style="justify-content:flex-end;align-items:flex-start;padding-top:22px">
+          <button class="btn btn-primary" onclick="generateCards()">Generate cards</button>
         </div>
       </div>
-      <div id="spanel-venues" style="display:none">
-        <div style="display:flex;gap:8px;margin-bottom:1rem">
-          <input class="form-input" type="text" id="venue-name-input" placeholder="Venue name e.g. The Coaster" style="flex:1" onkeydown="if(event.key==='Enter')addVenue()">
-          <button class="btn btn-primary" onclick="addVenue()">Add Venue</button>
-        </div>
-        <div id="venue-list"></div>
+    </div>
+    <div id="cards-output" style="display:none">
+      <div class="btn-row cards-card" style="margin-bottom:1rem">
+        <button class="btn btn-primary" onclick="printCards()">Print all cards</button>
+        <button class="btn btn-ghost" onclick="generateCards()">Regenerate</button>
+        <button class="btn btn-accent" onclick="showPage('player');document.body.classList.add('player-mode-host')">Preview player card ↗</button>
       </div>
-
-      <div id="spanel-bulk" style="display:none">
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem">
-          <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:.75rem;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase">Bulk Schedule Import</div>
-          <div class="form-group">
-            <label class="form-label">Venue</label>
-            <select class="form-input" id="bulk-venue-select" style="margin-bottom:.5rem">
-              <option value="">— select venue —</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Paste your schedule</label>
-            <div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:6px;line-height:1.6">
-              One entry per line. Format:<br>
-              <code style="background:var(--surface3);padding:1px 5px;border-radius:3px;font-size:11px">Apr 5 - Round 1: 90s Hip Hop, Round 2: Disney</code><br>
-              Optional notes after a pipe: <code style="background:var(--surface3);padding:1px 5px;border-radius:3px;font-size:11px">| private event</code><br>
-              Round 3 is optional. Year defaults to current year if not included.
-            </div>
-            <textarea class="form-input" id="bulk-text" rows="10"
-              style="font-family:var(--mono,monospace);font-size:12px;line-height:1.6;resize:vertical"
-              placeholder="Apr 5 - Round 1: 90s Hip Hop, Round 2: Disney&#10;Apr 12 - Round 1: Country, Round 2: 90s Hip Hop&#10;Apr 19 - Round 1: Disney, Round 2: Country, Round 3: 80s Pop | special night"></textarea>
-          </div>
-          <div style="display:flex;gap:8px;margin-top:.75rem">
-            <button class="btn btn-ghost" onclick="bulkParse()">Preview</button>
-            <button class="btn btn-primary" id="bulk-save-btn" onclick="bulkSave()" style="display:none">Save all entries</button>
-            <button class="btn btn-ghost btn-sm" onclick="bulkClear()" style="color:var(--text3)">Clear</button>
-          </div>
+      <div id="cards-qr" class="qr-wrap cards-card" style="max-width:320px">
+        <div class="section-label">Player QR code</div>
+        <div id="qr-container" style="display:inline-block;line-height:0;border-radius:6px;overflow:hidden"></div>
+        <div class="qr-label">Players scan this to open their digital card</div>
+        <div class="qr-url" id="qr-url-display"></div>
+        <div class="btn-row" style="justify-content:center;margin-top:10px">
+          <button class="btn btn-ghost btn-sm" onclick="downloadQR()">Download</button>
+          <button class="btn btn-ghost btn-sm" onclick="copyPlayerURL()">Copy link</button>
+          <button class="btn btn-ghost btn-sm" onclick="openQRFullscreen()">Fullscreen</button>
+          <button class="btn btn-ghost btn-sm" onclick="openQRNewTab()">Pop up in new tab</button>
         </div>
-        <div id="bulk-preview"></div>
+      </div>
+      <div class="cards-card">
+        <div class="section-label" id="cards-count-label">Generated cards</div>
+        <div class="cards-preview" id="cards-preview"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- HOST SCHEDULE OVERLAY (no password) -->
-<div class="overlay" id="host-sched-overlay">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-header">
-      <div class="modal-title">Tonight's Schedule</div>
-      <button class="modal-close" onclick="document.getElementById('host-sched-overlay').classList.remove('show')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-row" style="margin-bottom:1.25rem">
-        <div class="form-group">
-          <label class="form-label">Date</label>
-          <input class="form-input" type="date" id="host-sched-date" onchange="renderHostSched()">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Your venue</label>
-          <select class="form-input" id="host-sched-venue" onchange="renderHostSched()">
-            <option value="">— select your venue —</option>
-          </select>
+<!-- PLAYER -->
+<div class="page" id="page-player" style="display:none">
+  <div class="player-page">
+    <div id="player-entry-screen">
+      <button class="player-back" onclick="showPage('cards');document.body.classList.remove('player-mode-host')">← Back to Card Generator</button>
+      <div class="player-entry-card">
+        <div id="player-entry-banner-wrap" style="display:none;line-height:0"></div>
+        <div class="player-entry-body">
+          <p>Enter your name and you'll be assigned a unique card automatically.</p>
+          <div class="field-group" style="margin-bottom:16px">
+            <label class="field-label">Your name</label>
+            <input type="text" id="player-name" placeholder="e.g. Sarah" onkeydown="if(event.key==='Enter')loadPlayerCard()"/>
+          </div>
+          <button class="btn btn-primary" style="width:100%;padding:12px" onclick="loadPlayerCard()">Get my card</button>
         </div>
       </div>
-      <div id="host-sched-results"></div>
+    </div>
+    <div id="player-card-screen" style="display:none">
+      <div class="bingo-shout" id="bingo-shout">
+        <div class="bingo-shout-text">BINGO!</div>
+        <div class="bingo-shout-sub" id="bingo-shout-name"></div>
+      </div>
+      <div class="player-controls">
+        <div style="flex:1;font-size:13px;color:var(--text2)"><span id="player-info-label"></span></div>
+        <button class="btn btn-accent btn-sm" onclick="claimBingo()" style="font-size:13px;padding:6px 16px;font-weight:600">BINGO!</button>
+      </div>
+      <div class="bingo-card-wrap" id="player-bingo-card"></div>
+      <div class="bingo-status" id="player-status">Tap squares to daub as songs are called.</div>
+      <div id="spotify-link-wrap" style="display:none;text-align:center;margin-top:1.25rem;padding-bottom:1rem">
+        <a id="spotify-link" href="#" target="_blank" rel="noopener"
+          style="display:inline-flex;align-items:center;gap:8px;background:#1DB954;color:#fff;text-decoration:none;border-radius:99px;padding:10px 20px;font-size:13px;font-weight:600;font-family:var(--font);transition:opacity .15s"
+          onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+          See the Spotify playlist
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="qr-fullscreen" id="qr-fullscreen">
+  <button class="qr-fullscreen-close" onclick="closeQRFullscreen()">✕</button>
+  <div class="qr-fullscreen-inner" id="qr-fullscreen-inner"></div>
+  <div class="qr-fullscreen-label">Scan to play on your phone</div>
+</div>
+
+<div class="winner-overlay" id="winner-overlay" onclick="this.classList.remove('show')">
+  <div class="winner-box">
+    <div class="winner-emoji">🎉</div>
+    <div class="winner-title">BINGO!</div>
+    <div class="winner-sub" id="winner-name-display"></div>
+    <button class="btn btn-primary" onclick="document.getElementById('winner-overlay').classList.remove('show')">Close</button>
+  </div>
+</div>
+<!-- TIEBREAKER POPUP -->
+<div id="tb-overlay" style="display:none;position:fixed;z-index:1000;background:var(--bg2);border:1px solid var(--gold-border);border-radius:var(--radius-lg);box-shadow:0 20px 60px rgba(0,0,0,.4);padding:0;min-width:380px;min-height:280px;width:460px;user-select:none;top:80px;left:50%;transform:translateX(-50%);overflow:auto;resize:both">
+  <!-- Drag handle — double click for fullscreen -->
+  <div id="tb-drag-handle" ondblclick="tbToggleFullscreen()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:.5px solid var(--border);cursor:grab;background:var(--bg);border-radius:var(--radius-lg) var(--radius-lg) 0 0">
+    <div style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">⬡ Tie Breaker</div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:10px;color:var(--text3);font-family:var(--cinzel);letter-spacing:.06em">drag · dbl-click fullscreen</span>
+      <button onclick="closeTiebreaker()" style="background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">✕</button>
+    </div>
+  </div>
+  <!-- Content -->
+  <div style="padding:1.25rem 1.5rem 1rem">
+    <div style="font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text2);text-align:center;margin-bottom:1.25rem">Each player picks a number. Spin — closest wins.</div>
+    <div style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;justify-content:center">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Player A</div>
+        <input type="number" id="tb-a" placeholder="—" min="1" max="9999" oninput="tbClear()"
+          style="width:90px;text-align:center;font-family:var(--cinzel);font-size:28px;font-weight:600;color:var(--text);background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius);padding:10px 6px;outline:none;transition:all .2s">
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+        <div style="position:relative;display:inline-block;margin-top:14px">
+          <div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-top:20px solid var(--gold);z-index:2;filter:drop-shadow(0 0 6px rgba(201,168,76,.7)) drop-shadow(0 2px 4px rgba(0,0,0,.8))"></div>
+          <canvas id="tb-wheel" width="260" height="260" style="display:block;border-radius:50%;box-shadow:0 4px 24px rgba(0,0,0,.2)"></canvas>
+        </div>
+        <button id="tb-spin-btn" onclick="tbSpin()" style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--text);color:var(--bg);border:none;border-radius:99px;padding:10px 32px;cursor:pointer;transition:opacity .15s">Spin</button>
+        <div id="tb-result" style="font-family:var(--cinzel);font-size:12px;letter-spacing:.06em;text-align:center;min-height:38px;color:var(--text2);line-height:1.7"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:var(--cinzel);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Player B</div>
+        <input type="number" id="tb-b" placeholder="—" min="1" max="9999" oninput="tbClear()"
+          style="width:90px;text-align:center;font-family:var(--cinzel);font-size:28px;font-weight:600;color:var(--text);background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius);padding:10px 6px;outline:none;transition:all .2s">
+      </div>
     </div>
   </div>
 </div>
@@ -503,710 +489,1531 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 <div class="toast" id="toast"></div>
 
 <script>
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyCu6aBUE8qJCCf5FRMipqQD-tGSPE78D3Y",
-  authDomain: "bellamusicbingo.firebaseapp.com",
-  databaseURL: "https://bellamusicbingo-default-rtdb.firebaseio.com",
-  projectId: "bellamusicbingo",
-  storageBucket: "bellamusicbingo.firebasestorage.app",
-  messagingSenderId: "657495697029",
-  appId: "1:657495697029:web:3fe565cbe05455b7982bec"
+// ── FIREBASE CONFIG ───────────────────────────────────────────────────────────
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyCu6aBUE8qJCCf5FRMipqQD-tGSPE78D3Y",
+  authDomain:"bellamusicbingo.firebaseapp.com",
+  databaseURL:"https://bellamusicbingo-default-rtdb.firebaseio.com",
+  projectId:"bellamusicbingo",
+  storageBucket:"bellamusicbingo.firebasestorage.app",
+  messagingSenderId:"657495697029",
+  appId:"1:657495697029:web:3fe565cbe05455b7982bec"
 };
 
-let categories = [], venues = [], scheduleEntries = [];
-let activeFilter = 'all', adminUnlocked = false, deleteTargetId = null, db = null;
-let adminPassword = "BDAhnna44";
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let EVENT_TITLE='Music Bingo', EVENT_IMAGE='', SONGS_RAW=[], SPOTIFY_QR_URL='';
+let CLASSIC_BINGO=false;
+const CLASSIC_COLS=['B','I','N','G','O'];
+const CLASSIC_RANGES=[[1,15],[16,30],[31,45],[46,60],[61,75]];
+let allSongs=[], hostPlayedOrder=[];
+let db=null, sessionKey=null, categoryId=null;
+let resetSnapshot=null;
 
-// ── FIREBASE ──────────────────────────────────────────────────────────────────
-function initFirebase() {
-  var s1 = document.createElement('script');
-  s1.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js';
-  s1.onload = function() {
-    var s2 = document.createElement('script');
-    s2.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js';
-    s2.onload = function() {
-      firebase.initializeApp(FIREBASE_CONFIG);
-      db = firebase.database();
-      db.ref('landing/categories').on('value', function(snap) {
-        var data = snap.val() || {};
-        categories = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
-        categories.sort(function(a,b) { if (a.classicBingo && !b.classicBingo) return -1; if (!a.classicBingo && b.classicBingo) return 1; return (a.order||0)-(b.order||0); });
-        renderGrid(); buildFilterPills();
-        if (adminUnlocked) renderAdminList();
-      });
-      db.ref('landing/venues').on('value', function(snap) {
-        var data = snap.val() || {};
-        venues = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
-        venues.sort(function(a,b) { return a.name.localeCompare(b.name); });
-        populateVenueDropdowns();
-        renderVenueList();
-      });
-      db.ref('landing/schedule').on('value', function(snap) {
-        var data = snap.val() || {};
-        scheduleEntries = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
-        scheduleEntries.sort(function(a,b) { return a.date.localeCompare(b.date); });
-        renderTimeline();
-      });
-      db.ref('landing/settings/adminPassword').on('value', function(snap) {
-        if (snap.val()) adminPassword = snap.val();
-      });
-      db.ref('landing/settings/logoUrl').on('value', function(snap) {
-        var url = snap.val() || '';
-        applyLogo(url);
-        document.getElementById('logo-url-input').value = url;
-        if (url) { var pi = document.getElementById('logo-preview-img'); pi.src = url; pi.classList.add('show'); }
-      });
+// ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
+function bootstrap(){
+  const params=new URLSearchParams(window.location.search);
+  categoryId=params.get('id');
+  if(!categoryId){showError('No playlist ID found in the URL. Try clicking the playlist again from the main page.');return;}
 
-      // ── Now Playing bridge: listen for the host's current track ──────────────
-      // The media player writes to sessions/{sessionKey}/nowPlaying when it
-      // cues a song. If this page was opened via the player's link, the
-      // ?session= URL param tells us which path to watch.
-      var params = new URLSearchParams(window.location.search);
-      var sessionKey = params.get('session');
-      var categoryId = params.get('id');
-      if (sessionKey) {
-        var npPath = 'sessions/' + sessionKey + '/nowPlaying';
-        db.ref(npPath).on('value', function(snap) {
-          var data = snap.val();
-          var banner = document.getElementById('now-playing-banner');
-          if (!banner) return;
-          if (!data || !data.title) {
-            banner.classList.remove('active');
-            return;
-          }
-          document.getElementById('npb-song').textContent = data.title || '—';
-          document.getElementById('npb-artist').textContent = data.artist || '';
-          // Show which board this is linked to, helpful when admin is monitoring
-          if (categoryId) {
-            var cat = categories.find(function(c) { return c.id === categoryId; });
-            document.getElementById('npb-board').textContent = cat ? '⊞ ' + cat.title : '';
-          }
-          banner.classList.add('active');
+  // Timeout — if nothing loads in 8 seconds, show a helpful error
+  const timeout=setTimeout(()=>{
+    showError('Could not connect to the database. Check your internet connection and try refreshing.');
+  },8000);
+
+  const s1=document.createElement('script');
+  s1.src='https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js';
+  s1.onerror=()=>{clearTimeout(timeout);showError('Could not load required scripts. Check your internet connection.');};
+  s1.onload=()=>{
+    const s2=document.createElement('script');
+    s2.src='https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js';
+    s2.onerror=()=>{clearTimeout(timeout);showError('Could not load required scripts. Check your internet connection.');};
+    s2.onload=()=>{
+      try{
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db=firebase.database();
+        db.ref(`landing/categories/${categoryId}`).once('value',snap=>{
+          clearTimeout(timeout);
+          const data=snap.val();
+          if(!data){showError(`Playlist not found (ID: ${categoryId}). It may have been removed or not saved correctly.`);return;}
+          loadCategory(data);
+        },(err)=>{
+          clearTimeout(timeout);
+          showError('Database error: '+err.message);
         });
-      }
+        db.ref('landing/settings/logoUrl').once('value',snap=>{
+          const url=snap.val()||'';
+          if(url){const logo=document.getElementById('nav-brand-logo');logo.src=url;logo.style.display='block';}
+        });
+      }catch(e){clearTimeout(timeout);showError('Initialization error: '+e.message);}
     };
     document.head.appendChild(s2);
   };
   document.head.appendChild(s1);
 }
 
-// ── LOGO ──────────────────────────────────────────────────────────────────────
-function applyLogo(url) {
-  var ni = document.getElementById('nav-logo-img');
-  var hi = document.getElementById('hero-logo-img');
-  var ph = document.getElementById('hero-logo-placeholder');
-  if (url) { ni.src=url; ni.style.display='block'; hi.src=url; hi.style.display='block'; ph.style.display='none'; }
-  else { ni.style.display='none'; hi.style.display='none'; ph.style.display='flex'; }
-}
-function saveLogo() {
-  if (!db) return;
-  db.ref('landing/settings/logoUrl').set(document.getElementById('logo-url-input').value.trim());
-  showToast('Logo saved!');
-}
-function previewLogo() {
-  var url = document.getElementById('logo-url-input').value.trim();
-  var img = document.getElementById('logo-preview-img');
-  if (url) { img.src=url; img.classList.add('show'); img.onerror=function(){img.classList.remove('show');}; }
-  else img.classList.remove('show');
-}
+function loadCategory(data){
+  EVENT_TITLE=data.title||'Music Bingo';
+  EVENT_IMAGE=data.image||'';
+  const rawSongs=data.songs||'';
+  const spotifyUrl=data.spotifyUrl||'';
+  const spotifyQrUrl=data.spotifyQrUrl||'';
 
-// ── FIREBASE HELPERS ──────────────────────────────────────────────────────────
-function saveToFirebase(cat) {
-  if (!db) return;
-  var id = cat.id; var data = Object.assign({}, cat); delete data.id;
-  db.ref('landing/categories/' + id).set(data);
-}
-function deleteFromFirebase(id) { if (db) db.ref('landing/categories/' + id).remove(); }
+  SONGS_RAW=rawSongs.split('\n').map(s=>s.trim()).filter(Boolean);
+  SPOTIFY_QR_URL=spotifyQrUrl;
+  CLASSIC_BINGO=!!(data.classicBingo);
 
-// ── GRID ──────────────────────────────────────────────────────────────────────
-function getGenres(c) {
-  if (Array.isArray(c.genres) && c.genres.length) return c.genres;
-  if (c.genre) return c.genre.split(',').map(function(g){return g.trim();}).filter(Boolean);
-  return [];
-}
-function renderGrid() {
-  var q = document.getElementById('search-input').value.toLowerCase();
-  var grid = document.getElementById('cat-grid');
-  var filtered = categories.filter(function(c) {
-    var genres = getGenres(c);
-    var ms = !q || c.title.toLowerCase().includes(q) || genres.join(' ').toLowerCase().includes(q);
-    var mf = activeFilter === 'all' || genres.map(function(g){return g.toLowerCase();}).indexOf(activeFilter.toLowerCase()) !== -1;
-    return ms && mf;
-  });
-  var countEl = document.getElementById('cat-count');
-  countEl.textContent = filtered.length === 0 ? '' : filtered.length === 1 ? '1 playlist' : filtered.length + ' playlists';
-  if (!filtered.length) {
-    grid.innerHTML = '<div class="empty"><span class="empty-icon">♪</span><div class="empty-text">' + (categories.length === 0 ? 'No playlists yet — open Admin to add your first one.' : 'No playlists match your search.') + '</div></div>';
-    return;
+  if(CLASSIC_BINGO){
+    allSongs=[];
+    CLASSIC_COLS.forEach((col,ci)=>{
+      const [lo,hi]=CLASSIC_RANGES[ci];
+      for(let n=lo;n<=hi;n++){
+        allSongs.push({id:(ci*15+(n-lo)),title:String(n),artist:'',col,played:false});
+      }
+    });
+  } else {
+    if(SONGS_RAW.length<25){
+      showError(`This playlist only has ${SONGS_RAW.length} song${SONGS_RAW.length===1?'':'s'}. At least 25 are needed.`);
+      return;
+    }
+    allSongs=parseSongs(SONGS_RAW);
   }
-  var html = '';
-  filtered.forEach(function(c) {
-    var isLive = c.status !== 'coming';
-    var genres = getGenres(c);
-    var appUrl = 'app.html?id=' + c.id;
-    var imgHTML = c.image
-      ? '<img class="cat-banner" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="cat-banner-placeholder" style="display:none"><span>' + c.title + '</span></div>'
-      : '<div class="cat-banner-placeholder"><span>' + c.title + '</span></div>';
-    var genreHTML = c.classicBingo ? '<span class="cat-genre" style="background:rgba(201,168,76,.2);border-color:var(--gold-border2);color:var(--gold2)">Classic Bingo</span>' : (genres.length ? '<span class="cat-genre">' + genres[0] + '</span>' : '');
-    var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
-    var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
-    var href = isLive ? 'app.html?id=' + c.id : '#';
-    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
-  });
-  grid.innerHTML = html;
+
+  // Venue-scoped session key — two hosts on the same category don't clash
+  const urlSession = new URLSearchParams(window.location.search).get('session');
+  if (urlSession && urlSession.startsWith(categoryId + '_')) {
+    sessionKey = urlSession;
+    sessionStorage.setItem('bella_venue_token', urlSession.slice(categoryId.length + 1));
+    // Show linked banner — set a flag and apply when host page renders
+    window._playerLinked = true;
+  } else {
+    let venueToken = sessionStorage.getItem('bella_venue_token');
+    if (!venueToken) { venueToken = Math.random().toString(36).slice(2, 8); sessionStorage.setItem('bella_venue_token', venueToken); }
+    sessionKey = categoryId + '_' + venueToken;
+  }
+
+  document.getElementById('nav-brand').textContent=EVENT_TITLE;
+  document.getElementById('host-title').textContent=EVENT_TITLE+' \u2014 Host Tool';
+  document.title=EVENT_TITLE+' — Music Bingo';
+
+  if(EVENT_IMAGE){
+    const logo=document.getElementById('nav-brand-logo');
+    if(!logo.src||logo.src===window.location.href){logo.src=EVENT_IMAGE;logo.style.display='block';}
+    const hb=document.getElementById('host-banner');
+    hb.style.display='';
+    hb.innerHTML=`<img src="${EVENT_IMAGE}" alt="Banner" onerror="this.parentNode.classList.add('broken');this.parentNode.innerHTML='<span>${EVENT_TITLE}</span>'">`;
+    const bw=document.getElementById('player-entry-banner-wrap');
+    bw.style.display='';
+    bw.innerHTML=`<img class="player-entry-banner" src="${EVENT_IMAGE}" alt="${EVENT_TITLE}" onerror="this.parentNode.style.display='none'">`;
+  }
+
+  // Spotify link on player card
+  if(spotifyUrl){
+    const wrap=document.getElementById('spotify-link-wrap');
+    const link=document.getElementById('spotify-link');
+    link.href=spotifyUrl;
+    wrap.style.display='';
+  }
+
+  // Show app, hide loading
+  document.getElementById('loading-screen').classList.add('hide');
+  document.getElementById('main-nav').style.display='';
+  document.getElementById('back-link').style.display='';
+  document.getElementById('page-host').style.display='';
+
+  // Route
+  const params=new URLSearchParams(window.location.search);
+  if(params.has('cards')) showPage('cards',true);
+  else if(params.has('play')||params.has('player')) showPage('player',true);
+  else showPage('host',true);
+
+  if(CLASSIC_BINGO){
+    // Show caller tab, hide music-only tabs
+    document.getElementById('htab-caller').style.display='';
+    document.getElementById('htab-log').style.display='none';
+    document.getElementById('htab-print').style.display='none';
+    // Update search placeholder
+    const hs = document.getElementById('host-search');
+    if(hs) hs.placeholder='Search numbers…';
+    // Show sidebar caller
+    const sc=document.getElementById('sidebar-caller');
+    if(sc){ sc.style.display='flex'; sc.style.flexDirection='column'; }
+    callerRemaining=[];callerCalled=[];
+    CLASSIC_COLS.forEach((col,ci)=>{
+      const [lo,hi]=CLASSIC_RANGES[ci];
+      for(let n=lo;n<=hi;n++) callerRemaining.push({col,num:n,label:col+n});
+    });
+    for(let i=callerRemaining.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [callerRemaining[i],callerRemaining[j]]=[callerRemaining[j],callerRemaining[i]];
+    }
+    updateSidebarCaller();
+  }
+  renderHostGrid();renderPrintGrid();updateHostStats();
+  setupFirebaseListeners();
+
+  // Load QR
+  const qrScript=document.createElement('script');
+  qrScript.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  qrScript.onload=()=>{if(pendingQRUrl)generateQR(pendingQRUrl);};
+  document.head.appendChild(qrScript);
 }
-function buildFilterPills() {
-  var allGenres = [];
-  categories.forEach(function(c) { getGenres(c).forEach(function(g) { if (allGenres.indexOf(g) === -1) allGenres.push(g); }); });
-  allGenres.sort();
-  var pills = ['All'].concat(allGenres);
-  document.getElementById('filter-pills').innerHTML = pills.map(function(g) {
-    var val = g === 'All' ? 'all' : g;
-    return '<button class="pill' + (activeFilter === val ? ' active' : '') + '" onclick="setFilter(\'' + val + '\')">' + g + '</button>';
+
+function showError(msg){
+  document.getElementById('loading-screen').classList.add('hide');
+  const err=document.getElementById('error-screen');
+  err.classList.add('show');
+  if(msg) err.querySelector('.error-sub').textContent=msg;
+}
+
+// ── PARSE ─────────────────────────────────────────────────────────────────────
+function parseSongs(lines){
+  return lines.map((line,i)=>{
+    const tsMatch=line.match(/\[(\d+:\d{2})\]\s*$/);
+    const ts=tsMatch?tsMatch[1]:'';
+    const clean=tsMatch?line.slice(0,tsMatch.index).trim():line.trim();
+    const idx=clean.search(/\s[\u2013\u2014\-]\s/);
+    const title=idx!==-1?clean.slice(0,idx).trim():clean.trim();
+    const artist=idx!==-1?clean.slice(idx).replace(/^\s*[\u2013\u2014\-]\s*/,'').trim():'';
+    return{id:i,title,artist,ts,played:false};
+  });
+}
+function fmtLabel(s){
+  if(CLASSIC_BINGO) return`<span style="font-family:var(--cinzel);font-weight:700">${s.col}${s.title}</span>`;
+  const tsHTML=s.ts?` <span class="song-ts">${s.ts}</span>`:'';
+  return s.artist?`${s.title} <span class="artist-part">\u2013 ${s.artist}</span>${tsHTML}`:`${s.title}${tsHTML}`;
+}
+function fmtPlain(s){
+  if(CLASSIC_BINGO) return`${s.col}${s.title}`;
+  return s.artist?`${s.title} \u2013 ${s.artist}`:s.title;
+}
+
+// ── ROUTING ───────────────────────────────────────────────────────────────────
+function showPage(page,skipHistory){
+  ['host','cards','player'].forEach(p=>{
+    document.getElementById('page-'+p).classList.toggle('active',p===page);
+    document.getElementById('page-'+p).style.display=p===page?'':'none';
+    document.getElementById('tab-'+p).classList.toggle('active',p===page);
+  });
+  document.body.classList.toggle('player-mode',page==='player');
+  const backLink=document.getElementById('back-link');
+  backLink.classList.toggle('hidden',page==='player');
+  if(!skipHistory&&window.history){
+    const base=window.location.pathname+'?id='+categoryId;
+    window.history.pushState({},'',page==='host'?base:base+'&'+page);
+  }
+  // Show linked banner when host page is shown and player opened this
+  if(page==='host'&&window._playerLinked){
+    const ind=document.getElementById('player-link-indicator');
+    if(ind) ind.style.display='flex';
+  }
+}
+
+// ── HOST ──────────────────────────────────────────────────────────────────────
+function switchHostTab(tab){
+  document.getElementById('hpanel-daub').style.display=tab==='daub'?'':'none';
+  document.getElementById('hpanel-log').style.display=tab==='log'?'':'none';
+  document.getElementById('hpanel-caller').style.display=tab==='caller'?'':'none';
+  document.getElementById('hpanel-print').style.display=tab==='print'?'':'none';
+  document.getElementById('htab-daub').classList.toggle('active',tab==='daub');
+  document.getElementById('htab-log').classList.toggle('active',tab==='log');
+  document.getElementById('htab-caller').classList.toggle('active',tab==='caller');
+  document.getElementById('htab-print').classList.toggle('active',tab==='print');
+  if(tab==='log') renderPlayLog();
+}
+
+function renderPlayLog(){
+  const played = hostPlayedOrder.map((id,i)=>{
+    const s=allSongs.find(x=>x.id===id); if(!s) return '';
+    const n=i+1;
+    const tsHTML=s.ts?` <span class="song-ts">${s.ts}</span>`:'';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--green-bg);border:.5px solid var(--green-border);border-radius:var(--radius)">
+      <span style="font-size:11px;color:var(--green-sub);min-width:24px;font-family:var(--cinzel);font-weight:600">#${n}</span>
+      <span style="flex:1;font-size:13px;color:var(--green-text)">${fmtLabel(s)}${tsHTML}</span>
+      <button onclick="hostToggle(${s.id})" style="font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">undo</button>
+    </div>`;
+  }).join('');
+
+  const remaining = allSongs.filter(s=>!s.played).map(s=>{
+    const tsHTML=s.ts?` <span class="song-ts">${s.ts}</span>`:'';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);cursor:pointer" onclick="hostToggle(${s.id});renderPlayLog()">
+      <span style="flex:1;font-size:13px;color:var(--text)">${fmtLabel(s)}${tsHTML}</span>
+      <span style="font-size:11px;color:var(--text3);font-family:var(--cinzel);letter-spacing:.06em">tap to play</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('log-played-count').textContent=hostPlayedOrder.length;
+  document.getElementById('log-played-list').innerHTML=played||'<div style="font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);padding:4px 0">No songs played yet.</div>';
+  document.getElementById('log-remaining-list').innerHTML=remaining||'<div style="font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);padding:4px 0">All songs have been played!</div>';
+}
+function hostFilter(){
+  var raw = document.getElementById('host-search').value;
+  var q = raw.toLowerCase().replace(/[‘’`´ʼ]/g, "'");
+  renderHostGrid(q);
+  var clr = document.getElementById('host-search-clear');
+  if (clr) clr.style.display = raw.length ? 'block' : 'none';
+}
+function clearHostSearch(){
+  document.getElementById('host-search').value = '';
+  hostFilter();
+}
+function renderHostGrid(filter=''){
+  const grid=document.getElementById('host-song-grid');
+  const normQ=s=>s.toLowerCase().replace(/[\u2018\u2019\u0060\u00b4\u02bc]/g,"'");
+  const vis=filter?allSongs.filter(s=>normQ(s.title).includes(filter)||normQ(s.artist||'').includes(filter)):allSongs;
+  if(!vis.length){grid.innerHTML='<div class="no-results">No songs match.</div>';return;}
+  grid.innerHTML=vis.map(s=>`<div class="song-card${s.played?' played':''}" onclick="hostToggle(${s.id})"><div class="song-label">${fmtLabel(s)}</div></div>`).join('');
+}
+function hostReset(){
+  resetSnapshot={
+    playedIds:allSongs.filter(s=>s.played).map(s=>s.id),
+    playedOrder:[...hostPlayedOrder],
+    claimVisible:document.getElementById('bingo-claim-banner').classList.contains('show'),
+    activeBingoClaimKey,
+    claimNameText:document.getElementById('bingo-claim-name').textContent,
+    claimVerifyHTML:document.getElementById('bingo-claim-verify').innerHTML,
+    claimVerifyVisible:document.getElementById('bingo-claim-verify').style.display!=='none',
+  };
+  allSongs.forEach(s=>s.played=false);
+  hostPlayedOrder=[];
+  document.getElementById('host-search').value='';
+  renderHostGrid();updateHostStats();
+  document.getElementById('host-feed').style.display='none';
+  document.getElementById('bingo-claim-banner').classList.remove('show');
+  if(db&&sessionKey){
+    db.ref(`sessions/${sessionKey}/players`).remove();
+    db.ref(`sessions/${sessionKey}/bingoClaims`).remove();
+  }
+  document.getElementById('reset-undo-btn').style.display='';
+  showToast('Session reset');
+}
+function undoReset(){
+  if(!resetSnapshot)return;
+  allSongs.forEach(s=>s.played=resetSnapshot.playedIds.includes(s.id));
+  hostPlayedOrder=resetSnapshot.playedOrder;
+  renderHostGrid(document.getElementById('host-search').value.toLowerCase());
+  updateHostStats();renderHostFeed();
+  if(resetSnapshot.claimVisible){
+    document.getElementById('bingo-claim-name').textContent=resetSnapshot.claimNameText;
+    document.getElementById('bingo-claim-verify').innerHTML=resetSnapshot.claimVerifyHTML;
+    document.getElementById('bingo-claim-verify').style.display=resetSnapshot.claimVerifyVisible?'':' none';
+    document.getElementById('bingo-claim-banner').classList.add('show');
+    activeBingoClaimKey=resetSnapshot.activeBingoClaimKey;
+  }
+  resetSnapshot=null;
+  document.getElementById('reset-undo-btn').style.display='none';
+  showToast('Reset undone!');
+}
+function renderPrintGrid(){
+  document.getElementById('host-print-grid').innerHTML=
+    allSongs.map((s,i)=>`<div class="print-cell"><span class="cell-num">${i+1}.</span><div class="cell-label">${fmtLabel(s)}</div></div>`).join('');
+}
+function hostToggle(id){
+  const s=allSongs.find(x=>x.id===id);if(!s)return;
+  if(!s.played){s.played=true;hostPlayedOrder.push(id);}
+  else{s.played=false;hostPlayedOrder=hostPlayedOrder.filter(x=>x!==id);}
+  const autoClear=document.getElementById('auto-clear-cb');
+  if(autoClear&&autoClear.checked&&s.played) clearHostSearch();
+  renderHostGrid(document.getElementById('host-search').value.toLowerCase());
+  updateHostStats();renderHostFeed();
+  if(document.getElementById('hpanel-log')&&document.getElementById('hpanel-log').style.display!=='none') renderPlayLog();
+}
+function updateHostStats(){
+  const p=allSongs.filter(s=>s.played).length;
+  document.getElementById('h-played').textContent=p;
+  document.getElementById('h-remain').textContent=allSongs.length-p;
+  document.getElementById('h-total').textContent=allSongs.length;
+}
+function renderHostFeed(){
+  const feed=document.getElementById('host-feed'),list=document.getElementById('host-feed-list');
+  if(!hostPlayedOrder.length){feed.style.display='none';return;}
+  feed.style.display='';
+  document.getElementById('host-feed-title').textContent=`Played order (${hostPlayedOrder.length})`;
+  list.innerHTML=[...hostPlayedOrder].reverse().map((id,i)=>{
+    const s=allSongs.find(x=>x.id===id),n=hostPlayedOrder.length-i;
+    const tsHTML=s.ts?` <span class="feed-ts">${s.ts}</span>`:'';
+    return`<li class="feed-item"><span class="feed-num">#${n}</span><div class="feed-label">${fmtLabel(s)}${tsHTML}</div><button class="feed-undo" onclick="hostToggle(${id})">undo</button></li>`;
   }).join('');
 }
-function setFilter(val) { activeFilter = val; buildFilterPills(); renderGrid(); }
 
-// ── ADMIN ─────────────────────────────────────────────────────────────────────
-function openAdmin() {
-  document.getElementById('admin-overlay').classList.add('show');
-  if (!adminUnlocked) {
-    document.getElementById('pw-screen').style.display = '';
-    document.getElementById('admin-panel').style.display = 'none';
-    document.getElementById('pw-input').value = '';
-    document.getElementById('pw-error').textContent = '';
-    setTimeout(function(){document.getElementById('pw-input').focus();}, 100);
-  } else {
-    document.getElementById('pw-screen').style.display = 'none';
-    document.getElementById('admin-panel').style.display = '';
-    renderAdminList();
+function hostReset(){
+  // Save full snapshot before wiping
+  resetSnapshot={
+    playedIds:allSongs.filter(s=>s.played).map(s=>s.id),
+    playedOrder:[...hostPlayedOrder],
+    claimVisible:document.getElementById('bingo-claim-banner').classList.contains('show'),
+    activeBingoClaimKey,
+    claimNameText:document.getElementById('bingo-claim-name').textContent,
+    claimVerifyHTML:document.getElementById('bingo-claim-verify').innerHTML,
+    claimVerifyVisible:document.getElementById('bingo-claim-verify').style.display!=='none',
+  };
+
+  // Wipe session state
+  allSongs.forEach(s=>s.played=false);
+  hostPlayedOrder=[];
+  document.getElementById('host-search').value='';
+  renderHostGrid();updateHostStats();
+  document.getElementById('host-feed').style.display='none';
+  document.getElementById('bingo-claim-banner').classList.remove('show');
+
+  // Clear Firebase players and claims
+  if(db&&sessionKey){
+    db.ref(`sessions/${sessionKey}/players`).remove();
+    db.ref(`sessions/${sessionKey}/bingoClaims`).remove();
   }
+
+  // Show undo button
+  document.getElementById('reset-undo-btn').style.display='';
+  showToast('Session reset');
 }
-function closeAdmin() { document.getElementById('admin-overlay').classList.remove('show'); resetForm(); }
-function checkPW() {
-  if (document.getElementById('pw-input').value === adminPassword) {
-    adminUnlocked = true;
-    document.getElementById('pw-screen').style.display = 'none';
-    document.getElementById('admin-panel').style.display = '';
-    renderAdminList();
-  } else {
-    document.getElementById('pw-error').textContent = 'Incorrect password.';
-    document.getElementById('pw-input').value = '';
-    document.getElementById('pw-input').focus();
+
+function undoReset(){
+  if(!resetSnapshot)return;
+  // Restore played state
+  allSongs.forEach(s=>s.played=resetSnapshot.playedIds.includes(s.id));
+  hostPlayedOrder=resetSnapshot.playedOrder;
+  renderHostGrid(document.getElementById('host-search').value.toLowerCase());
+  updateHostStats();renderHostFeed();
+  // Restore claim banner
+  if(resetSnapshot.claimVisible){
+    document.getElementById('bingo-claim-name').textContent=resetSnapshot.claimNameText;
+    document.getElementById('bingo-claim-verify').innerHTML=resetSnapshot.claimVerifyHTML;
+    document.getElementById('bingo-claim-verify').style.display=resetSnapshot.claimVerifyVisible?'':'none';
+    document.getElementById('bingo-claim-banner').classList.add('show');
+    activeBingoClaimKey=resetSnapshot.activeBingoClaimKey;
   }
+  resetSnapshot=null;
+  document.getElementById('reset-undo-btn').style.display='none';
+  showToast('Reset undone!');
 }
-function renderAdminList() {
-  var list = document.getElementById('admin-list');
-  if (!categories.length) { list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0;font-style:italic">No categories yet. Add one above.</div>'; return; }
-  var html = '';
-  categories.forEach(function(c) {
-    var thumb = c.image ? '<img class="admin-item-thumb" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.background=\'var(--surface3)\'">' : '<div class="admin-item-thumb"></div>';
-    var genres = getGenres(c);
-    var meta = (genres.length ? genres.join(', ') : 'No genre') + ' · ' + (c.status === 'coming' ? 'Coming soon' : 'Live');
-    html += '<div class="admin-item">' + thumb + '<div class="admin-item-info"><div class="admin-item-title">' + c.title + '</div><div class="admin-item-meta">' + meta + '</div></div><div class="admin-item-actions"><button class="btn-accent" onclick="editCategory(\'' + c.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="promptDelete(\'' + c.id + '\',\'' + c.title.replace(/'/g, "\\'") + '\')">✕</button></div></div>';
-  });
-  list.innerHTML = html;
-}
-function updateSongCount() {
-  var lines = document.getElementById('f-songs').value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
-  var el = document.getElementById('song-count-label');
-  el.textContent = lines.length + ' song' + (lines.length === 1 ? '' : 's') + (lines.length < 25 ? ' — need at least 25' : '');
-  el.style.color = lines.length >= 25 ? '#4a9' : '#e05050';
-}
-function resetForm() {
-  ['edit-id','f-title','f-genre','f-image','f-songs','f-spotify','f-spotify-qr'].forEach(function(id){ document.getElementById(id).value = ''; });
-  document.getElementById('f-classic-bingo').checked = false;
-  document.getElementById('f-status').value = 'live';
-  document.getElementById('banner-preview-img').style.display = 'none';
-  document.getElementById('form-mode-label').textContent = 'Add New Category';
-  document.getElementById('cancel-edit-btn').style.display = 'none';
-  document.getElementById('song-count-label').textContent = '';
-}
-function editCategory(id) {
-  var c = categories.find(function(x){return x.id===id;});
-  if (!c) return;
-  document.getElementById('edit-id').value = id;
-  document.getElementById('f-title').value = c.title || '';
-  document.getElementById('f-genre').value = getGenres(c).join(', ');
-  document.getElementById('f-image').value = c.image || '';
-  document.getElementById('f-songs').value = c.songs || '';
-  document.getElementById('f-spotify').value = c.spotifyUrl || '';
-  document.getElementById('f-spotify-qr').value = c.spotifyQrUrl || '';
-  document.getElementById('f-status').value = c.status || 'live';
-  document.getElementById('f-classic-bingo').checked = !!(c.classicBingo);
-  document.getElementById('form-mode-label').textContent = 'Editing: ' + c.title;
-  document.getElementById('cancel-edit-btn').style.display = '';
-  updateSongCount(); previewBanner();
-  document.getElementById('cat-form-wrap').scrollIntoView({behavior:'smooth', block:'nearest'});
-}
-function saveCategory() {
-  var title = document.getElementById('f-title').value.trim();
-  if (!title) { showToast('Title required'); return; }
-  var isClassic = document.getElementById('f-classic-bingo').checked;
-  var songs = document.getElementById('f-songs').value.trim();
-  if (!isClassic) { var songCount = songs.split('\n').map(function(s){return s.trim();}).filter(Boolean).length; if (songCount < 25) { showToast('Need at least 25 songs (have ' + songCount + ')'); return; } }
-  var genreRaw = document.getElementById('f-genre').value.trim();
-  var genres = genreRaw ? genreRaw.split(',').map(function(g){return g.trim();}).filter(Boolean) : [];
-  var editId = document.getElementById('edit-id').value;
-  var id = editId || 'cat_' + Date.now();
-  var order = editId ? (function(){ var c = categories.find(function(x){return x.id===editId;}); return c ? (c.order||0) : categories.length; })() : categories.length;
-  saveToFirebase({id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic});
-  resetForm(); showToast(editId ? 'Updated!' : 'Category added!');
-}
-function previewBanner() {
-  var url = document.getElementById('f-image').value.trim();
-  var img = document.getElementById('banner-preview-img');
-  if (url) { img.src=url; img.style.display='block'; img.onerror=function(){img.style.display='none';}; }
-  else img.style.display = 'none';
-}
-function promptDelete(id, title) {
-  deleteTargetId = id;
-  document.getElementById('delete-name').textContent = '"' + title + '"';
-  document.getElementById('delete-confirm-overlay').classList.add('show');
-}
-function cancelDelete() { deleteTargetId = null; document.getElementById('delete-confirm-overlay').classList.remove('show'); }
-function confirmDelete() {
-  if (!deleteTargetId) return;
-  deleteFromFirebase(deleteTargetId); deleteTargetId = null;
-  document.getElementById('delete-confirm-overlay').classList.remove('show');
-  showToast('Removed');
+function renderPrintGrid(){
+  document.getElementById('host-print-grid').innerHTML=
+    allSongs.map((s,i)=>`<div class="print-cell"><span class="cell-num">${i+1}.</span><div class="cell-label">${fmtLabel(s)}</div></div>`).join('');
 }
 
-// ── SCHEDULE ──────────────────────────────────────────────────────────────────
-function openScheduleBtn() {
-  if (adminUnlocked) {
-    document.getElementById('admin-sched-overlay').classList.add('show');
-    renderTimeline(); renderSchedCatChecks();
-  } else {
-    var today = new Date().toISOString().split('T')[0];
-    document.getElementById('host-sched-date').value = today;
-    document.getElementById('host-sched-overlay').classList.add('show');
-    renderHostSched();
-  }
-}
-function closeAdminSched() { document.getElementById('admin-sched-overlay').classList.remove('show'); }
-
-function switchSchedTab(tab) {
-  ['timeline','add','bulk','venues'].forEach(function(t) {
-    document.getElementById('spanel-' + t).style.display = t === tab ? '' : 'none';
-    var btn = document.getElementById('stab-' + t);
-    if (btn) { btn.classList.toggle('active', t === tab); }
-  });
-  if (tab === 'add') renderSchedCatChecks();
-  if (tab === 'venues') renderVenueList();
-  if (tab === 'bulk') bulkPopulateVenue();
+function getQRDataUrl(){
+  const c=document.getElementById('qr-container');
+  const canvas=c.querySelector('canvas'),img=c.querySelector('img');
+  if(canvas){const t=document.createElement('canvas');t.width=200;t.height=200;t.getContext('2d').drawImage(canvas,0,0,200,200);return t.toDataURL();}
+  return img?img.src:'';
 }
 
-function populateVenueDropdowns() {
-  var opts = '<option value="">— select venue —</option>';
-  venues.forEach(function(v) { opts += '<option value="' + v.id + '">' + v.name + '</option>'; });
-  var filterOpts = '<option value="all">All venues</option>';
-  venues.forEach(function(v) { filterOpts += '<option value="' + v.id + '">' + v.name + '</option>'; });
-  var selects = ['sched-venue-select', 'host-sched-venue', 'bulk-venue-select'];
-  selects.forEach(function(id) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    var cur = el.value;
-    el.innerHTML = opts;
-    if (cur) el.value = cur;
-  });
-  var filterEl = document.getElementById('sched-venue-filter');
-  if (filterEl) { var cur = filterEl.value; filterEl.innerHTML = filterOpts; if (cur) filterEl.value = cur; }
+function printHostSheet(){
+  const qrSrc=getQRDataUrl();
+  const playerURL=document.getElementById('qr-url-display').textContent||'';
+  const bannerHTML=EVENT_IMAGE?`<img src="${EVENT_IMAGE}" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;border-radius:6px;margin-bottom:14px" onerror="this.style.display='none'">`: '';
+
+  // Build QR block — player QR always shown if available, Spotify QR shown if set
+  let qrBlock='';
+  if(qrSrc||SPOTIFY_QR_URL){
+    const playerQrHTML=qrSrc?`
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <img src="${qrSrc}" style="width:72px;height:72px;border-radius:4px">
+        <div style="font-size:9px;color:#888;text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Player Cards</div>
+      </div>`:'';
+    const spotifyQrHTML=SPOTIFY_QR_URL?`
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <img src="${SPOTIFY_QR_URL}" style="width:72px;height:72px;border-radius:4px" onerror="this.style.display='none'">
+        <div style="font-size:9px;color:#1DB954;text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Spotify</div>
+      </div>`:'';
+    qrBlock=`
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;background:#f8f8f8;border:1px solid #ddd;border-radius:6px;padding:10px 14px">
+        <div style="display:flex;gap:12px">${playerQrHTML}${spotifyQrHTML}</div>
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#666;margin-bottom:3px">QR Codes</div>
+          ${qrSrc?`<div style="font-size:10px;color:#999;word-break:break-all;font-family:monospace;margin-bottom:3px">${playerURL}</div>`:''}
+          <div style="font-size:11px;color:#555">Players scan Player Cards QR to get their digital bingo card${SPOTIFY_QR_URL?' · Scan Spotify QR to open the playlist':''}</div>
+        </div>
+      </div>`;}
+
+  const cellsHTML=allSongs.map((s,i)=>`
+    <div style="border:.5px solid #ccc;border-radius:5px;padding:7px 9px;background:#fff;display:flex;align-items:flex-start;gap:6px">
+      <span style="font-size:10px;color:#aaa;min-width:16px;margin-top:1px;flex-shrink:0">${i+1}.</span>
+      <div style="font-size:11px;font-weight:500;line-height:1.35">${fmtPlain(s)}</div>
+    </div>`).join('');
+
+  const printHTML=`<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<title>${EVENT_TITLE} — Host Sheet</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px;background:#fff;color:#1a1a1a}
+h1{font-size:18px;font-weight:700;margin-bottom:4px}
+.sub{font-size:12px;color:#888;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+</style>
+</head><body>
+${bannerHTML}
+${qrBlock}
+<h1>${EVENT_TITLE} — Song List</h1>
+<div class="sub">${allSongs.length} songs</div>
+<div class="grid">${cellsHTML}</div>
+</body></html>`;
+
+  const win=window.open('','_blank','width=900,height=700');
+  win.document.write(printHTML);
+  win.document.close();
+  win.onload=()=>setTimeout(()=>win.print(),300);
 }
 
-function addVenue() {
-  var name = document.getElementById('venue-name-input').value.trim();
-  if (!name || !db) return;
-  var id = 'venue_' + Date.now();
-  db.ref('landing/venues/' + id).set({id:id, name:name});
-  document.getElementById('venue-name-input').value = '';
-  showToast('Venue added!');
-}
-function deleteVenue(id) {
-  if (!db || !confirm('Remove this venue?')) return;
-  db.ref('landing/venues/' + id).remove();
-  showToast('Venue removed');
-}
-function renderVenueList() {
-  var list = document.getElementById('venue-list');
-  if (!list) return;
-  if (!venues.length) { list.innerHTML = '<div style="font-size:13px;color:var(--text3);font-style:italic">No venues yet.</div>'; return; }
-  var html = '';
-  venues.forEach(function(v) {
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;margin-bottom:6px"><span style="font-size:13px;color:var(--text)">' + v.name + '</span><button class="btn btn-danger btn-sm" onclick="deleteVenue(\'' + v.id + '\')">✕</button></div>';
-  });
-  list.innerHTML = html;
-}
+function printCards(){
+  if(!generatedCards.length){showToast('Generate cards first!');return;}
+  const liveGrids=document.querySelectorAll('#cards-preview .bingo-grid');
 
-function renderSchedCatChecks() {
-  var editIdEl = document.getElementById('sched-edit-id');
-  if (!editIdEl) return; // overlay not in DOM yet
-  var opts = '<option value="">— pick a category —</option>';
-  categories.forEach(function(c) { opts += '<option value="' + c.id + '">' + c.title + '</option>'; });
-  var opts3 = '<option value="">(none)</option>';
-  categories.forEach(function(c) { opts3 += '<option value="' + c.id + '">' + c.title + '</option>'; });
-  var editId = editIdEl.value;
-  var entry = editId ? scheduleEntries.find(function(e){return e.id===editId;}) : null;
-  var rounds = entry ? (entry.rounds || []) : [];
-  ['sched-round-1','sched-round-2'].forEach(function(id, i) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    el.innerHTML = opts;
-    el.value = rounds[i] || '';
-  });
-  var el3 = document.getElementById('sched-round-3');
-  if (el3) { el3.innerHTML = opts3; el3.value = rounds[2] || ''; }
-}
-
-function updateRecentHint() {
-  var venueId = document.getElementById('sched-venue-select').value;
-  var wrap = document.getElementById('recent-hint-wrap');
-  var list = document.getElementById('recent-hint-list');
-  if (!venueId || !wrap || !list) { if (wrap) wrap.style.display = 'none'; return; }
-  var recent = scheduleEntries.filter(function(e){return e.venueId === venueId;}).slice(-6).reverse();
-  if (!recent.length) { wrap.style.display = 'none'; return; }
-  wrap.style.display = '';
-  var today = new Date().toISOString().split('T')[0];
-  var html = '';
-  recent.forEach(function(e) {
-    var roundLabels = ['Round 1','Round 2','Round 3'];
-    var rounds = e.rounds || e.categoryIds || [];
-    var isPast = e.date < today;
-    var roundsHTML = rounds.map(function(id, i) {
-      var cat = categories.find(function(x){return x.id===id;});
-      var label = roundLabels[i] || ('Round '+(i+1));
-      return '<span style="color:var(--gold);font-size:10px;font-family:var(--cinzel);letter-spacing:.06em">' + label + ':</span> ' + (cat ? cat.title : '—');
-    }).join(' &nbsp;·&nbsp; ');
-    html += '<div style="font-size:12px;padding:7px 10px;background:var(--surface2);border-radius:var(--radius);margin-bottom:4px;border-left:3px solid ' + (isPast ? 'var(--border2)' : 'var(--gold)') + '">'
-      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:' + (roundsHTML?'4px':'0') + '">'
-      + '<span style="color:' + (isPast ? 'var(--text2)' : 'var(--gold)') + ';font-weight:600">' + formatDate(e.date) + '</span>'
-      + (e.notes ? '<span style="color:var(--text3);font-style:italic;font-size:11px"> — ' + e.notes + '</span>' : '')
-      + '</div>'
-      + (roundsHTML ? '<div style="color:var(--text);line-height:1.6">' + roundsHTML + '</div>' : '')
-      + '</div>';
-  });
-  list.innerHTML = html;
-}
-
-function saveSchedEntry() {
-  var date = document.getElementById('sched-date').value;
-  var venueId = document.getElementById('sched-venue-select').value;
-  if (!date) { showToast('Pick a date'); return; }
-  if (!venueId) { showToast('Pick a venue'); return; }
-  var r1 = document.getElementById('sched-round-1').value;
-  var r2 = document.getElementById('sched-round-2').value;
-  var r3 = document.getElementById('sched-round-3').value;
-  if (!r1 && !r2) { showToast('Pick at least one round'); return; }
-  var rounds = [r1, r2, r3].filter(Boolean);
-  var categoryIds = rounds.filter(function(id,i,a){return a.indexOf(id)===i;});
-  var notes = document.getElementById('sched-notes').value.trim();
-  var editId = document.getElementById('sched-edit-id').value;
-  var id = editId || 'sched_' + Date.now();
-  db.ref('landing/schedule/' + id).set({id:id, date:date, venueId:venueId, rounds:rounds, categoryIds:categoryIds, notes:notes});
-  resetSchedForm(); showToast(editId ? 'Entry updated!' : 'Entry added!');
-}
-
-function editSchedEntry(id) {
-  var e = scheduleEntries.find(function(x){return x.id===id;});
-  if (!e) return;
-  // Set the edit ID first so renderSchedCatChecks can read it
-  document.getElementById('sched-edit-id').value = id;
-  document.getElementById('sched-date').value = e.date;
-  document.getElementById('sched-venue-select').value = e.venueId;
-  document.getElementById('sched-notes').value = e.notes || '';
-  document.getElementById('sched-form-label').textContent = 'Editing Entry';
-  document.getElementById('sched-cancel-btn').style.display = '';
-  switchSchedTab('add');
-  // Rebuild dropdowns with category options, then restore saved rounds
-  renderSchedCatChecks();
-  // Explicitly set the saved round values after dropdowns are populated
-  var rounds = e.rounds || e.categoryIds || [];
-  ['sched-round-1','sched-round-2','sched-round-3'].forEach(function(elId, i) {
-    var el = document.getElementById(elId);
-    if (el && rounds[i]) el.value = rounds[i];
-  });
-  updateRecentHint();
-}
-function deleteSchedEntry(id) {
-  if (!db || !confirm('Delete this entry?')) return;
-  db.ref('landing/schedule/' + id).remove();
-  showToast('Entry removed');
-}
-function resetSchedForm() {
-  if (!document.getElementById('sched-edit-id')) return;
-  document.getElementById('sched-edit-id').value = '';
-  document.getElementById('sched-date').value = '';
-  document.getElementById('sched-venue-select').value = '';
-  document.getElementById('sched-notes').value = '';
-  document.getElementById('sched-form-label').textContent = 'Add Schedule Entry';
-  document.getElementById('sched-cancel-btn').style.display = 'none';
-  document.getElementById('recent-hint-wrap').style.display = 'none';
-  renderSchedCatChecks();
-}
-function formatDate(dateStr) {
-  if (!dateStr) return '';
-  var parts = dateStr.split('-');
-  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return months[parseInt(parts[1])-1] + ' ' + parseInt(parts[2]) + ', ' + parts[0];
-}
-
-function renderTimeline() {
-  var tl = document.getElementById('sched-timeline-content');
-  if (!tl) return;
-  var filterEl = document.getElementById('sched-venue-filter');
-  var venueFilter = filterEl ? filterEl.value : 'all';
-  var today = new Date().toISOString().split('T')[0];
-  var filtered = venueFilter === 'all' ? scheduleEntries : scheduleEntries.filter(function(e){return e.venueId===venueFilter;});
-  if (!filtered.length) {
-    tl.innerHTML = '<div style="font-size:14px;color:var(--text3);font-style:italic;padding:1rem 0">No schedule entries yet. Use Add Entry to plan your nights.</div>';
-    return;
-  }
-  var groups = {};
-  filtered.forEach(function(e) {
-    var key = e.date.slice(0,7);
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(e);
-  });
-  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var upcoming = []; var past = [];
-  Object.keys(groups).sort().forEach(function(month) {
-    var entries = groups[month];
-    var mp = month.split('-');
-    var label = monthNames[parseInt(mp[1])-1] + ' ' + mp[0];
-    var isUpcoming = month >= today.slice(0,7);
-    var rows = '';
-    entries.forEach(function(e) {
-      var vname = (venues.find(function(v){return v.id===e.venueId;}) || {}).name || 'Unknown';
-      var roundLabelsT = ['R1','R2','R3'];
-      var rounds = e.rounds || e.categoryIds || [];
-      var pills = rounds.map(function(id, ri) {
-        var c = categories.find(function(x){return x.id===id;});
-        var label = roundLabelsT[ri] ? '<span style="font-size:9px;color:var(--text3);margin-right:3px">' + roundLabelsT[ri] + '</span>' : '';
-        return '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:99px;padding:2px 8px;color:var(--gold2);font-family:var(--cinzel);letter-spacing:.04em">' + label + (c?c.title:id) + '</span>';
-      }).join('');
-      var isPast = e.date < today;
-      rows += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:.5px solid var(--border);opacity:' + (isPast?'0.55':'1') + '"><div style="min-width:36px;font-size:12px;font-weight:700;color:' + (isPast?'var(--text3)':'var(--gold)') + ';font-family:var(--cinzel);padding-top:2px">' + e.date.split('-')[2] + '</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px">' + vname + '</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:' + (e.notes?'4px':'0') + '">' + pills + '</div>' + (e.notes?'<div style="font-size:11px;color:var(--gold2);font-style:italic;background:var(--gold-dim);border-radius:4px;padding:2px 6px;display:inline-block;margin-top:2px">📋 '+e.notes+'</div>':'') + '</div><div style="display:flex;gap:4px;flex-shrink:0"><button class="btn-accent" onclick="editSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">✕</button></div></div>';
-    });
-    var block = '<div style="margin-bottom:1.5rem"><div style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:' + (isUpcoming?'var(--gold)':'var(--text3)') + ';margin-bottom:4px;padding-bottom:6px;border-bottom:1px solid var(--border)">' + label + '</div>' + rows + '</div>';
-    if (isUpcoming) upcoming.push(block); else past.push(block);
-  });
-  var html = '';
-  if (upcoming.length) html += '<div style="margin-bottom:2rem">' + upcoming.join('') + '</div>';
-  if (past.length) html += '<div style="opacity:.8"><div style="font-size:10px;font-family:var(--cinzel);letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Past</div>' + past.join('') + '</div>';
-  tl.innerHTML = html;
-}
-
-function renderHostSched() {
-  var res = document.getElementById('host-sched-results');
-  if (!res) return;
-  var date = document.getElementById('host-sched-date').value;
-  var venueId = document.getElementById('host-sched-venue').value;
-  if (!date || !venueId) {
-    res.innerHTML = '<div style="font-size:14px;color:var(--text3);font-style:italic;text-align:center;padding:1rem">Select a date and venue to see tonight\'s schedule.</div>';
-    return;
-  }
-  var entries = scheduleEntries.filter(function(e){return e.date===date && e.venueId===venueId;});
-  if (!entries.length) {
-    res.innerHTML = '<div style="font-size:14px;color:var(--text3);font-style:italic;text-align:center;padding:1rem">Nothing scheduled for this date and venue.</div>';
-    return;
-  }
-  var html = '';
-  entries.forEach(function(entry) {
-    // Notes block
-    if (entry.notes) {
-      html += '<div style="background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:var(--radius);padding:8px 12px;margin-bottom:12px;font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text2)">📋 ' + entry.notes + '</div>';
+  const pages=generatedCards.map((cells,idx)=>{
+    let fontSize=9;
+    if(liveGrids[idx]){
+      const firstCell=liveGrids[idx].querySelector('.bingo-cell:not(.free) .cell-text');
+      if(firstCell) fontSize=parseFloat(firstCell.style.fontSize)||9;
     }
-    // Rounds
-    var rounds = entry.rounds || entry.categoryIds || [];
-    var roundLabels = ['Round 1', 'Round 2', 'Round 3'];
-    rounds.forEach(function(catId, i) {
-      var c = categories.find(function(x){return x.id===catId;});
-      if (!c) return;
-      var appUrl = 'app.html?id=' + c.id;
-      var imgHTML = c.image ? '<img src="' + c.image + '" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;border-radius:6px 6px 0 0" onerror="this.style.display=\'none\'">' : '';
-      var roundLabel = roundLabels[i] || ('Round ' + (i+1));
-      html += '<div style="margin-bottom:12px">'
-        + '<div style="font-family:var(--cinzel);font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:4px">' + roundLabel + '</div>'
-        + '<div onclick="window.open(\'' + appUrl + '\',\'_blank\')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:border-color .2s" onmouseover="this.style.borderColor=\'var(--gold-border)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'
-        + imgHTML
-        + '<div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between"><div style="font-family:var(--cinzel);font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--text)">' + c.title + '</div><span style="font-size:12px;color:var(--gold)">Open ↗</span></div>'
-        + '</div></div>';
-    });
+    // Scale font size up proportionally since our card is now larger
+    const scaledFont=Math.round(fontSize*1.8);
+    const scaledArtist=Math.round(Math.max(6,fontSize-2)*1.8);
+
+    const imgHTML=EVENT_IMAGE
+      ?`<img style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block" src="${EVENT_IMAGE}" onerror="this.style.display='none'">`:'';
+
+    const cellsHTML=cells.map(s=>{
+      if(s.free) return`<div class="bc free"><div class="fsi"><div class="frt"><div class="fr" style="transform:rotate(-35deg)"></div><div class="fr" style="transform:rotate(-12deg)"></div><div class="fr"></div><div class="fr" style="transform:rotate(12deg)"></div><div class="fr" style="transform:rotate(35deg)"></div></div><div class="fw"><span class="fword">FREE</span><span class="fword">SPACE</span></div><div class="frb"><div class="fr" style="transform:rotate(35deg)"></div><div class="fr" style="transform:rotate(12deg)"></div><div class="fr"></div><div class="fr" style="transform:rotate(-12deg)"></div><div class="fr" style="transform:rotate(-35deg)"></div></div></div></div>`;
+      const art=s.artist?`<span class="ca" style="font-size:${scaledArtist}px">${s.artist}</span>`:'';
+      return`<div class="bc"><div class="ct" style="font-size:${scaledFont}px"><span class="cs">${s.title}</span>${art}</div></div>`;
+    }).join('');
+
+    const qr=SPOTIFY_QR_URL
+      ?`<div style="position:absolute;top:5px;left:5px;background:rgba(255,255,255,.9);border-radius:3px;padding:2px;line-height:0"><img src="${SPOTIFY_QR_URL}" style="width:60px;height:60px;display:block;border-radius:2px" onerror="this.style.display='none'"></div>`:'';
+
+    return`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@page{size:letter portrait;margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;padding:0.75in 0.5in 0.5in 0.5in}
+.card{width:70%;position:relative;border:1.5px solid #888;border-radius:8px;overflow:hidden;margin:0}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:4px}
+.bc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid #ccc;border-radius:4px;padding:4px;font-weight:500;background:#f8f8f8;overflow:hidden}
+.bc.free{background:#fff;border:1px solid #bbb}
+.ct{line-height:1.25;text-align:center;overflow-wrap:break-word;word-break:normal;white-space:normal}
+.cs{display:block}.ca{display:block;opacity:.6}
+.fsi{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:1px}
+.frt,.frb{display:flex;gap:2px;align-items:center;justify-content:center}
+.fr{width:2px;height:8px;border-radius:1px;background:#000}
+.fw{display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.fword{font-size:9px;font-weight:900;letter-spacing:.01em;text-transform:uppercase;color:#000}
+</style></head><body>
+<div class="card">${imgHTML}<div class="grid">${cellsHTML}</div>${qr}</div>
+</body></html>`;
   });
-  res.innerHTML = html || '<div style="font-size:14px;color:var(--text3);font-style:italic;text-align:center;padding:1rem">Nothing scheduled for this date and venue.</div>';
+
+  // Open each card in its own iframe within a single print window
+  const win=window.open('','_blank','width=900,height=700');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+@page{size:letter portrait;margin:0}
+body{background:#fff}
+iframe{width:8.5in;height:11in;border:none;display:block;page-break-after:always;break-after:page;vertical-align:top}
+iframe:last-child{page-break-after:auto;break-after:auto}
+</style></head><body>
+${pages.map(p=>`<iframe srcdoc="${p.replace(/"/g,'&quot;').replace(/\n/g,' ')}"></iframe>`).join('\n')}
+</body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),1200);
+}
+function hostCopyList(){
+  navigator.clipboard.writeText(hostPlayedOrder.map((id,i)=>`${i+1}. ${fmtPlain(allSongs.find(x=>x.id===id))}`).join('\n')).then(()=>showToast('Copied!'));
+}
+function hostCopyTSV(){
+  navigator.clipboard.writeText(allSongs.map(s=>`${s.title}\t${s.artist}`).join('\n')).then(()=>showToast('Copied!'));
 }
 
-// ── BULK SCHEDULE IMPORT ──────────────────────────────────────────────────────
-var bulkParsed = [];
-
-function bulkPopulateVenue() {
-  var sel = document.getElementById('bulk-venue-select');
-  if (!sel) return;
-  var cur = sel.value;
-  var opts = '<option value="">— select venue —</option>';
-  venues.forEach(function(v) { opts += '<option value="' + v.id + '">' + v.name + '</option>'; });
-  sel.innerHTML = opts;
-  if (cur) sel.value = cur;
+// ── CARD GENERATOR ────────────────────────────────────────────────────────────
+let generatedCards=[];
+// sessionOffset is randomised fresh every page load so card #1 always looks
+// different — but stays stable within a single session so digital and printed
+// cards generated in the same run stay in sync.
+const sessionOffset=Math.floor(Math.random()*2147483647);
+function seededRng(seed){let s=seed;return()=>{s=(s*1664525+1013904223)&0xffffffff;return(s>>>0)/0xffffffff;};}
+function generateCard(num){
+  const rng=seededRng((num*31337+17+sessionOffset)&0x7fffffff),pool=[...allSongs];
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+  const cells=pool.slice(0,24);
+  cells.splice(12,0,{id:-1,title:'FREE',artist:'',free:true});
+  return cells;
+}
+function buildFreeCell(){
+  return`<div class="bingo-cell free"><div class="free-space-inner"><div class="free-rays-top"><div class="free-ray" style="transform:rotate(-35deg)"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray" style="transform:rotate(35deg)"></div></div><div class="free-words"><span class="free-word">FREE</span><span class="free-word">SPACE</span></div><div class="free-rays-bottom"><div class="free-ray" style="transform:rotate(35deg)"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray" style="transform:rotate(-35deg)"></div></div></div></div>`;
+}
+function renderCardHTML(cells,cardNum){
+  const imgHTML=EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" onerror="this.style.display='none'">`: '';
+  const cellsHTML=cells.map(s=>{
+    if(s.free)return buildFreeCell();
+    const artistHTML=s.artist?`<span class="cell-artist">${s.artist}</span>`:'';
+    return`<div class="bingo-cell" data-id="${s.id}"><div class="cell-text"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
+  }).join('');
+  return`<div class="bingo-card-wrap">${imgHTML}<div class="bingo-grid" data-card="${cardNum}">${cellsHTML}</div></div>`;
+}
+function generateCards(){
+  const count=Math.min(100,Math.max(1,parseInt(document.getElementById('card-count').value)||30));
+  generatedCards=[];
+  for(let i=1;i<=count;i++)generatedCards.push(generateCard(i));
+  document.getElementById('cards-preview').innerHTML=generatedCards.map((cells,idx)=>renderCardHTML(cells,idx+1)).join('');
+  document.getElementById('cards-count-label').textContent=`${count} generated cards`;
+  document.getElementById('cards-output').style.display='';
+  requestAnimationFrame(()=>sizeAllCardGrids());
+  const playerURL=window.location.href.split('?')[0]+'?id='+categoryId+'&play';
+  document.getElementById('qr-url-display').textContent=playerURL;
+  generateQR(playerURL);
+  showToast(`${count} cards generated!`);
 }
 
-function bulkParse() {
-  var venueId = document.getElementById('bulk-venue-select').value;
-  var text = document.getElementById('bulk-text').value.trim();
-  var preview = document.getElementById('bulk-preview');
-  var saveBtn = document.getElementById('bulk-save-btn');
-  if (!venueId) { preview.innerHTML = '<div style="color:#e05050;font-size:13px;padding:.5rem 0">Pick a venue first.</div>'; return; }
-  if (!text) { preview.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:.5rem 0">Paste some schedule entries above.</div>'; return; }
 
-  var vname = (venues.find(function(v){return v.id===venueId;})||{}).name||'';
-  var year = new Date().getFullYear();
-  var monthMap = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11,
-    january:0,february:1,march:2,april:3,june:5,july:6,august:7,september:8,october:9,november:10,december:11};
-
-  bulkParsed = [];
-  var errors = [];
-  var lines = text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
-
-  lines.forEach(function(line, li) {
-    // Split notes
-    var noteParts = line.split('|');
-    var main = noteParts[0].trim();
-    var notes = noteParts[1] ? noteParts[1].trim() : '';
-
-    // Parse date — expect "Month Day" or "Month Day Year" before a dash
-    var dashIdx = main.indexOf('-');
-    if (dashIdx === -1) { errors.push('Line ' + (li+1) + ': no dash found after date'); return; }
-    var datePart = main.slice(0, dashIdx).trim();
-    var roundsPart = main.slice(dashIdx+1).trim();
-
-    // Parse date
-    var dateTokens = datePart.replace(',','').split(/\s+/);
-    var parsedDate = null;
-    if (dateTokens.length >= 2) {
-      var mKey = dateTokens[0].toLowerCase().slice(0,3);
-      var mNum = monthMap[mKey];
-      var day = parseInt(dateTokens[1]);
-      var yr = dateTokens[2] ? parseInt(dateTokens[2]) : year;
-      if (mNum !== undefined && !isNaN(day)) {
-        parsedDate = yr + '-' + String(mNum+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
-      }
+// ── TEXT SIZER ────────────────────────────────────────────────────────────────
+function sizeCellText(container){
+  const cells=Array.from(container.querySelectorAll('.bingo-cell:not(.free)'));
+  if(!cells.length)return;
+  const cellEl=cells[0],cellW=cellEl.clientWidth-10,cellH=cellEl.clientHeight-10;
+  if(cellW<=0||cellH<=0){setTimeout(()=>sizeCellText(container),80);return;}
+  const tester=document.createElement('div');
+  tester.style.cssText=`position:absolute;visibility:hidden;width:${cellW}px;overflow:hidden;text-align:center;line-height:1.25;overflow-wrap:break-word;word-break:normal;hyphens:none;white-space:normal;font-weight:500;font-family:${getComputedStyle(document.body).fontFamily}`;
+  document.body.appendChild(tester);
+  const samples=cells.map(c=>c.querySelector('.cell-text')?.innerHTML||'');
+  let lo=7,hi=26,best=7;
+  while(lo<=hi){
+    const mid=Math.floor((lo+hi)/2);let fits=true;
+    for(const html of samples){
+      tester.innerHTML=html;tester.style.fontSize=mid+'px';
+      const art=tester.querySelector('.cell-artist');
+      if(art)art.style.fontSize=Math.max(6,mid-2)+'px';
+      if(tester.scrollHeight>cellH+2){fits=false;break;}
     }
-    if (!parsedDate) { errors.push('Line ' + (li+1) + ': could not parse date "' + datePart + '"'); return; }
-
-    // Parse rounds — "Round 1: Title, Round 2: Title, Round 3: Title"
-    var rounds = [];
-    var roundMatches = roundsPart.split(',');
-    roundMatches.forEach(function(seg) {
-      seg = seg.trim();
-      var colonIdx = seg.indexOf(':');
-      if (colonIdx === -1) return;
-      var catName = seg.slice(colonIdx+1).trim().toLowerCase();
-      // Fuzzy match category name
-      var match = categories.find(function(c){ return c.title.toLowerCase() === catName; });
-      if (!match) {
-        // Try partial match
-        match = categories.find(function(c){ return c.title.toLowerCase().indexOf(catName) !== -1 || catName.indexOf(c.title.toLowerCase()) !== -1; });
-      }
-      rounds.push({ raw: seg.slice(colonIdx+1).trim(), catId: match ? match.id : null, catTitle: match ? match.title : null });
-    });
-
-    if (!rounds.length) { errors.push('Line ' + (li+1) + ': no rounds found'); return; }
-
-    bulkParsed.push({ date: parsedDate, venueId: venueId, rounds: rounds, notes: notes, raw: line });
+    if(fits){best=mid;lo=mid+1;}else hi=mid-1;
+  }
+  document.body.removeChild(tester);
+  cells.forEach(cell=>{
+    const txt=cell.querySelector('.cell-text');if(!txt)return;
+    txt.style.fontSize=best+'px';
+    const art=txt.querySelector('.cell-artist');
+    if(art)art.style.fontSize=Math.max(6,best-2)+'px';
   });
+}
+function sizeAllCardGrids(){document.querySelectorAll('.bingo-grid').forEach(g=>sizeCellText(g));}
 
-  // Build preview HTML
-  var html = '';
-  if (errors.length) {
-    html += '<div style="background:rgba(220,60,60,.08);border:1px solid rgba(220,60,60,.25);border-radius:var(--radius);padding:10px 14px;margin-bottom:1rem">';
-    html += '<div style="font-size:11px;font-weight:600;color:#e05050;margin-bottom:6px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase">Parse errors</div>';
-    errors.forEach(function(e){ html += '<div style="font-size:12px;color:#e05050;margin-bottom:2px">⚠ ' + e + '</div>'; });
-    html += '</div>';
+// ── QR ────────────────────────────────────────────────────────────────────────
+let pendingQRUrl=null;
+function generateQR(url){
+  pendingQRUrl=url;
+  if(!window.QRCode)return;
+  const c=document.getElementById('qr-container');c.innerHTML='';
+  new window.QRCode(c,{text:url,width:180,height:180,colorDark:'#1a1714',colorLight:'#ffffff',correctLevel:window.QRCode.CorrectLevel.M});
+}
+function getQRSrc(size){
+  const c=document.getElementById('qr-container');
+  const canvas=c.querySelector('canvas'),img=c.querySelector('img');
+  if(canvas){const t=document.createElement('canvas');t.width=size;t.height=size;t.getContext('2d').drawImage(canvas,0,0,size,size);return t.toDataURL();}
+  return img?img.src:'';
+}
+function downloadQR(){const src=getQRSrc(400);if(!src)return;const a=document.createElement('a');a.download=`${EVENT_TITLE.replace(/\s+/g,'-').toLowerCase()}-qr.png`;a.href=src;a.click();showToast('QR downloaded!');}
+function copyPlayerURL(){navigator.clipboard.writeText(window.location.href.split('?')[0]+'?id='+categoryId+'&play').then(()=>showToast('Link copied!'));}
+function openQRFullscreen(){
+  document.getElementById('qr-fullscreen-inner').innerHTML=`<img src="${getQRSrc(420)}" style="width:420px;height:420px;display:block">`;
+  document.getElementById('qr-fullscreen').classList.add('show');
+}
+function closeQRFullscreen(){document.getElementById('qr-fullscreen').classList.remove('show');}
+function openQRNewTab(){
+  const url=document.getElementById('qr-url-display').textContent;
+  if(!url){showToast('Generate cards first!');return;}
+  const qrSrc=getQRSrc(400);
+  const topHTML=EVENT_IMAGE
+    ?`<img src="${EVENT_IMAGE}" style="width:min(90vw,600px);height:auto;border-radius:10px;object-fit:cover" onerror="this.style.display='none'">`
+    :`<h1 style="color:#fff;font-size:clamp(18px,4vw,30px);font-weight:600;text-align:center;padding:0 1rem">${EVENT_TITLE}</h1>`;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${EVENT_TITLE}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#000;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;font-family:sans-serif;padding:2rem 1rem}img.qr{width:min(75vw,75vh);height:min(75vw,75vh);border-radius:12px;background:#fff;padding:16px;display:block}p{color:rgba(255,255,255,.4);font-size:12px;text-align:center;font-family:monospace;word-break:break-all;max-width:500px}</style></head><body>${topHTML}<img class="qr" src="${qrSrc}"><p>${url}</p></body></html>`;
+  window.open(URL.createObjectURL(new Blob([html],{type:'text/html'})),'_blank');
+}
+
+// ── PLAYER ────────────────────────────────────────────────────────────────────
+let playerDaubed=new Set(),playerCells=[],playerName='',playerCardNum=0;
+function nameToCardNum(name){
+  let salt=sessionStorage.getItem('bingo_salt_'+categoryId);
+  if(!salt){salt=Math.floor(Math.random()*999983).toString();sessionStorage.setItem('bingo_salt_'+categoryId,salt);}
+  const key=name.toLowerCase().trim()+salt;let hash=0;
+  for(let i=0;i<key.length;i++){hash=((hash<<5)-hash)+key.charCodeAt(i);hash|=0;}
+  return Math.abs(hash%9999)+1;
+}
+function loadPlayerCard(){
+  const name=document.getElementById('player-name').value.trim();
+  if(!name){showToast('Enter your name first!');return;}
+  playerName=name;playerCardNum=nameToCardNum(name);
+  playerDaubed=new Set();playerCells=generateCard(playerCardNum);
+  fbWritePlayer(name,playerCardNum);
+  document.getElementById('player-entry-screen').style.display='none';
+  document.getElementById('player-card-screen').style.display='';
+  document.getElementById('player-info-label').textContent=`${name} \u00b7 Card #${playerCardNum}`;
+  document.getElementById('bingo-shout').classList.remove('show');
+  renderPlayerCard();
+}
+function renderPlayerCard(){
+  const wrap=document.getElementById('player-bingo-card');
+  const bannerHTML=EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" onerror="this.style.display='none'">`: '';
+  const cellsHTML=playerCells.map((s,idx)=>{
+    if(s.free){
+      const isDaubed=playerDaubed.has('free');
+      return`<div class="bingo-cell free${isDaubed?' daubed':''}" onclick="playerDaubFree()"><div class="free-space-inner"><div class="free-rays-top"><div class="free-ray" style="transform:rotate(-35deg)"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray" style="transform:rotate(35deg)"></div></div><div class="free-words"><span class="free-word">FREE</span><span class="free-word">SPACE</span></div><div class="free-rays-bottom"><div class="free-ray" style="transform:rotate(35deg)"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray" style="transform:rotate(-35deg)"></div></div></div></div>`;
+    }
+    const isDaubed=playerDaubed.has(s.id);
+    const artistHTML=s.artist?`<span class="cell-artist">${s.artist}</span>`:'';
+    return`<div class="bingo-cell${isDaubed?' daubed':''}" onclick="playerDaub(${s.id})"><div class="cell-text"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
+  }).join('');
+  wrap.innerHTML=`${bannerHTML}<div class="bingo-grid" id="player-grid">${cellsHTML}</div>`;
+  requestAnimationFrame(()=>sizeCellText(wrap));
+  updatePlayerStatus();
+}
+function playerDaub(id){
+  if(playerDaubed.has(id))playerDaubed.delete(id);else playerDaubed.add(id);
+  renderPlayerCard();
+}
+function playerDaubFree(){
+  if(playerDaubed.has('free'))playerDaubed.delete('free');else playerDaubed.add('free');
+  renderPlayerCard();
+}
+function updatePlayerStatus(){
+  document.getElementById('player-status').textContent=`${playerDaubed.size} of 25 squares daubed. Tap squares as songs are called.`;
+}
+function checkBingo(){
+  const g=playerCells.map(s=>s.free?playerDaubed.has('free'):playerDaubed.has(s.id));
+  return[[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],
+    [0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],
+    [0,6,12,18,24],[4,8,12,16,20]].some(line=>line.every(i=>g[i]));
+}
+function claimBingo(){
+  if(checkBingo()){
+    document.getElementById('bingo-shout').classList.add('show');
+    document.getElementById('bingo-shout-name').textContent=`${playerName} has BINGO!`;
+    document.getElementById('winner-name-display').textContent=`${playerName} has a winning card!`;
+    document.getElementById('winner-overlay').classList.add('show');
+    // Send daubed song IDs to host for verification
+    const daubedIds=Array.from(playerDaubed);
+    const daubedSongs=playerCells
+      .filter(s=>s.free?playerDaubed.has('free'):playerDaubed.has(s.id))
+      .map(s=>s.free?'FREE SPACE':fmtPlain(s));
+    fbWriteBingoClaim(playerName,playerCardNum,daubedSongs);
+  }else showToast("Not quite \u2014 keep daubing! \uD83C\uDFB5");
+}
+
+// ── FIREBASE ──────────────────────────────────────────────────────────────────
+function setupFirebaseListeners(){
+  if(!db)return;
+  db.ref(`sessions/${sessionKey}/players`).on('value',snap=>{
+    const list=Object.values(snap.val()||{});
+    document.getElementById('h-players').textContent=list.length;
+    renderPlayerList(list);
+  });
+  db.ref(`sessions/${sessionKey}/bingoClaims`).on('child_added',snap=>{
+    const c=snap.val();if(!c||c.dismissed)return;
+    showBingoClaim(c.name,c.cardNum,snap.key,c.daubedSongs||[]);
+  });
+  // Player bridge: auto-tick when media player plays a song
+  const listenPath = 'sessions/'+sessionKey+'/nowPlaying';
+  console.log('[Bingo bridge] Listening on:', listenPath);
+  // Write our session key so the player can verify it's using the right path
+  db.ref('sessions/'+sessionKey+'/bingoAppReady').set({at: Date.now(), sessionKey: sessionKey});
+  db.ref(`sessions/${sessionKey}/nowPlaying`).on('value',snap=>{
+    const np=snap.val();
+    if(!np)return;
+    console.log('[Bingo bridge] nowPlaying received:', JSON.stringify(np));
+    if(!np.title)return;
+    const age = Date.now()-np.at;
+    if(age>30000){console.log('[Bingo bridge] Stale ('+age+'ms), skipping');return;}
+    autoTickFromPlayer(np.title,np.artist||'');
+  });
+  // Classic bingo caller sync — update sidebar when pop-out calls a number
+  if(CLASSIC_BINGO){
+    db.ref(`sessions/${sessionKey}/caller`).on('value',snap=>{
+      const d=snap.val();
+      if(d) updateSidebarCaller(d);
+    });
+  }
+}
+
+function normStr(s){
+  return s.toLowerCase()
+    .replace(/^(the|a|an)\s+/,'')
+    .replace(/[\u2018\u2019\u0060\u00b4\u02bc]/g,"'")
+    .replace(/[^a-z0-9'\s]/g,'')
+    .replace(/\s+/g,' ').trim();
+}
+
+function autoTickFromPlayer(title,artist){
+  const nt=normStr(title),na=normStr(artist);
+  console.log('[Bingo bridge] autoTick called. title='+title+' artist='+artist+' nt='+nt+' na='+na);
+  console.log('[Bingo bridge] allSongs count='+allSongs.length+', unplayed='+allSongs.filter(s=>!s.played).length);
+  // Try exact match first (title + artist)
+  let match=allSongs.find(s=>!s.played&&normStr(s.title)===nt&&normStr(s.artist)===na);
+  // Then title-only exact
+  if(!match) match=allSongs.find(s=>!s.played&&normStr(s.title)===nt);
+  // Then title substring (handles slight wording differences)
+  if(!match) match=allSongs.find(s=>!s.played&&(normStr(s.title).includes(nt)||nt.includes(normStr(s.title))));
+  console.log('[Bingo bridge] match=', match?match.title:'NO MATCH');
+  if(!match)return;
+  match.played=true;
+  hostPlayedOrder.push(match.id);
+  const q=document.getElementById('host-search');
+  renderHostGrid(q?q.value.toLowerCase():'');
+  updateHostStats();renderHostFeed();
+  if(document.getElementById('hpanel-log')&&document.getElementById('hpanel-log').style.display!=='none') renderPlayLog();
+  showToast('\u266a Auto-ticked: '+fmtPlain(match));
+}
+function fbWritePlayer(name,cardNum){
+  if(!db)return;
+  const key=name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+cardNum;
+  db.ref(`sessions/${sessionKey}/players/${key}`).set({name,cardNum,joinedAt:firebase.database.ServerValue.TIMESTAMP});
+}
+function fbWriteBingoClaim(name,cardNum,daubedSongs){
+  if(!db)return;
+  db.ref(`sessions/${sessionKey}/bingoClaims`).push({
+    name,cardNum,
+    daubedSongs:daubedSongs||[],
+    claimedAt:firebase.database.ServerValue.TIMESTAMP,
+    dismissed:false
+  });
+}
+function fbDismissClaim(key){if(!db||!key)return;db.ref(`sessions/${sessionKey}/bingoClaims/${key}`).update({dismissed:true});}
+function clearAllPlayers(){
+  if(!db)return;if(!confirm('Clear all players and claims?'))return;
+  db.ref(`sessions/${sessionKey}/players`).remove();
+  db.ref(`sessions/${sessionKey}/bingoClaims`).remove();
+  document.getElementById('bingo-claim-banner').classList.remove('show');
+}
+let activeBingoClaimKey=null;
+function togglePlayerList(){const p=document.getElementById('player-list-panel');p.style.display=p.style.display==='none'?'':'none';}
+function renderPlayerList(players){
+  const el=document.getElementById('player-list-items');
+  if(!players.length){el.innerHTML='<span style="font-size:13px;color:var(--text3)">No players yet — share the QR!</span>';return;}
+  players.sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0));
+  el.innerHTML=players.map(p=>`<div style="background:var(--bg2);border:.5px solid var(--border);border-radius:var(--radius);padding:5px 10px;font-size:13px">${p.name} <span style="color:var(--text3);font-size:11px">#${p.cardNum}</span></div>`).join('');
+}
+function showBingoClaim(name,cardNum,claimKey,daubedSongs){
+  activeBingoClaimKey=claimKey;
+  document.getElementById('bingo-claim-name').textContent=`${name} (Card #${cardNum})`;
+
+  // Build verification: check each daubed song against played list
+  const verifyEl=document.getElementById('bingo-claim-verify');
+  if(daubedSongs&&daubedSongs.length&&verifyEl){
+    const playedTitles=new Set(allSongs.filter(s=>s.played).map(s=>fmtPlain(s).toLowerCase()));
+    const rows=daubedSongs.map(song=>{
+      const isFree=song==='FREE SPACE';
+      const played=isFree||playedTitles.has(song.toLowerCase());
+      return`<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0">
+        <span style="font-size:14px">${played?'✅':'❌'}</span>
+        <span style="color:${played?'#27500A':'#c0392b'}">${song}</span>
+      </div>`;
+    }).join('');
+    const allValid=daubedSongs.every(s=>s==='FREE SPACE'||playedTitles.has(s.toLowerCase()));
+    verifyEl.innerHTML=`
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:6px">
+        Card verification — ${allValid?'✅ All songs confirmed played':'⚠️ Some songs not yet called'}
+      </div>
+      <div style="max-height:160px;overflow-y:auto;background:var(--bg2);border-radius:6px;padding:8px 10px">
+        ${rows}
+      </div>`;
+    verifyEl.style.display='';
+  } else if(verifyEl){
+    verifyEl.style.display='none';
   }
 
-  if (bulkParsed.length) {
-    html += '<div style="font-family:var(--cinzel);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">'
-      + bulkParsed.length + ' entr' + (bulkParsed.length===1?'y':'ies') + ' ready to save for ' + vname + '</div>';
-    html += '<div style="display:flex;flex-direction:column;gap:6px">';
-    bulkParsed.forEach(function(entry) {
-      var roundsHTML = entry.rounds.map(function(r, i) {
-        var label = ['Round 1','Round 2','Round 3'][i] || ('Round '+(i+1));
-        var ok = r.catId !== null;
-        return '<span style="font-size:11px;' + (ok?'color:var(--text)':'color:#e05050;text-decoration:line-through') + '">'
-          + '<span style="color:var(--gold);font-family:var(--cinzel);font-size:9px">' + label + ':</span> '
-          + (ok ? r.catTitle : r.raw + ' ⚠ not found') + '</span>';
-      }).join(' &nbsp;·&nbsp; ');
-      var hasError = entry.rounds.some(function(r){return !r.catId;});
-      html += '<div style="background:' + (hasError?'rgba(220,60,60,.06)':'var(--surface2)') + ';border:1px solid '
-        + (hasError?'rgba(220,60,60,.2)':'var(--border)') + ';border-radius:var(--radius);padding:8px 12px">'
-        + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
-        + '<span style="font-family:var(--cinzel);font-size:11px;font-weight:600;color:var(--gold);min-width:72px">' + formatDate(entry.date) + '</span>'
-        + '<span>' + roundsHTML + '</span>'
-        + (entry.notes ? '<span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:auto">📋 ' + entry.notes + '</span>' : '')
-        + '</div></div>';
-    });
-    html += '</div>';
+  document.getElementById('bingo-claim-banner').classList.add('show');
+  showToast(`\uD83C\uDF89 ${name} called BINGO!`);
+}
+function dismissBingoClaim(){
+  document.getElementById('bingo-claim-banner').classList.remove('show');
+  if(activeBingoClaimKey)fbDismissClaim(activeBingoClaimKey);
+  activeBingoClaimKey=null;
+}
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+// ── MEDIA PLAYER URL ─────────────────────────────────────────────
+const MEDIA_PLAYER_URL = 'https://belladonnanights.github.io/musicplayer/belladonna-player.html';
 
-    var allOk = bulkParsed.every(function(e){return e.rounds.every(function(r){return r.catId;});});
-    saveBtn.style.display = '';
-    saveBtn.textContent = 'Save ' + bulkParsed.length + ' entr' + (bulkParsed.length===1?'y':'ies');
-    if (!allOk) {
-      html += '<div style="font-size:11px;color:#e05050;margin-top:8px;font-style:italic">⚠ Some categories weren\'t matched — fix the names and re-preview, or save anyway and edit later.</div>';
-      saveBtn.textContent += ' (some unmatched)';
-    }
+function openMediaPlayer(){
+  const url=`${MEDIA_PLAYER_URL}?bingo=${encodeURIComponent(categoryId)}&session=${encodeURIComponent(sessionKey)}`;
+  window.open(url,'_blank');
+  // Show linked banner immediately — no need to wait for the player to respond
+  const ind = document.getElementById('player-link-indicator');
+  if (ind) ind.style.display = 'flex';
+}
+
+// ── TIEBREAKER ────────────────────────────────────────────────────────────────
+var tbAngle=0,tbSpinning=false;
+function openTiebreaker(){
+  var el=document.getElementById('tb-overlay');
+  el.style.display='block';
+  el.style.transform='translateX(-50%)';
+  el.style.left='50%';
+  el.style.top='80px';
+  document.fonts.ready.then(function(){tbDraw(tbAngle);});
+  // Set up drag
+  var handle=document.getElementById('tb-drag-handle');
+  var dragging=false,ox=0,oy=0;
+  handle.onmousedown=function(e){
+    if(e.target.tagName==='BUTTON')return;
+    dragging=true;
+    var rect=el.getBoundingClientRect();
+    ox=e.clientX-rect.left; oy=e.clientY-rect.top;
+    el.style.transform='none';
+    el.style.cursor='grabbing';
+    handle.style.cursor='grabbing';
+    e.preventDefault();
+  };
+  document.onmousemove=function(e){
+    if(!dragging)return;
+    el.style.left=(e.clientX-ox)+'px';
+    el.style.top=(e.clientY-oy)+'px';
+  };
+  document.onmouseup=function(){
+    dragging=false;
+    el.style.cursor='';
+    handle.style.cursor='grab';
+  };
+}
+var tbIsFullscreen=false, tbSavedStyle={};
+function tbToggleFullscreen(){
+  var el=document.getElementById('tb-overlay');
+  if(!tbIsFullscreen){
+    // Save current position/size
+    tbSavedStyle={top:el.style.top,left:el.style.left,width:el.style.width,height:el.style.height,transform:el.style.transform,borderRadius:el.style.borderRadius,resize:el.style.resize};
+    el.style.top='0';el.style.left='0';el.style.width='100vw';el.style.height='100vh';
+    el.style.transform='none';el.style.borderRadius='0';el.style.resize='none';
+    tbIsFullscreen=true;
   } else {
-    saveBtn.style.display = 'none';
+    tbExitFullscreen();
   }
-
-  preview.innerHTML = html;
 }
-
-function bulkSave() {
-  if (!bulkParsed.length) return;
-  var venueId = document.getElementById('bulk-venue-select').value;
-  var saved = 0;
-  bulkParsed.forEach(function(entry) {
-    var rounds = entry.rounds.filter(function(r){return r.catId;}).map(function(r){return r.catId;});
-    if (!rounds.length) return;
-    var id = 'sched_' + Date.now() + '_' + Math.floor(Math.random()*9999);
-    db.ref('landing/schedule/' + id).set({
-      id: id, date: entry.date, venueId: venueId,
-      rounds: rounds, categoryIds: rounds, notes: entry.notes
-    });
-    saved++;
+function tbExitFullscreen(){
+  if(!tbIsFullscreen)return;
+  var el=document.getElementById('tb-overlay');
+  el.style.top=tbSavedStyle.top||'80px';
+  el.style.left=tbSavedStyle.left||'50%';
+  el.style.width=tbSavedStyle.width||'460px';
+  el.style.height=tbSavedStyle.height||'';
+  el.style.transform=tbSavedStyle.transform||'none';
+  el.style.borderRadius=tbSavedStyle.borderRadius||'var(--radius-lg)';
+  el.style.resize='both';
+  tbIsFullscreen=false;
+}
+function closeTiebreaker(){
+  tbIsFullscreen=false;
+  document.getElementById('tb-overlay').style.display='none';
+}
+function tbDraw(angle){
+  var cv=document.getElementById('tb-wheel');if(!cv)return;
+  var ctx=cv.getContext('2d'),cx=130,cy=130,r=123,seg=20,arc=Math.PI*2/seg;
+  ctx.clearRect(0,0,260,260);
+  for(var i=0;i<seg;i++){
+    var s=angle+i*arc,e=s+arc,gold=i%2===0;
+    var grad=ctx.createLinearGradient(cx+Math.cos(s+arc/2)*(r*.3),cy+Math.sin(s+arc/2)*(r*.3),cx+Math.cos(s+arc/2)*r,cy+Math.sin(s+arc/2)*r);
+    if(gold){grad.addColorStop(0,'#d4a835');grad.addColorStop(.5,'#c9a030');grad.addColorStop(1,'#8a6010');}
+    else{grad.addColorStop(0,'#f8f3e8');grad.addColorStop(1,'#d8cfa8');}
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,s,e);ctx.closePath();
+    ctx.fillStyle=grad;ctx.fill();
+    ctx.strokeStyle='rgba(20,10,0,.6)';ctx.lineWidth=1;ctx.stroke();
+    ctx.save();
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r-3,s,e);ctx.closePath();ctx.clip();
+    ctx.translate(cx,cy);ctx.rotate(s+arc/2);ctx.transform(1,0,-0.42,1,0,0);
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    ctx.font='bold 22px "Bebas Neue",Impact,sans-serif';
+    ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=3;ctx.shadowOffsetX=1;ctx.shadowOffsetY=1;
+    ctx.strokeStyle='rgba(0,0,0,.95)';ctx.lineWidth=4;ctx.lineJoin='round';
+    ctx.strokeText(String(i+1),r-13,0);
+    ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+    ctx.fillStyle='#ffffff';ctx.fillText(String(i+1),r-13,0);
+    ctx.restore();
+  }
+  for(var j=0;j<seg;j++){var sa=angle+j*arc;ctx.beginPath();ctx.moveTo(cx+Math.cos(sa)*15,cy+Math.sin(sa)*15);ctx.lineTo(cx+Math.cos(sa)*(r-1),cy+Math.sin(sa)*(r-1));ctx.strokeStyle='rgba(20,8,0,.55)';ctx.lineWidth=1.5;ctx.stroke();}
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='#1a0a00';ctx.lineWidth=7;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,r-3.5,0,Math.PI*2);
+  var rimG=ctx.createLinearGradient(cx-r,cy-r,cx+r,cy+r);
+  rimG.addColorStop(0,'rgba(245,223,144,.9)');rimG.addColorStop(.5,'rgba(201,168,76,.6)');rimG.addColorStop(1,'rgba(245,223,144,.9)');
+  ctx.strokeStyle=rimG;ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,18,0,Math.PI*2);ctx.fillStyle='#0e0a06';ctx.fill();
+  ctx.beginPath();ctx.arc(cx,cy,15,0,Math.PI*2);
+  var hub=ctx.createRadialGradient(cx-5,cy-5,1,cx,cy,15);
+  hub.addColorStop(0,'#f9e87a');hub.addColorStop(.4,'#d4a835');hub.addColorStop(1,'#5a3800');
+  ctx.fillStyle=hub;ctx.fill();
+  ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.fillStyle='rgba(255,245,180,.9)';ctx.fill();
+}
+function tbLanded(angle){
+  var seg=20,arc=Math.PI*2/seg,ptr=-Math.PI/2;
+  var a=((ptr-angle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+  return Math.floor(a/arc)%seg+1;
+}
+function tbSpin(){
+  if(tbSpinning)return;
+  var aVal=document.getElementById('tb-a').value.trim();
+  var bVal=document.getElementById('tb-b').value.trim();
+  if(!aVal||!bVal){document.getElementById('tb-result').textContent='Enter both numbers first';return;}
+  var a=parseInt(aVal),b=parseInt(bVal);
+  if(isNaN(a)||isNaN(b)||a<1||a>9999||b<1||b>9999){document.getElementById('tb-result').textContent='Numbers must be 1–9999';return;}
+  tbSpinning=true;
+  document.getElementById('tb-spin-btn').disabled=true;
+  document.getElementById('tb-result').textContent='';
+  tbClearHighlights();
+  var tot=(6+Math.random()*6)*Math.PI*2+Math.random()*Math.PI*2;
+  var dur=3000+Math.random()*1000,sa=tbAngle,st=performance.now();
+  function eo(t){return 1-Math.pow(1-t,4);}
+  function fr(now){
+    var t=Math.min((now-st)/dur,1);
+    tbAngle=sa+tot*eo(t);tbDraw(tbAngle);
+    if(t<1){requestAnimationFrame(fr);}
+    else{tbSpinning=false;document.getElementById('tb-spin-btn').disabled=false;tbShowResult(a,b,tbLanded(tbAngle));}
+  }
+  requestAnimationFrame(fr);
+}
+function tbShowResult(a,b,landed){
+  var da=Math.abs(a-landed),db=Math.abs(b-landed);
+  var elA=document.getElementById('tb-a'),elB=document.getElementById('tb-b');
+  var res=document.getElementById('tb-result');
+  if(da===db){
+    elA.style.borderColor=elB.style.borderColor='var(--gold-border2)';
+    elA.style.boxShadow=elB.style.boxShadow='0 0 0 3px rgba(201,168,76,.25)';
+    res.innerHTML='<span style="color:var(--gold)">Landed on '+landed+' — still a tie! Spin again.</span>';
+  } else {
+    var w=da<db?'A':'B',we=w==='A'?elA:elB,le=w==='A'?elB:elA;
+    we.style.borderColor='var(--gold)';
+    we.style.boxShadow='0 0 0 3px rgba(201,168,76,.35),0 0 18px rgba(201,168,76,.3)';
+    we.style.color='var(--gold)';
+    le.style.opacity='.35';
+    res.innerHTML='Wheel: <strong style="color:var(--gold);font-family:var(--cinzel);font-size:15px">'+landed+'</strong><br>'
+      +'<span style="color:var(--gold);font-weight:600;font-family:var(--cinzel)">Player '+w+' wins!</span><br>'
+      +'<span style="font-size:11px;color:var(--text3)">'+(w==='A'?da:db)+' away vs '+(w==='A'?db:da)+' away</span>';
+  }
+}
+function tbClear(){tbClearHighlights();document.getElementById('tb-result').textContent='';}
+function tbClearHighlights(){
+  ['tb-a','tb-b'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.style.borderColor='';el.style.boxShadow='';el.style.color='';el.style.opacity='';
   });
-  showToast(saved + ' entr' + (saved===1?'y':'ies') + ' saved!');
-  bulkClear();
-  switchSchedTab('timeline');
 }
 
-function bulkClear() {
-  document.getElementById('bulk-text').value = '';
-  document.getElementById('bulk-preview').innerHTML = '';
-  document.getElementById('bulk-save-btn').style.display = 'none';
-  bulkParsed = [];
-}
-function changePassword() {
-  var newPw = document.getElementById('new-pw-input').value.trim();
-  var msg = document.getElementById('pw-change-msg');
-  if (!newPw) { msg.textContent = 'Enter a password'; msg.style.color = '#e05050'; return; }
-  if (!db) return;
-  db.ref('landing/settings/adminPassword').set(newPw);
-  document.getElementById('new-pw-input').value = '';
-  msg.textContent = 'Saved!'; msg.style.color = 'var(--gold)';
-  setTimeout(function(){ msg.textContent = ''; }, 2500);
-}
-function showToast(msg) {
-  var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');}, 2200);
-}
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') { closeAdmin(); cancelDelete(); closeAdminSched(); document.getElementById('host-sched-overlay').classList.remove('show'); }
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    closeQRFullscreen();
+    if(tbIsFullscreen){tbExitFullscreen();}
+    else{closeTiebreaker();}
+  }
 });
-document.getElementById('admin-overlay').addEventListener('click', function(e) {
-  if (e.target === document.getElementById('admin-overlay')) closeAdmin();
-});
+// ── BINGO NUMBER CALLER ─────────────────────────────────────────────────────
+let callerRemaining=[], callerCalled=[], callerSpinning=false;
 
-initFirebase();
+function openCaller(){
+  // Use current state — don't reshuffle if already calling
+  if(!callerRemaining.length&&!callerCalled.length){
+    CLASSIC_COLS.forEach((col,ci)=>{
+      const [lo,hi]=CLASSIC_RANGES[ci];
+      for(let n=lo;n<=hi;n++) callerRemaining.push({col,num:n,label:col+n});
+    });
+    for(let i=callerRemaining.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [callerRemaining[i],callerRemaining[j]]=[callerRemaining[j],callerRemaining[i]];
+    }
+  }
+  // Pass current state to pop-out
+  const remaining=JSON.stringify(callerRemaining);
+  const fbConfig=JSON.stringify({
+    apiKey:"AIzaSyCu6aBUE8qJCCf5FRMipqQD-tGSPE78D3Y",
+    authDomain:"bellamusicbingo.firebaseapp.com",
+    databaseURL:"https://bellamusicbingo-default-rtdb.firebaseio.com",
+    projectId:"bellamusicbingo"
+  });
+  const fbSessionKey=sessionKey;
+  const title=EVENT_TITLE||'Classic Bingo';
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Number Caller</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;600;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080705;--s1:#121008;--s2:#1c1810;--s3:#2a2416;
+  --gold:#c9a84c;--gold2:#e8c96a;--gold3:#f5df90;
+  --shine:linear-gradient(135deg,#c9a84c 0%,#f5df90 45%,#c9a84c 70%,#e2b84a 100%);
+  --b1:rgba(201,168,76,.18);--b2:rgba(201,168,76,.38);
+  --t1:#f0ede8;--t2:#a09070;--t3:#5a4e3c;
+}
+html,body{height:100%;background:var(--bg);color:var(--t1);overflow:hidden;font-family:'Cinzel',serif;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 18px;border-bottom:1px solid var(--b1);background:var(--s1);flex-shrink:0;height:42px}
+.topbar-title{font-size:11px;letter-spacing:.2em;text-transform:uppercase;background:var(--shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.fsbtn{background:none;border:1px solid var(--b2);border-radius:6px;color:var(--gold);font-size:11px;padding:5px 14px;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:.08em;transition:all .15s}
+.fsbtn:hover{background:var(--b1)}
+.count{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)}
+
+/* NORMAL LAYOUT */
+.main{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 42px);padding:1.25rem 1rem 1rem;gap:1.25rem;overflow:hidden}
+.center-row{display:flex;align-items:center;justify-content:center;gap:3rem;flex-wrap:wrap;flex-shrink:0}
+
+/* FULLSCREEN LAYOUT */
+body.fs .topbar{display:none}
+body.fs .main{height:100vh;padding:2rem 2rem 1rem;gap:1.5rem}
+body.fs .center-row{gap:4rem}
+body.fs .main{padding:1.5rem 2.5rem .75rem;gap:1rem}
+body.fs .center-row{gap:5rem}
+body.fs .globe-outer{width:520px;height:520px}
+body.fs .globe-outer canvas{width:520px;height:520px}
+body.fs .globe-outer::before{width:28px;height:28px;top:-14px}
+body.fs .globe-outer::after{width:28px;height:28px;bottom:-14px}
+body.fs .current-ball{width:420px;height:420px}
+body.fs .ball-col-letter{font-size:108px}
+body.fs .ball-col-number{font-size:160px}
+body.fs .callbtn{font-size:20px;padding:18px 72px}
+body.fs .hball{width:110px;height:110px;min-width:110px}
+body.fs .hball .hl{font-size:24px}
+body.fs .hball .hn{font-size:40px}
+body.fs .hrow{gap:20px;justify-content:center}
+body.fs .divider{display:none}
+body.fs .count{font-size:13px}
+
+/* GLOBE */
+.globe-outer{position:relative;width:290px;height:290px;flex-shrink:0;transition:width .3s,height .3s}
+.globe-outer canvas{position:absolute;top:0;left:0;width:290px;height:290px;border-radius:50%;transition:width .3s,height .3s}
+.globe-outer::before,.globe-outer::after{content:'';position:absolute;left:50%;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;background:var(--shine);box-shadow:0 0 10px rgba(201,168,76,.4);z-index:10}
+.globe-outer::before{top:-9px}
+.globe-outer::after{bottom:-9px}
+.axle{position:absolute;left:50%;top:-16px;transform:translateX(-50%);width:4px;height:292px;background:linear-gradient(180deg,rgba(201,168,76,.8),rgba(201,168,76,.3),rgba(201,168,76,.8));border-radius:2px;z-index:2;pointer-events:none}
+.stand{position:absolute;bottom:-38px;left:50%;transform:translateX(-50%);width:180px}
+.stand-bar{height:10px;background:linear-gradient(90deg,transparent,var(--s3),var(--s3),transparent);border-radius:5px;border-top:1px solid var(--b2)}
+.stand-legs{display:flex;justify-content:space-between;padding:0 20px}
+.stand-leg{width:4px;height:22px;background:var(--s3);border:1px solid var(--b1);border-radius:2px}
+body.fs .globe-outer::before{width:24px;height:24px;top:-12px}
+body.fs .globe-outer::after{width:24px;height:24px;bottom:-12px}
+
+/* BALL */
+.ball-col{display:flex;flex-direction:column;align-items:center;gap:14px}
+.current-ball{width:235px;height:235px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;background:radial-gradient(ellipse at 38% 32%,#2a2010,#0d0b06);border:2px solid var(--b2);box-shadow:0 0 40px rgba(201,168,76,.08),0 8px 32px rgba(0,0,0,.7);transition:box-shadow .4s,border-color .4s,width .3s,height .3s}
+.current-ball::before{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(ellipse at 33% 23%,rgba(201,168,76,.1),transparent 55%);pointer-events:none}
+.current-ball.lit{border-color:var(--gold2);box-shadow:0 0 80px rgba(201,168,76,.45),0 0 24px rgba(201,168,76,.25)}
+.current-ball.lit::before{background:radial-gradient(ellipse at 33% 23%,rgba(201,168,76,.22),transparent 55%)}
+.ball-col-letter{font-family:'Bebas Neue',sans-serif;font-size:56px;line-height:1;color:var(--t3);transition:color .3s,font-size .3s}
+.ball-col-number{font-family:'Bebas Neue',sans-serif;font-size:82px;line-height:.88;color:var(--t3);transition:color .3s,font-size .3s}
+.current-ball.lit .ball-col-letter,.current-ball.lit .ball-col-number{color:var(--gold2)}
+.current-ball.pop{animation:pop .5s cubic-bezier(.17,.67,.3,1.4)}
+@keyframes pop{0%{transform:scale(.2);opacity:0}65%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.callbtn{font-family:'Cinzel',serif;font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;background:var(--shine);color:#000;border:none;border-radius:99px;padding:13px 50px;cursor:pointer;transition:opacity .15s,font-size .3s,padding .3s;box-shadow:0 4px 20px rgba(201,168,76,.25)}
+.callbtn:hover:not(:disabled){opacity:.82}
+.callbtn:disabled{opacity:.28;cursor:default}
+
+/* HISTORY */
+.divider{height:1px;width:88%;background:linear-gradient(90deg,transparent,var(--b2),transparent);flex-shrink:0}
+.history-section{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;flex:1;overflow:hidden;min-height:0}
+.hlabel{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);flex-shrink:0}
+.hrow{display:flex;gap:8px;align-items:center;justify-content:flex-start;width:100%;overflow-x:auto;padding:4px 2px 8px;flex-shrink:0;scrollbar-width:none}
+.hrow::-webkit-scrollbar{display:none}
+.hball{width:62px;height:62px;min-width:62px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 35% 30%,#2a2010,#0d0b06);border:1.5px solid var(--b2);box-shadow:0 3px 10px rgba(0,0,0,.5);position:relative;flex-shrink:0;transition:width .3s,height .3s,min-width .3s}
+.hball::before{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(ellipse at 33% 25%,rgba(201,168,76,.12),transparent 55%);pointer-events:none}
+.hball .hl{font-family:'Bebas Neue',sans-serif;font-size:14px;line-height:1;color:var(--gold);transition:font-size .3s}
+.hball .hn{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:.95;color:var(--gold2);transition:font-size .3s}
+.hball.newest{border-color:var(--gold2);box-shadow:0 0 18px rgba(201,168,76,.4),0 3px 10px rgba(0,0,0,.5)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-title">${title}</div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="count" id="cnt">75 remaining</span>
+    <button class="fsbtn" id="fsbtn" onclick="toggleFS()">⛶ Fullscreen</button>
+  </div>
+</div>
+<div class="main">
+  <div class="center-row">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+      <div class="globe-outer" id="globe-wrap">
+        <div class="axle"></div>
+        <canvas id="gc" width="520" height="520"></canvas>
+      </div>
+      <div class="stand">
+        <div class="stand-bar"></div>
+        <div class="stand-legs"><div class="stand-leg"></div><div class="stand-leg"></div></div>
+      </div>
+    </div>
+    <div class="ball-col">
+      <div class="current-ball" id="cb">
+        <div class="ball-col-letter" id="cl">?</div>
+        <div class="ball-col-number" id="cn">—</div>
+      </div>
+      <button class="callbtn" id="callbtn" onclick="callNext()">Call Number</button>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="history-section">
+    <div class="hlabel" id="hlabel">Called numbers</div>
+    <div class="hrow" id="hrow"></div>
+  </div>
+</div>
+
+<script>
+var remaining=${remaining};
+var called=[];
+var spinning=false;
+var globeAngle=0;
+var lastTs=0;
+var isFull=false;
+
+var gc=document.getElementById('gc');
+var ctx=gc.getContext('2d');
+// Canvas is 520x520 internally for sharpness, displayed at 260x260 via CSS
+var R=250,CX=260,CY=260;
+
+// Physics balls — gravity model: each ball has angle position, rests at bottom when still
+var pballs=[];
+var NUM_BALLS=18;
+function initBalls(){
+  pballs=[];
+  for(var i=0;i<NUM_BALLS;i++){
+    // Start clustered near bottom of globe
+    var theta=Math.random()*Math.PI*2;
+    var phi=Math.PI*0.72+Math.random()*Math.PI*0.22; // near bottom
+    pballs.push({
+      theta:theta, phi:phi,
+      vtheta:0, vphi:0,
+      r:26 // radius in canvas units (520px canvas)
+    });
+  }
+}
+initBalls();
+
+// Star/sparkle particles — only move when spinning
+var sparks=[];
+function initSparks(){
+  sparks=[];
+  for(var i=0;i<8;i++){
+    sparks.push({
+      angle:Math.random()*Math.PI*2,
+      radius:60+Math.random()*140,
+      speed:(Math.random()-.5)*0.05,
+      size:1.5+Math.random()*2.5,
+      alpha:Math.random()
+    });
+  }
+}
+initSparks();
+
+function drawGlobe(){
+  ctx.clearRect(0,0,520,520);
+
+  // Clip to circle
+  ctx.save();
+  ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);ctx.clip();
+
+  // Background gradient
+  var bg=ctx.createRadialGradient(CX-60,CY-60,20,CX,CY,R);
+  bg.addColorStop(0,'#2a2010');bg.addColorStop(.55,'#110e08');bg.addColorStop(1,'#040302');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,520,520);
+
+  // Sparkles — only draw if spinning
+  if(spinning){
+    sparks.forEach(function(sp){
+      var sx=CX+Math.cos(sp.angle)*sp.radius;
+      var sy=CY+Math.sin(sp.angle)*sp.radius;
+      ctx.beginPath();
+      // 4-point star
+      for(var k=0;k<8;k++){
+        var a=k*Math.PI/4;
+        var sr=k%2===0?sp.size*2.5:sp.size*0.8;
+        if(k===0)ctx.moveTo(sx+Math.cos(a)*sr,sy+Math.sin(a)*sr);
+        else ctx.lineTo(sx+Math.cos(a)*sr,sy+Math.sin(a)*sr);
+      }
+      ctx.closePath();
+      ctx.fillStyle='rgba(201,168,76,'+sp.alpha*0.6+')';ctx.fill();
+    });
+  }
+
+  // Single vertical line down the middle (not spinning — fixed)
+  ctx.beginPath();
+  ctx.moveTo(CX,CY-R);ctx.lineTo(CX,CY+R);
+  ctx.strokeStyle='rgba(201,168,76,0.18)';ctx.lineWidth=1.5;ctx.stroke();
+
+  // Longitude lines that rotate with globe spin (just 4, subtle)
+  for(var li=0;li<4;li++){
+    var lonAngle=globeAngle+li*(Math.PI/4);
+    ctx.save();ctx.translate(CX,CY);ctx.rotate(lonAngle);
+    ctx.beginPath();
+    ctx.ellipse(0,0,R*0.14,R,0,0,Math.PI*2);
+    ctx.strokeStyle='rgba(201,168,76,0.08)';ctx.lineWidth=1;ctx.stroke();
+    ctx.restore();
+  }
+
+  // Sort balls by depth (z) — painter's algorithm
+  var projected=pballs.map(function(b,i){
+    var x3=Math.sin(b.phi)*Math.cos(b.theta+globeAngle);
+    var y3=-Math.cos(b.phi); // y up
+    var z3=Math.sin(b.phi)*Math.sin(b.theta+globeAngle);
+    var depth=(z3+1)/2; // 0=back, 1=front
+    var sx=CX+x3*(R-b.r-6);
+    var sy=CY+y3*(R-b.r-6);
+    return{i,sx,sy,z:z3,depth,r:b.r};
+  });
+  projected.sort(function(a,bb){return a.z-bb.z;});
+
+  projected.forEach(function(p){
+    var scale=0.7+0.3*p.depth;
+    var alpha=0.3+0.7*p.depth;
+    var rad=p.r*scale;
+    var bg2=ctx.createRadialGradient(p.sx-rad*0.28,p.sy-rad*0.28,rad*0.04,p.sx,p.sy,rad);
+    bg2.addColorStop(0,'rgba(55,42,15,'+alpha+')');
+    bg2.addColorStop(1,'rgba(10,8,4,'+alpha+')');
+    ctx.beginPath();ctx.arc(p.sx,p.sy,rad,0,Math.PI*2);
+    ctx.fillStyle=bg2;ctx.fill();
+    ctx.strokeStyle='rgba(201,168,76,'+(alpha*0.65)+')';ctx.lineWidth=1.8*scale;ctx.stroke();
+    // Subtle highlight
+    ctx.beginPath();ctx.arc(p.sx-rad*0.26,p.sy-rad*0.26,rad*0.2,0,Math.PI*2);
+    ctx.fillStyle='rgba(201,168,76,'+(alpha*0.15)+')';ctx.fill();
+  });
+
+  ctx.restore();
+
+  // Outer rim
+  ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);
+  ctx.strokeStyle='rgba(201,168,76,0.6)';ctx.lineWidth=5;ctx.stroke();
+  ctx.beginPath();ctx.arc(CX,CY,R-3,0,Math.PI*2);
+  ctx.strokeStyle='rgba(201,168,76,0.15)';ctx.lineWidth=6;ctx.stroke();
+  // Glass highlight
+  ctx.beginPath();ctx.arc(CX-55,CY-55,R*0.52,Math.PI*1.1,Math.PI*1.75);
+  ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=22;ctx.stroke();
+}
+
+var IDLE_SPEED=0.006;
+var SPIN_SPEED=0.055;
+var curSpeed=IDLE_SPEED;
+
+function tick(ts){
+  if(ts-lastTs>=16){
+    lastTs=ts;
+    var target=spinning?SPIN_SPEED:IDLE_SPEED;
+    curSpeed+=(target-curSpeed)*0.07;
+    globeAngle+=curSpeed;
+
+    // Ball physics
+    pballs.forEach(function(b){
+      if(spinning){
+        // Chaotic tumble when spinning
+        b.vtheta+=(Math.random()-.5)*0.008;
+        b.vphi+=(Math.random()-.5)*0.006;
+        b.vtheta=Math.max(-.12,Math.min(.12,b.vtheta));
+        b.vphi=Math.max(-.1,Math.min(.1,b.vphi));
+        b.theta+=b.vtheta;
+        b.phi+=b.vphi;
+        if(b.phi<0.08){b.phi=0.08;b.vphi=Math.abs(b.vphi)*0.6;}
+        if(b.phi>Math.PI-.08){b.phi=Math.PI-.08;b.vphi=-Math.abs(b.vphi)*0.6;}
+      } else {
+        // Gravity: settle toward bottom (phi = PI*0.8)
+        var gravTarget=Math.PI*0.78;
+        var gravForce=(gravTarget-b.phi)*0.015;
+        b.vphi+=gravForce;
+        b.vphi*=0.82; // dampen
+        b.vtheta*=0.88;
+        b.theta+=b.vtheta;
+        b.phi+=b.vphi;
+        if(b.phi<0.08){b.phi=0.08;b.vphi=Math.abs(b.vphi)*0.3;}
+        if(b.phi>Math.PI-.08){b.phi=Math.PI-.08;b.vphi=-Math.abs(b.vphi)*0.3;}
+      }
+    });
+
+    // Sparkles animate only when spinning
+    if(spinning){
+      sparks.forEach(function(sp){
+        sp.angle+=sp.speed*3;
+        sp.alpha+=((Math.random()>.5?0.8:0.2)-sp.alpha)*0.1;
+      });
+    }
+
+    drawGlobe();
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+// Firebase sync setup
+var fbDb=null;
+(function(){
+  var s1=document.createElement('script');
+  s1.src='https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js';
+  s1.onload=function(){
+    var s2=document.createElement('script');
+    s2.src='https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js';
+    s2.onload=function(){
+      try{
+        firebase.initializeApp(${fbConfig});
+        fbDb=firebase.database();
+        // Listen for caller updates from sidebar
+        var lastCalledLabel='';
+        fbDb.ref('sessions/${fbSessionKey}/caller').on('value',function(snap){
+          var data=snap.val();
+          if(!data||!data.current)return;
+          var ball=data.current;
+          var ballLabel=ball.col+ball.num;
+          // Sync remaining/called lists
+          var calledSet=new Set(data.called||[]);
+          remaining=remaining.filter(function(b){return !calledSet.has(b.col+b.num);});
+          called=data.called?data.called.map(function(lbl){
+            var col=lbl[0];var num=parseInt(lbl.slice(1));return{col:col,num:num,label:lbl};
+          }):[];
+          // Only update display if this is a new ball (prevents double on self-call)
+          if(ballLabel!==lastCalledLabel){
+            lastCalledLabel=ballLabel;
+            // If sidebar triggered the call, trigger spin animation here too
+            if(!spinning){
+              spinning=true;
+              setTimeout(function(){
+                spinning=false;
+                showBall(ball.col,ball.num);
+                document.getElementById('cnt').textContent=(data.remaining||0)+' remaining';
+                document.getElementById('hlabel').textContent='Called: '+called.length+' of 75';
+                var btn=document.getElementById('callbtn');
+                if(btn){btn.disabled=(data.remaining||0)===0;if((data.remaining||0)===0)btn.textContent='All Called!';}
+              },1900);
+            }
+          }
+          var btn=document.getElementById('callbtn');
+          if(btn&&!spinning)btn.disabled=(data.remaining||0)===0||!!data.spinning;
+        });
+      }catch(e){console.warn('Firebase not available',e);}
+    };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s1);
+})();
+
+function showBall(col,num){
+  var cbEl=document.getElementById('cb');
+  document.getElementById('cl').textContent=col;
+  document.getElementById('cn').textContent=num;
+  cbEl.classList.add('lit');cbEl.classList.remove('pop');void cbEl.offsetWidth;cbEl.classList.add('pop');
+  var row=document.getElementById('hrow');
+  var mb=document.createElement('div');mb.className='hball newest';
+  mb.innerHTML='<div class="hl">'+col+'</div><div class="hn">'+num+'</div>';
+  row.insertBefore(mb,row.firstChild);
+  if(row.children[1])row.children[1].classList.remove('newest');
+  while(row.children.length>5)row.removeChild(row.lastChild);
+}
+
+function callNext(){
+  if(!remaining.length||spinning)return;
+  spinning=true;
+  document.getElementById('callbtn').disabled=true;
+  var ball=remaining.shift();
+  called.push(ball);
+  lastCalledLabel=ball.col+ball.num;
+  setTimeout(function(){
+    spinning=false;
+    showBall(ball.col,ball.num);
+    document.getElementById('cnt').textContent=remaining.length+' remaining';
+    document.getElementById('hlabel').textContent='Called: '+called.length+' of 75';
+    document.getElementById('callbtn').disabled=remaining.length===0;
+    if(remaining.length===0)document.getElementById('callbtn').textContent='All Called!';
+    // Sync to Firebase so sidebar updates (template literal fixed)
+    if(fbDb&&fbSessionKey){
+      fbDb.ref('sessions/'+fbSessionKey+'/caller').set({
+        current:{col:ball.col,num:ball.num},
+        called:called.map(function(b){return b.col+b.num;}),
+        remaining:remaining.length,
+        spinning:false,
+        ts:Date.now()
+      });
+    }
+  },1900);
+}
+
+function toggleFS(){
+  var btn=document.getElementById('fsbtn');
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().then(function(){
+      document.body.classList.add('fs');
+      btn.textContent='✕ Exit Fullscreen';
+    });
+  } else {
+    document.exitFullscreen().then(function(){
+      document.body.classList.remove('fs');
+      btn.textContent='⛶ Fullscreen';
+    });
+  }
+}
+document.addEventListener('fullscreenchange',function(){
+  if(!document.fullscreenElement){
+    document.body.classList.remove('fs');
+    if(document.getElementById('fsbtn'))document.getElementById('fsbtn').textContent='⛶ Fullscreen';
+  }
+});
+<\/script>
+</body></html>`;
+
+  const w=window.open('','_blank','width=720,height=620,toolbar=0,menubar=0,scrollbars=0,resizable=1');
+  w.document.write(html);w.document.close();
+}
+
+// ── SIDEBAR NUMBER CALLER ─────────────────────────────────────────────────────
+function sidebarCallNumber(){
+  if(!callerRemaining.length)return;
+  const btn=document.getElementById('sc-call-btn');
+  if(btn&&btn.disabled)return; // prevent double-tap
+  // Animate immediately
+  if(btn) btn.disabled=true;
+  document.getElementById('sc-letter').textContent='…';
+  document.getElementById('sc-number').textContent='';
+  document.getElementById('sc-ball').style.borderColor='var(--gold)';
+  setTimeout(()=>{
+    const ball=callerRemaining.shift();
+    callerCalled.push(ball);
+    // Update sidebar display directly
+    updateSidebarCaller({
+      current:{col:ball.col,num:ball.num},
+      called:callerCalled.map(b=>b.col+b.num),
+      remaining:callerRemaining.length
+    });
+    // Write to Firebase so pop-out stays in sync
+    if(db&&sessionKey){
+      db.ref(`sessions/${sessionKey}/caller`).set({
+        current:{col:ball.col,num:ball.num},
+        called:callerCalled.map(b=>b.col+b.num),
+        remaining:callerRemaining.length,
+        spinning:false,
+        ts:firebase.database.ServerValue.TIMESTAMP
+      });
+    }
+  },600);
+}
+
+let _lastSidebarLabel='';
+function updateSidebarCaller(data){
+  if(!data||!data.current)return;
+  const newLabel=data.current.col+data.current.num;
+  if(newLabel===_lastSidebarLabel)return; // already rendered this ball
+  _lastSidebarLabel=newLabel;
+  const ball=data.current;
+  const sbBtn=document.getElementById('sc-call-btn');
+  const rem=data.remaining||0;
+  // Update ball display
+  const ballEl=document.getElementById('sc-ball');
+  const letterEl=document.getElementById('sc-letter');
+  const numberEl=document.getElementById('sc-number');
+  letterEl.textContent=ball.col;
+  numberEl.textContent=ball.num;
+  letterEl.style.color='var(--gold)';
+  numberEl.style.color='var(--gold2)';
+  ballEl.style.borderColor='var(--gold)';
+  ballEl.style.background='var(--bg)';
+  // Update remaining count
+  document.getElementById('sc-count').textContent=rem+' left';
+  // Sync local remaining list
+  const calledSet=new Set(data.called||[]);
+  callerRemaining=callerRemaining.filter(b=>!calledSet.has(b.col+b.num));
+  // Update history — last 3
+  const hist=document.getElementById('sc-history');
+  const called=(data.called||[]).slice(-4,-1).reverse(); // last 3 before current
+  hist.innerHTML=called.map(lbl=>`<div style="width:30px;height:30px;border-radius:50%;border:1px solid var(--gold-border);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--cinzel);font-size:10px;font-weight:600;color:var(--text2)">${lbl}</div>`).join('');
+  // Re-enable button
+  if(sbBtn){
+    sbBtn.disabled=rem===0;
+    sbBtn.textContent=rem===0?'Done':'Call';
+  }
+}
+
+bootstrap();
 </script>
 </body>
 </html>
