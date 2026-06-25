@@ -204,6 +204,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <span class="nav-brand-text" id="nav-brand">Music Bingo</span>
   </div>
   <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+    <button onclick="openMediaPlayer()" style="background:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:5px 12px;font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--gold);cursor:pointer;transition:all .15s" title="Open Belladonna Media Player">♪ Media Player</button>
     <button onclick="location.reload()" style="background:none;border:.5px solid var(--border2);border-radius:var(--radius);padding:5px 12px;font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--text3);cursor:pointer;transition:all .15s" title="Reload to get latest category data">↺ Reload</button>
   </div>
   <div class="nav-tabs">
@@ -508,6 +509,23 @@ const CLASSIC_RANGES=[[1,15],[16,30],[31,45],[46,60],[61,75]];
 let allSongs=[], hostPlayedOrder=[];
 let db=null, sessionKey=null, categoryId=null;
 let resetSnapshot=null;
+
+// ── MEDIA PLAYER LAUNCH ───────────────────────────────────────────────────────
+// Opens the Belladonna Media Player Electron app via custom URL protocol.
+// The Electron app must be installed and have registered 'belladonnaplayer://'
+// as a protocol handler (done in main.js). Falls back to a helpful message
+// if the app isn't installed.
+function openMediaPlayer() {
+  // Try the custom protocol — browser will silently fail if not installed
+  const a = document.createElement('a');
+  a.href = 'belladonnaplayer://open';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Show a brief toast so the host knows the launch was attempted
+  showToast('Opening Belladonna Media Player…');
+}
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
 function bootstrap(){
@@ -1246,8 +1264,10 @@ function autoTickFromPlayer(title,artist){
   let match=allSongs.find(s=>!s.played&&normStr(s.title)===nt&&normStr(s.artist)===na);
   // Then title-only exact
   if(!match) match=allSongs.find(s=>!s.played&&normStr(s.title)===nt);
-  // Then title substring (handles slight wording differences)
-  if(!match) match=allSongs.find(s=>!s.played&&(normStr(s.title).includes(nt)||nt.includes(normStr(s.title))));
+  // Then artist-only match with title substring (player strips ft. so artist may differ)
+  if(!match&&na) match=allSongs.find(s=>!s.played&&normStr(s.artist).startsWith(na)&&(normStr(s.title).includes(nt)||nt.includes(normStr(s.title))));
+  // Then title substring — guard against short titles causing false positives
+  if(!match&&nt.length>=5) match=allSongs.find(s=>!s.played&&(normStr(s.title).includes(nt)||nt.includes(normStr(s.title))));
   console.log('[Bingo bridge] match=', match?match.title:'NO MATCH');
   if(!match)return;
   match.played=true;
