@@ -501,13 +501,13 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 
 <script>
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyCu6aBUE8qJCCf5FRMipqQD-tGSPE78D3Y",
-  authDomain: "bellamusicbingo.firebaseapp.com",
-  databaseURL: "https://bellamusicbingo-default-rtdb.firebaseio.com",
-  projectId: "bellamusicbingo",
-  storageBucket: "bellamusicbingo.firebasestorage.app",
-  messagingSenderId: "657495697029",
-  appId: "1:657495697029:web:3fe565cbe05455b7982bec"
+  apiKey: "AIzaSyCIfAE1JGHsUGzzVH2pz1Vyj5b5OhA0tDQ",
+  authDomain: "belladonna-hq.firebaseapp.com",
+  databaseURL: "https://belladonna-hq-default-rtdb.firebaseio.com",
+  projectId: "belladonna-hq",
+  storageBucket: "belladonna-hq.firebasestorage.app",
+  messagingSenderId: "1021873183587",
+  appId: "1:1021873183587:web:def283bb7b5ca48e4f9156"
 };
 
 let categories = [], venues = [], scheduleEntries = [];
@@ -524,30 +524,30 @@ function initFirebase() {
     s2.onload = function() {
       firebase.initializeApp(FIREBASE_CONFIG);
       db = firebase.database();
-      db.ref('landing/categories').on('value', function(snap) {
+      db.ref('bingo/landing/categories').on('value', function(snap) {
         var data = snap.val() || {};
         categories = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
         categories.sort(function(a,b) { if (a.classicBingo && !b.classicBingo) return -1; if (!a.classicBingo && b.classicBingo) return 1; return (a.order||0)-(b.order||0); });
         renderGrid(); buildFilterPills();
         if (adminUnlocked) renderAdminList();
       });
-      db.ref('landing/venues').on('value', function(snap) {
+      db.ref('bingo/landing/venues').on('value', function(snap) {
         var data = snap.val() || {};
         venues = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
         venues.sort(function(a,b) { return a.name.localeCompare(b.name); });
         populateVenueDropdowns();
         renderVenueList();
       });
-      db.ref('landing/schedule').on('value', function(snap) {
+      db.ref('bingo/landing/schedule').on('value', function(snap) {
         var data = snap.val() || {};
         scheduleEntries = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
         scheduleEntries.sort(function(a,b) { return a.date.localeCompare(b.date); });
         renderTimeline();
       });
-      db.ref('landing/settings/adminPassword').on('value', function(snap) {
+      db.ref('bingo/landing/settings/adminPassword').on('value', function(snap) {
         if (snap.val()) adminPassword = snap.val();
       });
-      db.ref('landing/settings/logoUrl').on('value', function(snap) {
+      db.ref('bingo/landing/settings/logoUrl').on('value', function(snap) {
         var url = snap.val() || '';
         applyLogo(url);
         document.getElementById('logo-url-input').value = url;
@@ -559,7 +559,7 @@ function initFirebase() {
       // link is activated, and removes it when unlinked/logged out.
       // This lets the public landing page show every board currently in use,
       // so hosts and guests can see at a glance which categories are live.
-      db.ref('sessions/active').on('value', function(snap) {
+      db.ref('bingo/sessions/active').on('value', function(snap) {
         renderActiveSessions(snap.val());
       });
     };
@@ -625,7 +625,7 @@ function applyLogo(url) {
 }
 function saveLogo() {
   if (!db) return;
-  db.ref('landing/settings/logoUrl').set(document.getElementById('logo-url-input').value.trim());
+  db.ref('bingo/landing/settings/logoUrl').set(document.getElementById('logo-url-input').value.trim());
   showToast('Logo saved!');
 }
 function previewLogo() {
@@ -639,9 +639,9 @@ function previewLogo() {
 function saveToFirebase(cat) {
   if (!db) return;
   var id = cat.id; var data = Object.assign({}, cat); delete data.id;
-  db.ref('landing/categories/' + id).set(data);
+  db.ref('bingo/landing/categories/' + id).set(data);
 }
-function deleteFromFirebase(id) { if (db) db.ref('landing/categories/' + id).remove(); }
+function deleteFromFirebase(id) { if (db) db.ref('bingo/landing/categories/' + id).remove(); }
 
 // ── GRID ──────────────────────────────────────────────────────────────────────
 function getGenres(c) {
@@ -649,18 +649,6 @@ function getGenres(c) {
   if (c.genre) return c.genre.split(',').map(function(g){return g.trim();}).filter(Boolean);
   return [];
 }
-function openBingoPopup(id) {
-  var url = 'app.html?id=' + id;
-  var w = Math.min(1280, screen.availWidth - 40);
-  var h = Math.min(900, screen.availHeight - 40);
-  var left = Math.round((screen.availWidth - w) / 2);
-  var top = Math.round((screen.availHeight - h) / 2);
-  var win = window.open(url, 'bingo_' + id,
-    'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top +
-    ',resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no');
-  if (win) win.focus();
-}
-
 function renderGrid() {
   var q = document.getElementById('search-input').value.toLowerCase();
   var grid = document.getElementById('cat-grid');
@@ -688,8 +676,7 @@ function renderGrid() {
     var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
     var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
     var href = isLive ? 'app.html?id=' + c.id : '#';
-    var onclick = isLive ? 'onclick="openBingoPopup(\'' + c.id + '\');return false;"' : '';
-    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" ' + onclick + '>' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
+    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
   });
   grid.innerHTML = html;
 }
@@ -856,13 +843,13 @@ function addVenue() {
   var name = document.getElementById('venue-name-input').value.trim();
   if (!name || !db) return;
   var id = 'venue_' + Date.now();
-  db.ref('landing/venues/' + id).set({id:id, name:name});
+  db.ref('bingo/landing/venues/' + id).set({id:id, name:name});
   document.getElementById('venue-name-input').value = '';
   showToast('Venue added!');
 }
 function deleteVenue(id) {
   if (!db || !confirm('Remove this venue?')) return;
-  db.ref('landing/venues/' + id).remove();
+  db.ref('bingo/landing/venues/' + id).remove();
   showToast('Venue removed');
 }
 function renderVenueList() {
@@ -940,7 +927,7 @@ function saveSchedEntry() {
   var notes = document.getElementById('sched-notes').value.trim();
   var editId = document.getElementById('sched-edit-id').value;
   var id = editId || 'sched_' + Date.now();
-  db.ref('landing/schedule/' + id).set({id:id, date:date, venueId:venueId, rounds:rounds, categoryIds:categoryIds, notes:notes});
+  db.ref('bingo/landing/schedule/' + id).set({id:id, date:date, venueId:venueId, rounds:rounds, categoryIds:categoryIds, notes:notes});
   resetSchedForm(); showToast(editId ? 'Entry updated!' : 'Entry added!');
 }
 
@@ -967,7 +954,7 @@ function editSchedEntry(id) {
 }
 function deleteSchedEntry(id) {
   if (!db || !confirm('Delete this entry?')) return;
-  db.ref('landing/schedule/' + id).remove();
+  db.ref('bingo/landing/schedule/' + id).remove();
   showToast('Entry removed');
 }
 function resetSchedForm() {
@@ -1206,7 +1193,7 @@ function bulkSave() {
     var rounds = entry.rounds.filter(function(r){return r.catId;}).map(function(r){return r.catId;});
     if (!rounds.length) return;
     var id = 'sched_' + Date.now() + '_' + Math.floor(Math.random()*9999);
-    db.ref('landing/schedule/' + id).set({
+    db.ref('bingo/landing/schedule/' + id).set({
       id: id, date: entry.date, venueId: venueId,
       rounds: rounds, categoryIds: rounds, notes: entry.notes
     });
@@ -1228,7 +1215,7 @@ function changePassword() {
   var msg = document.getElementById('pw-change-msg');
   if (!newPw) { msg.textContent = 'Enter a password'; msg.style.color = '#e05050'; return; }
   if (!db) return;
-  db.ref('landing/settings/adminPassword').set(newPw);
+  db.ref('bingo/landing/settings/adminPassword').set(newPw);
   document.getElementById('new-pw-input').value = '';
   msg.textContent = 'Saved!'; msg.style.color = 'var(--gold)';
   setTimeout(function(){ msg.textContent = ''; }, 2500);
