@@ -204,7 +204,6 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <span class="nav-brand-text" id="nav-brand">Music Bingo</span>
   </div>
   <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
-    <button onclick="openMediaPlayer()" style="background:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:5px 12px;font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--gold);cursor:pointer;transition:all .15s" title="Open Belladonna Media Player">♪ Media Player</button>
     <button onclick="location.reload()" style="background:none;border:.5px solid var(--border2);border-radius:var(--radius);padding:5px 12px;font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--text3);cursor:pointer;transition:all .15s" title="Reload to get latest category data">↺ Reload</button>
   </div>
   <div class="nav-tabs">
@@ -492,13 +491,13 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
 <script>
 // ── FIREBASE CONFIG ───────────────────────────────────────────────────────────
 const FIREBASE_CONFIG={
-  apiKey:"AIzaSyCu6aBUE8qJCCf5FRMipqQD-tGSPE78D3Y",
-  authDomain:"bellamusicbingo.firebaseapp.com",
-  databaseURL:"https://bellamusicbingo-default-rtdb.firebaseio.com",
-  projectId:"bellamusicbingo",
-  storageBucket:"bellamusicbingo.firebasestorage.app",
-  messagingSenderId:"657495697029",
-  appId:"1:657495697029:web:3fe565cbe05455b7982bec"
+  apiKey:"AIzaSyCIfAE1JGHsUGzzVH2pz1Vyj5b5OhA0tDQ",
+  authDomain:"belladonna-hq.firebaseapp.com",
+  databaseURL:"https://belladonna-hq-default-rtdb.firebaseio.com",
+  projectId:"belladonna-hq",
+  storageBucket:"belladonna-hq.firebasestorage.app",
+  messagingSenderId:"1021873183587",
+  appId:"1:1021873183587:web:def283bb7b5ca48e4f9156"
 };
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
@@ -509,23 +508,6 @@ const CLASSIC_RANGES=[[1,15],[16,30],[31,45],[46,60],[61,75]];
 let allSongs=[], hostPlayedOrder=[];
 let db=null, sessionKey=null, categoryId=null;
 let resetSnapshot=null;
-
-// ── MEDIA PLAYER LAUNCH ───────────────────────────────────────────────────────
-// Opens the Belladonna Media Player Electron app via custom URL protocol.
-// The Electron app must be installed and have registered 'belladonnaplayer://'
-// as a protocol handler (done in main.js). Falls back to a helpful message
-// if the app isn't installed.
-function openMediaPlayer() {
-  // Try the custom protocol — browser will silently fail if not installed
-  const a = document.createElement('a');
-  a.href = 'belladonnaplayer://open';
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  // Show a brief toast so the host knows the launch was attempted
-  showToast('Opening Belladonna Media Player…');
-}
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
 function bootstrap(){
@@ -549,7 +531,7 @@ function bootstrap(){
       try{
         firebase.initializeApp(FIREBASE_CONFIG);
         db=firebase.database();
-        db.ref(`landing/categories/${categoryId}`).once('value',snap=>{
+        db.ref(`bingo/landing/categories/${categoryId}`).once('value',snap=>{
           clearTimeout(timeout);
           const data=snap.val();
           if(!data){showError(`Playlist not found (ID: ${categoryId}). It may have been removed or not saved correctly.`);return;}
@@ -558,7 +540,7 @@ function bootstrap(){
           clearTimeout(timeout);
           showError('Database error: '+err.message);
         });
-        db.ref('landing/settings/logoUrl').once('value',snap=>{
+        db.ref('bingo/landing/settings/logoUrl').once('value',snap=>{
           const url=snap.val()||'';
           if(url){const logo=document.getElementById('nav-brand-logo');logo.src=url;logo.style.display='block';}
         });
@@ -798,8 +780,8 @@ function hostReset(){
   document.getElementById('host-feed').style.display='none';
   document.getElementById('bingo-claim-banner').classList.remove('show');
   if(db&&sessionKey){
-    db.ref(`sessions/${sessionKey}/players`).remove();
-    db.ref(`sessions/${sessionKey}/bingoClaims`).remove();
+    db.ref(`bingo/sessions/${sessionKey}/players`).remove();
+    db.ref(`bingo/sessions/${sessionKey}/bingoClaims`).remove();
   }
   document.getElementById('reset-undo-btn').style.display='';
   showToast('Session reset');
@@ -875,8 +857,8 @@ function hostReset(){
 
   // Clear Firebase players and claims
   if(db&&sessionKey){
-    db.ref(`sessions/${sessionKey}/players`).remove();
-    db.ref(`sessions/${sessionKey}/bingoClaims`).remove();
+    db.ref(`bingo/sessions/${sessionKey}/players`).remove();
+    db.ref(`bingo/sessions/${sessionKey}/bingoClaims`).remove();
   }
 
   // Show undo button
@@ -1216,12 +1198,12 @@ function claimBingo(){
 // ── FIREBASE ──────────────────────────────────────────────────────────────────
 function setupFirebaseListeners(){
   if(!db)return;
-  db.ref(`sessions/${sessionKey}/players`).on('value',snap=>{
+  db.ref(`bingo/sessions/${sessionKey}/players`).on('value',snap=>{
     const list=Object.values(snap.val()||{});
     document.getElementById('h-players').textContent=list.length;
     renderPlayerList(list);
   });
-  db.ref(`sessions/${sessionKey}/bingoClaims`).on('child_added',snap=>{
+  db.ref(`bingo/sessions/${sessionKey}/bingoClaims`).on('child_added',snap=>{
     const c=snap.val();if(!c||c.dismissed)return;
     showBingoClaim(c.name,c.cardNum,snap.key,c.daubedSongs||[]);
   });
@@ -1229,8 +1211,8 @@ function setupFirebaseListeners(){
   const listenPath = 'sessions/'+sessionKey+'/nowPlaying';
   console.log('[Bingo bridge] Listening on:', listenPath);
   // Write our session key so the player can verify it's using the right path
-  db.ref('sessions/'+sessionKey+'/bingoAppReady').set({at: Date.now(), sessionKey: sessionKey});
-  db.ref(`sessions/${sessionKey}/nowPlaying`).on('value',snap=>{
+  db.ref('bingo/sessions/'+sessionKey+'/bingoAppReady').set({at: Date.now(), sessionKey: sessionKey});
+  db.ref(`bingo/sessions/${sessionKey}/nowPlaying`).on('value',snap=>{
     const np=snap.val();
     if(!np)return;
     console.log('[Bingo bridge] nowPlaying received:', JSON.stringify(np));
@@ -1241,7 +1223,7 @@ function setupFirebaseListeners(){
   });
   // Classic bingo caller sync — update sidebar when pop-out calls a number
   if(CLASSIC_BINGO){
-    db.ref(`sessions/${sessionKey}/caller`).on('value',snap=>{
+    db.ref(`bingo/sessions/${sessionKey}/caller`).on('value',snap=>{
       const d=snap.val();
       if(d) updateSidebarCaller(d);
     });
@@ -1281,22 +1263,22 @@ function autoTickFromPlayer(title,artist){
 function fbWritePlayer(name,cardNum){
   if(!db)return;
   const key=name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+cardNum;
-  db.ref(`sessions/${sessionKey}/players/${key}`).set({name,cardNum,joinedAt:firebase.database.ServerValue.TIMESTAMP});
+  db.ref(`bingo/sessions/${sessionKey}/players/${key}`).set({name,cardNum,joinedAt:firebase.database.ServerValue.TIMESTAMP});
 }
 function fbWriteBingoClaim(name,cardNum,daubedSongs){
   if(!db)return;
-  db.ref(`sessions/${sessionKey}/bingoClaims`).push({
+  db.ref(`bingo/sessions/${sessionKey}/bingoClaims`).push({
     name,cardNum,
     daubedSongs:daubedSongs||[],
     claimedAt:firebase.database.ServerValue.TIMESTAMP,
     dismissed:false
   });
 }
-function fbDismissClaim(key){if(!db||!key)return;db.ref(`sessions/${sessionKey}/bingoClaims/${key}`).update({dismissed:true});}
+function fbDismissClaim(key){if(!db||!key)return;db.ref(`bingo/sessions/${sessionKey}/bingoClaims/${key}`).update({dismissed:true});}
 function clearAllPlayers(){
   if(!db)return;if(!confirm('Clear all players and claims?'))return;
-  db.ref(`sessions/${sessionKey}/players`).remove();
-  db.ref(`sessions/${sessionKey}/bingoClaims`).remove();
+  db.ref(`bingo/sessions/${sessionKey}/players`).remove();
+  db.ref(`bingo/sessions/${sessionKey}/bingoClaims`).remove();
   document.getElementById('bingo-claim-banner').classList.remove('show');
 }
 let activeBingoClaimKey=null;
@@ -1537,10 +1519,10 @@ function openCaller(){
   // Pass current state to pop-out
   const remaining=JSON.stringify(callerRemaining);
   const fbConfig=JSON.stringify({
-    apiKey:"AIzaSyCu6aBUE8qJCCf5FRMipqQD-tGSPE78D3Y",
-    authDomain:"bellamusicbingo.firebaseapp.com",
-    databaseURL:"https://bellamusicbingo-default-rtdb.firebaseio.com",
-    projectId:"bellamusicbingo"
+    apiKey:"AIzaSyCIfAE1JGHsUGzzVH2pz1Vyj5b5OhA0tDQ",
+    authDomain:"belladonna-hq.firebaseapp.com",
+    databaseURL:"https://belladonna-hq-default-rtdb.firebaseio.com",
+    projectId:"belladonna-hq"
   });
   const fbSessionKey=sessionKey;
   const title=EVENT_TITLE||'Classic Bingo';
@@ -1862,7 +1844,7 @@ var fbDb=null;
         fbDb=firebase.database();
         // Listen for caller updates from sidebar
         var lastCalledLabel='';
-        fbDb.ref('sessions/${fbSessionKey}/caller').on('value',function(snap){
+        fbDb.ref('bingo/sessions/${fbSessionKey}/caller').on('value',function(snap){
           var data=snap.val();
           if(!data||!data.current)return;
           var ball=data.current;
@@ -1928,7 +1910,7 @@ function callNext(){
     if(remaining.length===0)document.getElementById('callbtn').textContent='All Called!';
     // Sync to Firebase so sidebar updates (template literal fixed)
     if(fbDb&&fbSessionKey){
-      fbDb.ref('sessions/'+fbSessionKey+'/caller').set({
+      fbDb.ref('bingo/sessions/'+fbSessionKey+'/caller').set({
         current:{col:ball.col,num:ball.num},
         called:called.map(function(b){return b.col+b.num;}),
         remaining:remaining.length,
@@ -1987,7 +1969,7 @@ function sidebarCallNumber(){
     });
     // Write to Firebase so pop-out stays in sync
     if(db&&sessionKey){
-      db.ref(`sessions/${sessionKey}/caller`).set({
+      db.ref(`bingo/sessions/${sessionKey}/caller`).set({
         current:{col:ball.col,num:ball.num},
         called:callerCalled.map(b=>b.col+b.num),
         remaining:callerRemaining.length,
