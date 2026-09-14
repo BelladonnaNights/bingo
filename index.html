@@ -521,7 +521,7 @@ function hasValidGatewaySession(){
 }
 function bingoGatewaySignOut(){
   try{Object.keys(localStorage).filter(function(k){return k.indexOf('gatewaySession_')===0;}).forEach(function(k){localStorage.removeItem(k);});}catch(e){}
-  if(bingoAuth) bingoAuth.signOut().then(function(){ window.location.href='accounts.html?return='+encodeURIComponent(location.href)+'&app='+GATEWAY_APP_KEY; });
+  if(bingoAuth) bingoAuth.signOut().then(function(){ window.location.href='https://belladonnanights.github.io/belladonna-gateway/accounts.html?return='+encodeURIComponent(location.href)+'&app='+GATEWAY_APP_KEY; });
 }
 
 // ── FIREBASE ──────────────────────────────────────────────────────────────────
@@ -734,14 +734,14 @@ function openAdmin() {
   if (!hasValidGatewaySession()) {
     msg.textContent = 'Taking you to sign in…';
     var here = location.href.split('?')[0] + '?openadmin=1';
-    window.location.href = 'accounts.html?return=' + encodeURIComponent(here) + '&app=' + GATEWAY_APP_KEY;
+    window.location.href = 'https://belladonnanights.github.io/belladonna-gateway/accounts.html?return=' + encodeURIComponent(here) + '&app=' + GATEWAY_APP_KEY;
     return;
   }
   if (!bingoAuth) { msg.textContent = 'Still connecting — try again in a moment.'; return; }
   bingoAuth.onAuthStateChanged(function(user) {
     if (!user) {
       var here2 = location.href.split('?')[0] + '?openadmin=1';
-      window.location.href = 'accounts.html?return=' + encodeURIComponent(here2) + '&app=' + GATEWAY_APP_KEY;
+      window.location.href = 'https://belladonnanights.github.io/belladonna-gateway/accounts.html?return=' + encodeURIComponent(here2) + '&app=' + GATEWAY_APP_KEY;
       return;
     }
     bingoDbFs.collection('users').doc(user.uid).get().then(function(snap) {
