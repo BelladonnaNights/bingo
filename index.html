@@ -257,18 +257,16 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 <div class="overlay" id="admin-overlay">
   <div id="pw-screen" class="password-box">
     <h2>ADMIN</h2>
-    <p>Enter your password to manage categories.</p>
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <input class="form-input" type="password" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkPW()" style="flex:1">
-      <button class="btn btn-primary" onclick="checkPW()">Enter</button>
-    </div>
-    <div id="pw-error" style="font-size:12px;color:#e05050;min-height:18px"></div>
+    <p id="pw-screen-msg">Checking your Belladonna Gateway access…</p>
     <button class="btn btn-ghost btn-sm" onclick="closeAdmin()" style="margin-top:12px;width:100%">Cancel</button>
   </div>
   <div class="modal" id="admin-panel" style="display:none">
     <div class="modal-header">
       <div class="modal-title">Manage Categories</div>
-      <button class="modal-close" onclick="closeAdmin()">✕</button>
+      <div style="display:flex;align-items:center;gap:0.6rem;">
+        <button class="btn btn-ghost btn-sm" onclick="bingoGatewaySignOut()">Sign Out</button>
+        <button class="modal-close" onclick="closeAdmin()">✕</button>
+      </div>
     </div>
     <div class="modal-body">
       <div style="margin-bottom:1.5rem">
@@ -338,11 +336,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
       <div class="admin-list" id="admin-list"></div>
     </div>
     <div class="modal-footer">
-      <div style="flex:1;display:flex;align-items:center;gap:8px">
-        <input class="form-input" type="password" id="new-pw-input" placeholder="New password" style="max-width:180px;font-size:12px;padding:6px 10px">
-        <button class="btn btn-ghost btn-sm" onclick="changePassword()">Change Password</button>
-        <span id="pw-change-msg" style="font-size:11px;color:var(--gold);min-width:60px"></span>
-      </div>
+      <div style="flex:1;font-size:11px;color:var(--text3);">Admin access is managed in Belladonna HQ → Accounts now, not a shared password here.</div>
       <button class="btn btn-ghost" onclick="closeAdmin()">Done</button>
     </div>
   </div>
@@ -512,7 +506,23 @@ const FIREBASE_CONFIG = {
 
 let categories = [], venues = [], scheduleEntries = [];
 let activeFilter = 'all', adminUnlocked = false, deleteTargetId = null, db = null;
-let adminPassword = "BDAhnna44";
+let bingoAuth = null, bingoDbFs = null;
+
+// ── GATEWAY LOGIN GATE (admin panel only — the public schedule stays open to everyone) ──
+const GATEWAY_APP_KEY = 'bingo';
+const GATEWAY_SESSION_MS = 6 * 60 * 60 * 1000;
+function hasValidGatewaySession(){
+  try{
+    const raw = localStorage.getItem('gatewaySession_'+GATEWAY_APP_KEY);
+    if(!raw) return false;
+    const s = JSON.parse(raw);
+    return (Date.now()-s.ts) < GATEWAY_SESSION_MS;
+  }catch(e){ return false; }
+}
+function bingoGatewaySignOut(){
+  try{Object.keys(localStorage).filter(function(k){return k.indexOf('gatewaySession_')===0;}).forEach(function(k){localStorage.removeItem(k);});}catch(e){}
+  if(bingoAuth) bingoAuth.signOut().then(function(){ window.location.href='accounts.html?return='+encodeURIComponent(location.href)+'&app='+GATEWAY_APP_KEY; });
+}
 
 // ── FIREBASE ──────────────────────────────────────────────────────────────────
 function initFirebase() {
@@ -522,8 +532,16 @@ function initFirebase() {
     var s2 = document.createElement('script');
     s2.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js';
     s2.onload = function() {
+      var s3 = document.createElement('script');
+      s3.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js';
+      s3.onload = function() {
+        var s4 = document.createElement('script');
+        s4.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js';
+        s4.onload = function() {
       firebase.initializeApp(FIREBASE_CONFIG);
       db = firebase.database();
+      bingoAuth = firebase.auth();
+      bingoDbFs = firebase.firestore();
       db.ref('bingo/landing/categories').on('value', function(snap) {
         var data = snap.val() || {};
         categories = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
@@ -544,9 +562,6 @@ function initFirebase() {
         scheduleEntries.sort(function(a,b) { return a.date.localeCompare(b.date); });
         renderTimeline();
       });
-      db.ref('bingo/landing/settings/adminPassword').on('value', function(snap) {
-        if (snap.val()) adminPassword = snap.val();
-      });
       db.ref('bingo/landing/settings/logoUrl').on('value', function(snap) {
         var url = snap.val() || '';
         applyLogo(url);
@@ -562,6 +577,17 @@ function initFirebase() {
       db.ref('bingo/sessions/active').on('value', function(snap) {
         renderActiveSessions(snap.val());
       });
+
+      // If we were just bounced back here from the Gateway login after
+      // clicking Admin, reopen the admin panel automatically — one login,
+      // not one login plus a second click to get back to where they were.
+      if (new URLSearchParams(location.search).get('openadmin') === '1') {
+        setTimeout(openAdmin, 300);
+      }
+        };
+        document.head.appendChild(s4);
+      };
+      document.head.appendChild(s3);
     };
     document.head.appendChild(s2);
   };
@@ -695,31 +721,45 @@ function setFilter(val) { activeFilter = val; buildFilterPills(); renderGrid(); 
 // ── ADMIN ─────────────────────────────────────────────────────────────────────
 function openAdmin() {
   document.getElementById('admin-overlay').classList.add('show');
-  if (!adminUnlocked) {
-    document.getElementById('pw-screen').style.display = '';
-    document.getElementById('admin-panel').style.display = 'none';
-    document.getElementById('pw-input').value = '';
-    document.getElementById('pw-error').textContent = '';
-    setTimeout(function(){document.getElementById('pw-input').focus();}, 100);
-  } else {
+  if (adminUnlocked) {
     document.getElementById('pw-screen').style.display = 'none';
     document.getElementById('admin-panel').style.display = '';
     renderAdminList();
+    return;
   }
+  document.getElementById('pw-screen').style.display = '';
+  document.getElementById('admin-panel').style.display = 'none';
+  var msg = document.getElementById('pw-screen-msg');
+
+  if (!hasValidGatewaySession()) {
+    msg.textContent = 'Taking you to sign in…';
+    var here = location.href.split('?')[0] + '?openadmin=1';
+    window.location.href = 'accounts.html?return=' + encodeURIComponent(here) + '&app=' + GATEWAY_APP_KEY;
+    return;
+  }
+  if (!bingoAuth) { msg.textContent = 'Still connecting — try again in a moment.'; return; }
+  bingoAuth.onAuthStateChanged(function(user) {
+    if (!user) {
+      var here2 = location.href.split('?')[0] + '?openadmin=1';
+      window.location.href = 'accounts.html?return=' + encodeURIComponent(here2) + '&app=' + GATEWAY_APP_KEY;
+      return;
+    }
+    bingoDbFs.collection('users').doc(user.uid).get().then(function(snap) {
+      var profile = snap.exists ? snap.data() : {};
+      var isBingoAdmin = !!(profile.adminAccess && profile.adminAccess.bingo);
+      if (profile.status === 'banned') { msg.textContent = 'This account is currently restricted.'; return; }
+      if (!isBingoAdmin) {
+        msg.textContent = (profile.name ? profile.name + ', your' : 'Your') + ' account doesn\'t have Bingo admin access. Ask Belladonna to grant it from the Accounts tab in HQ.';
+        return;
+      }
+      adminUnlocked = true;
+      document.getElementById('pw-screen').style.display = 'none';
+      document.getElementById('admin-panel').style.display = '';
+      renderAdminList();
+    }).catch(function() { msg.textContent = 'Could not verify admin access. Please try again.'; });
+  });
 }
 function closeAdmin() { document.getElementById('admin-overlay').classList.remove('show'); resetForm(); }
-function checkPW() {
-  if (document.getElementById('pw-input').value === adminPassword) {
-    adminUnlocked = true;
-    document.getElementById('pw-screen').style.display = 'none';
-    document.getElementById('admin-panel').style.display = '';
-    renderAdminList();
-  } else {
-    document.getElementById('pw-error').textContent = 'Incorrect password.';
-    document.getElementById('pw-input').value = '';
-    document.getElementById('pw-input').focus();
-  }
-}
 function renderAdminList() {
   var list = document.getElementById('admin-list');
   if (!categories.length) { list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0;font-style:italic">No categories yet. Add one above.</div>'; return; }
@@ -1209,16 +1249,6 @@ function bulkClear() {
   document.getElementById('bulk-preview').innerHTML = '';
   document.getElementById('bulk-save-btn').style.display = 'none';
   bulkParsed = [];
-}
-function changePassword() {
-  var newPw = document.getElementById('new-pw-input').value.trim();
-  var msg = document.getElementById('pw-change-msg');
-  if (!newPw) { msg.textContent = 'Enter a password'; msg.style.color = '#e05050'; return; }
-  if (!db) return;
-  db.ref('bingo/landing/settings/adminPassword').set(newPw);
-  document.getElementById('new-pw-input').value = '';
-  msg.textContent = 'Saved!'; msg.style.color = 'var(--gold)';
-  setTimeout(function(){ msg.textContent = ''; }, 2500);
 }
 function showToast(msg) {
   var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
