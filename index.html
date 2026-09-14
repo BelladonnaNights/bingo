@@ -192,6 +192,8 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <div class="nav-title">MUSIC<span>BINGO</span></div>
   </div>
   <div class="nav-right">
+    <span class="nav-user-label" id="bingo-user-label" style="font-size:11px;color:var(--text3);margin-right:6px;"></span>
+    <button class="nav-btn nav-btn-ghost" onclick="bingoGatewaySignOut()" style="font-size:9px;">Sign Out</button>
     <button class="nav-btn" onclick="openAdmin()">Admin ⚙</button>
     <button class="nav-btn nav-btn-sched" onclick="openScheduleBtn()">Schedule</button>
   </div>
@@ -506,7 +508,7 @@ const FIREBASE_CONFIG = {
 
 let categories = [], venues = [], scheduleEntries = [];
 let activeFilter = 'all', adminUnlocked = false, deleteTargetId = null, db = null;
-let bingoAuth = null, bingoDbFs = null;
+let bingoAuth = null, bingoDbFs = null, bingoUserProfile = null;
 
 // ── GATEWAY LOGIN GATE (admin panel only — the public schedule stays open to everyone) ──
 const GATEWAY_APP_KEY = 'bingo';
@@ -542,6 +544,43 @@ function initFirebase() {
       db = firebase.database();
       bingoAuth = firebase.auth();
       bingoDbFs = firebase.firestore();
+
+      // ── FULL-APP GATEWAY GATE ──
+      // The whole app requires a signed-in Belladonna Gateway account now —
+      // same as HQ and Trivia, checked once up front, not just for Admin.
+      if (!hasValidGatewaySession()) {
+        window.location.href = 'https://belladonnanights.github.io/belladonna-gateway/accounts.html?return=' + encodeURIComponent(location.href.split('?')[0]) + '&app=' + GATEWAY_APP_KEY;
+        return;
+      }
+      bingoAuth.onAuthStateChanged(function(user) {
+        if (!user) {
+          window.location.href = 'https://belladonnanights.github.io/belladonna-gateway/accounts.html?return=' + encodeURIComponent(location.href.split('?')[0]) + '&app=' + GATEWAY_APP_KEY;
+          return;
+        }
+        bingoDbFs.collection('users').doc(user.uid).get().then(function(snap) {
+          bingoUserProfile = snap.exists ? snap.data() : {};
+          if (bingoUserProfile.status === 'banned') {
+            document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:#b0505a;font-family:sans-serif;padding:2rem;text-align:center;">This account is currently restricted.</div>';
+            return;
+          }
+          var label = document.getElementById('bingo-user-label');
+          if (label) label.textContent = bingoUserProfile.name || user.email || 'account';
+          startBingoDataListeners();
+          if (new URLSearchParams(location.search).get('openadmin') === '1') setTimeout(openAdmin, 300);
+        }).catch(function(){
+          document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:#b0505a;font-family:sans-serif;padding:2rem;text-align:center;">Could not verify your account. Please refresh and try again.</div>';
+        });
+      });
+    };
+    document.head.appendChild(s4);
+  };
+  document.head.appendChild(s3);
+    };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s1);
+}
+function startBingoDataListeners(){
       db.ref('bingo/landing/categories').on('value', function(snap) {
         var data = snap.val() || {};
         categories = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
@@ -577,21 +616,6 @@ function initFirebase() {
       db.ref('bingo/sessions/active').on('value', function(snap) {
         renderActiveSessions(snap.val());
       });
-
-      // If we were just bounced back here from the Gateway login after
-      // clicking Admin, reopen the admin panel automatically — one login,
-      // not one login plus a second click to get back to where they were.
-      if (new URLSearchParams(location.search).get('openadmin') === '1') {
-        setTimeout(openAdmin, 300);
-      }
-        };
-        document.head.appendChild(s4);
-      };
-      document.head.appendChild(s3);
-    };
-    document.head.appendChild(s2);
-  };
-  document.head.appendChild(s1);
 }
 
 // ── NOW PLAYING — renders all active host sessions into the banner ────────────
@@ -721,7 +745,14 @@ function setFilter(val) { activeFilter = val; buildFilterPills(); renderGrid(); 
 // ── ADMIN ─────────────────────────────────────────────────────────────────────
 function openAdmin() {
   document.getElementById('admin-overlay').classList.add('show');
-  if (adminUnlocked) {
+  // The whole app already required signing in to load at all, so by the time
+  // anyone can click this button they're a known, verified account — no
+  // further redirect or re-sign-in, just a direct check of that account's
+  // own Bingo admin flag.
+  var isBingoAdmin = !!(bingoUserProfile && bingoUserProfile.adminAccess && bingoUserProfile.adminAccess.bingo);
+  var isBanned = !!(bingoUserProfile && bingoUserProfile.status === 'banned');
+  if (adminUnlocked || isBingoAdmin) {
+    adminUnlocked = true;
     document.getElementById('pw-screen').style.display = 'none';
     document.getElementById('admin-panel').style.display = '';
     renderAdminList();
@@ -729,35 +760,9 @@ function openAdmin() {
   }
   document.getElementById('pw-screen').style.display = '';
   document.getElementById('admin-panel').style.display = 'none';
-  var msg = document.getElementById('pw-screen-msg');
-
-  if (!hasValidGatewaySession()) {
-    msg.textContent = 'Taking you to sign in…';
-    var here = location.href.split('?')[0] + '?openadmin=1';
-    window.location.href = 'https://belladonnanights.github.io/belladonna-gateway/accounts.html?return=' + encodeURIComponent(here) + '&app=' + GATEWAY_APP_KEY;
-    return;
-  }
-  if (!bingoAuth) { msg.textContent = 'Still connecting — try again in a moment.'; return; }
-  bingoAuth.onAuthStateChanged(function(user) {
-    if (!user) {
-      var here2 = location.href.split('?')[0] + '?openadmin=1';
-      window.location.href = 'https://belladonnanights.github.io/belladonna-gateway/accounts.html?return=' + encodeURIComponent(here2) + '&app=' + GATEWAY_APP_KEY;
-      return;
-    }
-    bingoDbFs.collection('users').doc(user.uid).get().then(function(snap) {
-      var profile = snap.exists ? snap.data() : {};
-      var isBingoAdmin = !!(profile.adminAccess && profile.adminAccess.bingo);
-      if (profile.status === 'banned') { msg.textContent = 'This account is currently restricted.'; return; }
-      if (!isBingoAdmin) {
-        msg.textContent = (profile.name ? profile.name + ', your' : 'Your') + ' account doesn\'t have Bingo admin access. Ask Belladonna to grant it from the Accounts tab in HQ.';
-        return;
-      }
-      adminUnlocked = true;
-      document.getElementById('pw-screen').style.display = 'none';
-      document.getElementById('admin-panel').style.display = '';
-      renderAdminList();
-    }).catch(function() { msg.textContent = 'Could not verify admin access. Please try again.'; });
-  });
+  document.getElementById('pw-screen-msg').textContent = isBanned
+    ? 'This account is currently restricted.'
+    : (bingoUserProfile && bingoUserProfile.name ? bingoUserProfile.name + ', your' : 'Your') + ' account doesn\'t have Bingo admin access. Ask Belladonna to grant it from the Accounts tab in HQ.';
 }
 function closeAdmin() { document.getElementById('admin-overlay').classList.remove('show'); resetForm(); }
 function renderAdminList() {
