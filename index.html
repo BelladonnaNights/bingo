@@ -428,9 +428,23 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
         </div>
       </div>
       <div id="spanel-venues" style="display:none">
-        <div style="display:flex;gap:8px;margin-bottom:1rem">
-          <input class="form-input" type="text" id="venue-name-input" placeholder="Venue name e.g. The Coaster" style="flex:1" onkeydown="if(event.key==='Enter')addVenue()">
-          <button class="btn btn-primary" onclick="addVenue()">Add Venue</button>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem;align-items:flex-end;">
+          <div style="flex:2;min-width:140px;"><label class="form-label">Venue Name</label><input class="form-input" type="text" id="venue-name-input" placeholder="e.g. The Coaster" onkeydown="if(event.key==='Enter')addVenue()"></div>
+          <div style="flex:1;min-width:100px;"><label class="form-label">Day</label>
+            <select class="form-input" id="venue-day-input">
+              <option value="">—</option>
+              <option value="Sun">Sun</option><option value="Mon">Mon</option><option value="Tue">Tue</option>
+              <option value="Wed">Wed</option><option value="Thu">Thu</option><option value="Fri">Fri</option><option value="Sat">Sat</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:100px;"><label class="form-label">Time</label><input class="form-input" type="time" id="venue-time-input"></div>
+          <div style="flex:1;min-width:120px;"><label class="form-label">Host</label><input class="form-input" type="text" id="venue-host-input" placeholder="Host name"></div>
+          <div style="flex:1;min-width:110px;"><label class="form-label">Status</label>
+            <select class="form-input" id="venue-status-input">
+              <option value="active">Active</option><option value="seasonal">Seasonal</option><option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="venue-add-btn" onclick="addVenue()">Add Venue</button>
         </div>
         <div id="venue-list"></div>
       </div>
@@ -843,9 +857,18 @@ function confirmDelete() {
 }
 
 // ── SCHEDULE ──────────────────────────────────────────────────────────────────
+// Three tiers now: full admin sees everything including Venues; scheduleAccess
+// (a host specifically granted just this) sees the schedule editor minus
+// Venues; everyone else gets the read-only "what's on tonight" lookup.
+function hasBingoScheduleAccess(){
+  return !!(bingoUserProfile && bingoUserProfile.scheduleAccess && bingoUserProfile.scheduleAccess.bingo);
+}
 function openScheduleBtn() {
-  if (adminUnlocked) {
+  if (adminUnlocked || hasBingoScheduleAccess()) {
     document.getElementById('admin-sched-overlay').classList.add('show');
+    var venuesTabBtn = document.getElementById('stab-venues');
+    if (venuesTabBtn) venuesTabBtn.style.display = adminUnlocked ? '' : 'none';
+    if (!adminUnlocked && document.getElementById('spanel-venues').style.display !== 'none') switchSchedTab('timeline');
     renderTimeline(); renderSchedCatChecks();
   } else {
     var today = new Date().toISOString().split('T')[0];
@@ -884,13 +907,36 @@ function populateVenueDropdowns() {
   if (filterEl) { var cur = filterEl.value; filterEl.innerHTML = filterOpts; if (cur) filterEl.value = cur; }
 }
 
+let venueEditId = null;
 function addVenue() {
   var name = document.getElementById('venue-name-input').value.trim();
+  var day = document.getElementById('venue-day-input').value;
+  var time = document.getElementById('venue-time-input').value;
+  var host = document.getElementById('venue-host-input').value.trim();
+  var status = document.getElementById('venue-status-input').value;
   if (!name || !db) return;
-  var id = 'venue_' + Date.now();
-  db.ref('bingo/landing/venues/' + id).set({id:id, name:name});
+  var id = venueEditId || ('venue_' + Date.now());
+  db.ref('bingo/landing/venues/' + id).set({id:id, name:name, day:day, time:time, host:host, status:status});
   document.getElementById('venue-name-input').value = '';
-  showToast('Venue added!');
+  document.getElementById('venue-day-input').value = '';
+  document.getElementById('venue-time-input').value = '';
+  document.getElementById('venue-host-input').value = '';
+  document.getElementById('venue-status-input').value = 'active';
+  var wasEdit = !!venueEditId;
+  venueEditId = null;
+  document.getElementById('venue-add-btn').textContent = 'Add Venue';
+  showToast(wasEdit ? 'Venue updated!' : 'Venue added!');
+}
+function editVenue(id) {
+  var v = venues.find(function(x){return x.id===id;});
+  if (!v) return;
+  venueEditId = id;
+  document.getElementById('venue-name-input').value = v.name || '';
+  document.getElementById('venue-day-input').value = v.day || '';
+  document.getElementById('venue-time-input').value = v.time || '';
+  document.getElementById('venue-host-input').value = v.host || '';
+  document.getElementById('venue-status-input').value = v.status || 'active';
+  document.getElementById('venue-add-btn').textContent = 'Save Changes';
 }
 function deleteVenue(id) {
   if (!db || !confirm('Remove this venue?')) return;
@@ -903,7 +949,13 @@ function renderVenueList() {
   if (!venues.length) { list.innerHTML = '<div style="font-size:13px;color:var(--text3);font-style:italic">No venues yet.</div>'; return; }
   var html = '';
   venues.forEach(function(v) {
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;margin-bottom:6px"><span style="font-size:13px;color:var(--text)">' + v.name + '</span><button class="btn btn-danger btn-sm" onclick="deleteVenue(\'' + v.id + '\')">✕</button></div>';
+    var pattern = (v.day ? v.day : '') + (v.time ? ' ' + v.time : '');
+    var sub = [pattern.trim(), v.host ? 'Host: ' + v.host : '', v.status && v.status !== 'active' ? v.status : ''].filter(Boolean).join(' · ');
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;margin-bottom:6px">'
+      + '<div><div style="font-size:13px;color:var(--text)">' + v.name + '</div>'
+      + (sub ? '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + sub + '</div>' : '') + '</div>'
+      + '<div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="editVenue(\'' + v.id + '\')">✎</button><button class="btn btn-danger btn-sm" onclick="deleteVenue(\'' + v.id + '\')">✕</button></div>'
+      + '</div>';
   });
   list.innerHTML = html;
 }
