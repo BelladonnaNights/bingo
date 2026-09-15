@@ -529,6 +529,26 @@ const FIREBASE_CONFIG = {
 let categories = [], venues = [], scheduleEntries = [];
 let activeFilter = 'all', adminUnlocked = false, deleteTargetId = null, db = null;
 let bingoAuth = null, bingoDbFs = null, bingoUserProfile = null;
+// Checkout's cancel toggle writes to Firestore's `shifts` collection (no
+// login on checkin/checkout, so this is the only place a cancellation can
+// land). Loaded once and overlaid onto scheduleEntries by venue name + date.
+let shiftsCancelledBingo = [];
+function loadShiftsCancelledBingo(){
+  bingoDbFs.collection('shifts').where('cancelled','==',true).get().then(function(snap){
+    shiftsCancelledBingo = snap.docs.map(function(d){ return d.data(); });
+    applyCheckoutCancellations();
+  }).catch(function(e){ console.warn('Could not load shifts:', e); });
+}
+function normVenueBingo(s){ return (s||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,' ').trim(); }
+function applyCheckoutCancellations(){
+  if(!shiftsCancelledBingo.length || !scheduleEntries.length) return;
+  scheduleEntries.forEach(function(e){
+    var v = venues.find(function(x){ return x.id===e.venueId; });
+    if(!v) return;
+    e.cancelled = shiftsCancelledBingo.some(function(s){ return normVenueBingo(s.venue)===normVenueBingo(v.name) && s.date===e.date; });
+  });
+  renderTimeline();
+}
 
 // ── GATEWAY LOGIN GATE (admin panel only — the public schedule stays open to everyone) ──
 const GATEWAY_APP_KEY = 'bingo';
@@ -586,6 +606,7 @@ function initFirebase() {
           var label = document.getElementById('bingo-user-label');
           if (label) label.textContent = bingoUserProfile.name || user.email || 'account';
           startBingoDataListeners();
+          loadShiftsCancelledBingo();
           if (new URLSearchParams(location.search).get('openadmin') === '1') setTimeout(openAdmin, 300);
         }).catch(function(){
           document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:#b0505a;font-family:sans-serif;padding:2rem;text-align:center;">Could not verify your account. Please refresh and try again.</div>';
@@ -619,6 +640,7 @@ function startBingoDataListeners(){
         var data = snap.val() || {};
         scheduleEntries = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
         scheduleEntries.sort(function(a,b) { return a.date.localeCompare(b.date); });
+        applyCheckoutCancellations();
         renderTimeline();
       });
       db.ref('bingo/landing/settings/logoUrl').on('value', function(snap) {
@@ -1121,7 +1143,8 @@ function renderTimeline() {
         return '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:99px;padding:2px 8px;color:var(--gold2);font-family:var(--cinzel);letter-spacing:.04em">' + label + (c?c.title:id) + '</span>';
       }).join('');
       var isPast = e.date < today;
-      rows += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:.5px solid var(--border);opacity:' + (isPast?'0.55':'1') + '"><div style="min-width:36px;font-size:12px;font-weight:700;color:' + (isPast?'var(--text3)':'var(--gold)') + ';font-family:var(--cinzel);padding-top:2px">' + e.date.split('-')[2] + '</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px">' + vname + '</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:' + (e.notes?'4px':'0') + '">' + pills + '</div>' + (e.notes?'<div style="font-size:11px;color:var(--gold2);font-style:italic;background:var(--gold-dim);border-radius:4px;padding:2px 6px;display:inline-block;margin-top:2px">📋 '+e.notes+'</div>':'') + '</div><div style="display:flex;gap:4px;flex-shrink:0"><button class="btn-accent" onclick="editSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">✕</button></div></div>';
+      var cancelBadge = e.cancelled ? '<span style="font-size:9px;background:rgba(176,80,90,.15);border:1px solid rgba(176,80,90,.4);color:#d07090;border-radius:99px;padding:2px 8px;font-family:var(--cinzel);letter-spacing:.06em;margin-left:6px;">CANCELLED</span>' : '';
+      rows += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:.5px solid var(--border);opacity:' + (e.cancelled?'0.5':(isPast?'0.55':'1')) + '"><div style="min-width:36px;font-size:12px;font-weight:700;color:' + (isPast?'var(--text3)':'var(--gold)') + ';font-family:var(--cinzel);padding-top:2px">' + e.date.split('-')[2] + '</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px">' + vname + cancelBadge + '</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:' + (e.notes?'4px':'0') + '">' + pills + '</div>' + (e.notes?'<div style="font-size:11px;color:var(--gold2);font-style:italic;background:var(--gold-dim);border-radius:4px;padding:2px 6px;display:inline-block;margin-top:2px">📋 '+e.notes+'</div>':'') + '</div><div style="display:flex;gap:4px;flex-shrink:0"><button class="btn-accent" onclick="editSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">✕</button></div></div>';
     });
     var block = '<div style="margin-bottom:1.5rem"><div style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:' + (isUpcoming?'var(--gold)':'var(--text3)') + ';margin-bottom:4px;padding-bottom:6px;border-bottom:1px solid var(--border)">' + label + '</div>' + rows + '</div>';
     if (isUpcoming) upcoming.push(block); else past.push(block);
@@ -1148,6 +1171,9 @@ function renderHostSched() {
   }
   var html = '';
   entries.forEach(function(entry) {
+    if (entry.cancelled) {
+      html += '<div style="background:rgba(176,80,90,.12);border:1px solid rgba(176,80,90,.35);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-family:var(--cinzel);font-size:12px;letter-spacing:.06em;color:#d07090;">⚠ This gig was marked CANCELLED at checkout.</div>';
+    }
     // Notes block
     if (entry.notes) {
       html += '<div style="background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:var(--radius);padding:8px 12px;margin-bottom:12px;font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text2)">📋 ' + entry.notes + '</div>';
