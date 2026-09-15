@@ -325,6 +325,12 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
           <img class="banner-preview" id="banner-preview-img" src="" alt="" style="display:none">
         </div>
         <div class="form-group">
+          <label class="form-label">Square image URL <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+          <input class="form-input" type="text" id="f-square-image" placeholder="https://yoursite.com/square.jpg" oninput="previewSquareImage()">
+          <div class="form-hint">A square (1:1) crop — this is what the Planner app shows for this category, since the banner's wide shape doesn't work as a small thumbnail.</div>
+          <img class="banner-preview" id="square-preview-img" src="" alt="" style="display:none;width:80px;height:80px;object-fit:cover;">
+        </div>
+        <div class="form-group">
           <label class="form-label">Song list</label>
           <textarea class="form-input" id="f-songs" rows="8" placeholder="Song Name – Artist&#10;Song Name – Artist&#10;(one per line, minimum 25)" style="resize:vertical;font-family:var(--mono,monospace);font-size:12px;line-height:1.5" oninput="updateSongCount()"></textarea>
           <div id="song-count-label" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
@@ -798,10 +804,11 @@ function updateSongCount() {
   el.style.color = lines.length >= 25 ? '#4a9' : '#e05050';
 }
 function resetForm() {
-  ['edit-id','f-title','f-genre','f-image','f-songs','f-spotify','f-spotify-qr'].forEach(function(id){ document.getElementById(id).value = ''; });
+  ['edit-id','f-title','f-genre','f-image','f-square-image','f-songs','f-spotify','f-spotify-qr'].forEach(function(id){ document.getElementById(id).value = ''; });
   document.getElementById('f-classic-bingo').checked = false;
   document.getElementById('f-status').value = 'live';
   document.getElementById('banner-preview-img').style.display = 'none';
+  document.getElementById('square-preview-img').style.display = 'none';
   document.getElementById('form-mode-label').textContent = 'Add New Category';
   document.getElementById('cancel-edit-btn').style.display = 'none';
   document.getElementById('song-count-label').textContent = '';
@@ -813,6 +820,7 @@ function editCategory(id) {
   document.getElementById('f-title').value = c.title || '';
   document.getElementById('f-genre').value = getGenres(c).join(', ');
   document.getElementById('f-image').value = c.image || '';
+  document.getElementById('f-square-image').value = c.squareImage || '';
   document.getElementById('f-songs').value = c.songs || '';
   document.getElementById('f-spotify').value = c.spotifyUrl || '';
   document.getElementById('f-spotify-qr').value = c.spotifyQrUrl || '';
@@ -820,7 +828,7 @@ function editCategory(id) {
   document.getElementById('f-classic-bingo').checked = !!(c.classicBingo);
   document.getElementById('form-mode-label').textContent = 'Editing: ' + c.title;
   document.getElementById('cancel-edit-btn').style.display = '';
-  updateSongCount(); previewBanner();
+  updateSongCount(); previewBanner(); previewSquareImage();
   document.getElementById('cat-form-wrap').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 function saveCategory() {
@@ -834,12 +842,18 @@ function saveCategory() {
   var editId = document.getElementById('edit-id').value;
   var id = editId || 'cat_' + Date.now();
   var order = editId ? (function(){ var c = categories.find(function(x){return x.id===editId;}); return c ? (c.order||0) : categories.length; })() : categories.length;
-  saveToFirebase({id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic});
+  saveToFirebase({id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), squareImage:document.getElementById('f-square-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic});
   resetForm(); showToast(editId ? 'Updated!' : 'Category added!');
 }
 function previewBanner() {
   var url = document.getElementById('f-image').value.trim();
   var img = document.getElementById('banner-preview-img');
+  if (url) { img.src=url; img.style.display='block'; img.onerror=function(){img.style.display='none';}; }
+  else img.style.display = 'none';
+}
+function previewSquareImage() {
+  var url = document.getElementById('f-square-image').value.trim();
+  var img = document.getElementById('square-preview-img');
   if (url) { img.src=url; img.style.display='block'; img.onerror=function(){img.style.display='none';}; }
   else img.style.display = 'none';
 }
