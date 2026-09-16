@@ -193,6 +193,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
   </div>
   <div class="nav-right">
     <span class="nav-user-label" id="bingo-user-label" style="font-size:11px;color:var(--text3);margin-right:6px;"></span>
+    <select id="bingo-location-select" onchange="setBingoLocation(this.value)" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:999px;color:var(--gold);padding:4px 10px;font-size:11px;margin-right:6px;"></select>
     <button class="nav-btn nav-btn-ghost" onclick="bingoGatewaySignOut()" style="font-size:9px;">Sign Out</button>
     <button class="nav-btn" onclick="openAdmin()">Admin ⚙</button>
     <button class="nav-btn nav-btn-sched" onclick="openScheduleBtn()">Schedule</button>
@@ -605,7 +606,7 @@ function initFirebase() {
           }
           var label = document.getElementById('bingo-user-label');
           if (label) label.textContent = bingoUserProfile.name || user.email || 'account';
-          startBingoDataListeners();
+          loadBingoLocations();
           loadShiftsCancelledBingo();
           if (new URLSearchParams(location.search).get('openadmin') === '1') setTimeout(openAdmin, 300);
         }).catch(function(){
@@ -621,6 +622,41 @@ function initFirebase() {
   };
   document.head.appendChild(s1);
 }
+// ── LOCATIONS ── same shared list HQ manages, and the same enforcement as
+// HQ: locked to the account's own assigned location unless it's flagged
+// allLocations, in which case a picker shows up. Every signed-in user gets
+// filtered to their location, not just admins — a host in one territory
+// shouldn't see another territory's venues cluttering their app.
+var bingoLocations = [{code:'wa-southsound',label:'WA - South Sound'}];
+var bingoLocationId = null;
+function loadBingoLocations(){
+  bingoDbFs.collection('hq_data').doc('locations').get().then(function(snap){
+    if (snap.exists && Array.isArray(snap.data().list) && snap.data().list.length) bingoLocations = snap.data().list;
+    var sel = document.getElementById('bingo-location-select');
+    if (bingoUserProfile.allLocations) {
+      sel.style.display = '';
+      sel.disabled = false;
+      sel.innerHTML = bingoLocations.map(function(l){ return '<option value="'+l.code+'">'+l.label+'</option>'; }).join('');
+      bingoLocationId = (bingoUserProfile.locationId && bingoLocations.some(function(l){return l.code===bingoUserProfile.locationId;})) ? bingoUserProfile.locationId : bingoLocations[0].code;
+      sel.value = bingoLocationId;
+    } else {
+      bingoLocationId = bingoUserProfile.locationId || bingoLocations[0].code;
+      sel.style.display = 'none';
+    }
+    startBingoDataListeners();
+  }).catch(function(){
+    bingoLocationId = bingoUserProfile.locationId || 'wa-southsound';
+    startBingoDataListeners();
+  });
+}
+function setBingoLocation(code){
+  if (!bingoUserProfile.allLocations) return;
+  bingoLocationId = code;
+  startBingoDataListeners();
+}
+function bingoLocationMatches(recordLocId){
+  return !recordLocId || recordLocId === bingoLocationId;
+}
 function startBingoDataListeners(){
       db.ref('bingo/landing/categories').on('value', function(snap) {
         var data = snap.val() || {};
@@ -631,14 +667,14 @@ function startBingoDataListeners(){
       });
       db.ref('bingo/landing/venues').on('value', function(snap) {
         var data = snap.val() || {};
-        venues = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
+        venues = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); }).filter(function(v){ return bingoLocationMatches(v.locationId); });
         venues.sort(function(a,b) { return a.name.localeCompare(b.name); });
         populateVenueDropdowns();
         renderVenueList();
       });
       db.ref('bingo/landing/schedule').on('value', function(snap) {
         var data = snap.val() || {};
-        scheduleEntries = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
+        scheduleEntries = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); }).filter(function(e){ return venues.some(function(v){return v.id===e.venueId;}); });
         scheduleEntries.sort(function(a,b) { return a.date.localeCompare(b.date); });
         applyCheckoutCancellations();
         renderTimeline();
@@ -952,7 +988,7 @@ function addVenue() {
   var status = document.getElementById('venue-status-input').value;
   if (!name || !db) return;
   var id = venueEditId || ('venue_' + Date.now());
-  db.ref('bingo/landing/venues/' + id).set({id:id, name:name, day:day, time:time, host:host, status:status});
+  db.ref('bingo/landing/venues/' + id).set({id:id, name:name, day:day, time:time, host:host, status:status, locationId:bingoLocationId});
   document.getElementById('venue-name-input').value = '';
   document.getElementById('venue-day-input').value = '';
   document.getElementById('venue-time-input').value = '';
@@ -1060,7 +1096,7 @@ function saveSchedEntry() {
   var notes = document.getElementById('sched-notes').value.trim();
   var editId = document.getElementById('sched-edit-id').value;
   var id = editId || 'sched_' + Date.now();
-  db.ref('bingo/landing/schedule/' + id).set({id:id, date:date, venueId:venueId, rounds:rounds, categoryIds:categoryIds, notes:notes});
+  db.ref('bingo/landing/schedule/' + id).set({id:id, date:date, venueId:venueId, rounds:rounds, categoryIds:categoryIds, notes:notes, locationId:bingoLocationId});
   resetSchedForm(); showToast(editId ? 'Entry updated!' : 'Entry added!');
 }
 
@@ -1332,7 +1368,7 @@ function bulkSave() {
     var id = 'sched_' + Date.now() + '_' + Math.floor(Math.random()*9999);
     db.ref('bingo/landing/schedule/' + id).set({
       id: id, date: entry.date, venueId: venueId,
-      rounds: rounds, categoryIds: rounds, notes: entry.notes
+      rounds: rounds, categoryIds: rounds, notes: entry.notes, locationId: bingoLocationId
     });
     saved++;
   });
