@@ -900,9 +900,48 @@ function saveCategory() {
   var genres = genreRaw ? genreRaw.split(',').map(function(g){return g.trim();}).filter(Boolean) : [];
   var editId = document.getElementById('edit-id').value;
   var id = editId || 'cat_' + Date.now();
-  var order = editId ? (function(){ var c = categories.find(function(x){return x.id===editId;}); return c ? (c.order||0) : categories.length; })() : categories.length;
-  saveToFirebase({id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), squareImage:document.getElementById('f-square-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic});
+  var existing = editId ? (categories.find(function(x){return x.id===editId;}) || {}) : {};
+  var order = editId ? (existing.order||0) : categories.length;
+  // Spread the existing record first — saveToFirebase() below does a full
+  // .set() overwrite, so any field this form doesn't know about (vmCatId,
+  // for instance) would otherwise be silently erased on every save.
+  var payload = Object.assign({}, existing, {id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), squareImage:document.getElementById('f-square-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic});
+  saveToFirebase(payload);
+  syncCategoryToVm(payload); // fire-and-forget — mirror into Venue Menu/Planner
   resetForm(); showToast(editId ? 'Updated!' : 'Category added!');
+}
+
+// ═══════════════════════════════════════════════
+// VENUE MENU / PLANNER LINK SYNC
+// ─────────────────────────────────────────────
+// Categories here also show up in the Venue Menu (customer-facing) and
+// Planner (scheduling) apps, which both live in Firestore's
+// venueMenuCategories collection. The first time a category is saved
+// here without a link yet, a companion Firestore doc is created and the
+// two are linked (vmCatId here, bingoCatId there). Every later save
+// pushes title/genre/image down onto that linked doc. Venue Menu carries
+// the matching push-down half when IT edits a linked category.
+function syncCategoryToVm(cat) {
+  if (!bingoDbFs) return;
+  var tagsStr = (cat.genres||[]).join(', ');
+  try {
+    if (cat.vmCatId) {
+      bingoDbFs.collection('venueMenuCategories').doc(cat.vmCatId).update({
+        name: cat.title, tags: tagsStr, image: cat.image || ''
+      }).catch(function(e){ console.error('Venue Menu sync failed:', e); });
+    } else {
+      var newDoc = bingoDbFs.collection('venueMenuCategories').doc();
+      newDoc.set({
+        name: cat.title, type: 'Bingo', tags: tagsStr, image: cat.image || '',
+        plannerTier: 'music-bingo', linked: true, bingoCatId: cat.id,
+        createdAt: Date.now(), updatedAt: Date.now()
+      }).then(function(){
+        return db.ref('bingo/landing/categories/' + cat.id + '/vmCatId').set(newDoc.id);
+      }).catch(function(e){ console.error('Venue Menu sync failed:', e); });
+    }
+  } catch(e) {
+    console.error('Venue Menu sync failed:', e);
+  }
 }
 function previewBanner() {
   var url = document.getElementById('f-image').value.trim();
