@@ -360,15 +360,6 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
         </div>
       </div>
       <div class="form-label">Your categories</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-        <button class="btn btn-ghost btn-sm" id="archived-toggle-btn" onclick="toggleShowArchived()">Show Hidden (<span id="archived-count">0</span>)</button>
-        <button class="btn btn-ghost btn-sm" id="bulk-archive-toggle-btn" onclick="toggleBulkArchiveMode()">Select Multiple to Hide</button>
-      </div>
-      <div id="bulk-archive-bar" style="display:none;align-items:center;gap:10px;margin-bottom:8px;padding:8px 12px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.3);border-radius:8px">
-        <span id="bulk-archive-count" style="font-size:12px;color:var(--text3)">0 selected</span>
-        <button class="btn btn-primary btn-sm" onclick="archiveSelected()">Hide Selected</button>
-        <button class="btn btn-ghost btn-sm" onclick="cancelBulkArchive()">Cancel</button>
-      </div>
       <div class="admin-list" id="admin-list"></div>
     </div>
     <div class="modal-footer">
@@ -812,6 +803,7 @@ function renderGrid() {
   var q = document.getElementById('search-input').value.toLowerCase();
   var grid = document.getElementById('cat-grid');
   var filtered = categories.filter(function(c) {
+    if (c.unified !== true) return false; // only categories that have been through category-unification.html show publicly
     var genres = getGenres(c);
     var ms = !q || c.title.toLowerCase().includes(q) || genres.join(' ').toLowerCase().includes(q);
     var mf = activeFilter === 'all' || genres.map(function(g){return g.toLowerCase();}).indexOf(activeFilter.toLowerCase()) !== -1;
@@ -876,9 +868,17 @@ function openAdmin() {
 function closeAdmin() { document.getElementById('admin-overlay').classList.remove('show'); resetForm(); }
 function renderAdminList() {
   var list = document.getElementById('admin-list');
-  if (!categories.length) { list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0;font-style:italic">No categories yet. Add one above.</div>'; return; }
+  // Only categories that have been through category-unification.html
+  // (created there, or matched/merged there) show here — a category that
+  // predates the unification project just doesn't show until it's been
+  // through that tool. Nothing here touches Firebase.
+  var visible = categories.filter(function(c) { return c.unified === true; });
+  if (!visible.length) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0;font-style:italic">' + (categories.length ? 'No unified categories yet — run category-unification.html to bring your existing categories in.' : 'No categories yet. Add one above.') + '</div>';
+    return;
+  }
   var html = '';
-  categories.forEach(function(c) {
+  visible.forEach(function(c) {
     var thumb = c.image ? '<img class="admin-item-thumb" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.background=\'var(--surface3)\'">' : '<div class="admin-item-thumb"></div>';
     var genres = getGenres(c);
     var meta = (genres.length ? genres.join(', ') : 'No genre') + ' · ' + (c.status === 'coming' ? 'Coming soon' : 'Live');
@@ -886,6 +886,7 @@ function renderAdminList() {
   });
   list.innerHTML = html;
 }
+
 function updateSongCount() {
   var lines = document.getElementById('f-songs').value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
   var el = document.getElementById('song-count-label');
@@ -940,7 +941,14 @@ function saveCategory() {
     description: document.getElementById('f-vm-description').value.trim(),
     bannerUrl: document.getElementById('f-vm-banner').value.trim()
   };
-  saveToFirebase({id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), squareImage:document.getElementById('f-square-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic, venueMenu:venueMenu});
+  var catData = {id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), squareImage:document.getElementById('f-square-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic, venueMenu:venueMenu};
+  // unified:true on brand-new categories so they show up in this same
+  // library view immediately — that view only shows categories that have
+  // been through the unification process, and a category made fresh here
+  // counts as one. Left untouched on edits (saveToFirebase merges, so an
+  // existing category's unified flag, whatever it is, survives an edit).
+  if (!editId) catData.unified = true;
+  saveToFirebase(catData);
   resetForm(); showToast(editId ? 'Updated!' : 'Category added!');
 }
 function previewBanner() {
