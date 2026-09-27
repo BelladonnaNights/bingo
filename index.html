@@ -940,9 +940,11 @@ function renderWhereShows(c) {
   var box = document.getElementById('where-shows-box');
   var list = document.getElementById('where-shows-list');
   if (!c) { box.style.display = 'none'; return; }
-  var rows = ['Planner — as Bingo'];
+  // Venue Menu admin shows EVERY live category regardless of the "show on
+  // Venue Menu" checkbox — that checkbox only controls the public venue.html
+  // — so "Venue Menu admin" always applies; only the public row is conditional.
+  var rows = ['Planner — as Bingo', 'Venue Menu admin — as Bingo'];
   if (c.venueMenu && c.venueMenu.show) {
-    rows.push('Venue Menu admin — as Bingo');
     rows.push('Venue Menu (public) — as a Bingo category');
   }
   box.style.display = 'block';
