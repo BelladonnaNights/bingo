@@ -354,6 +354,12 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
             <input class="form-input" type="text" id="f-vm-banner" placeholder="https://…">
           </div>
         </div>
+        <!-- WHERE THIS SHOWS — read-only cross-app reference. Same doc
+             everywhere, so this just says where else it's already living. -->
+        <div id="where-shows-box" style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1rem;display:none">
+          <div style="font-size:11px;font-weight:600;color:var(--gold);margin-bottom:.5rem;font-family:var(--cinzel);letter-spacing:.1em;text-transform:uppercase">Where This Shows</div>
+          <div id="where-shows-list" style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text3)"></div>
+        </div>
         <div style="display:flex;gap:8px;margin-top:.5rem">
           <button class="btn btn-primary" onclick="saveCategory()">Save Category</button>
           <button class="btn btn-ghost btn-sm" onclick="resetForm()" id="cancel-edit-btn" style="display:none">Cancel Edit</button>
@@ -902,6 +908,7 @@ function resetForm() {
   document.getElementById('square-preview-img').style.display = 'none';
   document.getElementById('form-mode-label').textContent = 'Add New Category';
   document.getElementById('cancel-edit-btn').style.display = 'none';
+  var wsBox = document.getElementById('where-shows-box'); if (wsBox) wsBox.style.display = 'none';
   document.getElementById('song-count-label').textContent = '';
 }
 function editCategory(id) {
@@ -923,7 +930,23 @@ function editCategory(id) {
   document.getElementById('form-mode-label').textContent = 'Editing: ' + c.title;
   document.getElementById('cancel-edit-btn').style.display = '';
   updateSongCount(); previewBanner(); previewSquareImage();
+  renderWhereShows(c);
   document.getElementById('cat-form-wrap').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+// Read-only cross-app reference — this doc IS the category everywhere, so
+// this just tells you which other apps are already reading it. Never
+// writes anything; derived purely from fields already on the doc.
+function renderWhereShows(c) {
+  var box = document.getElementById('where-shows-box');
+  var list = document.getElementById('where-shows-list');
+  if (!c) { box.style.display = 'none'; return; }
+  var rows = ['Planner — as Bingo'];
+  if (c.venueMenu && c.venueMenu.show) {
+    rows.push('Venue Menu admin — as Bingo');
+    rows.push('Venue Menu (public) — as a Bingo category');
+  }
+  box.style.display = 'block';
+  list.innerHTML = rows.map(function(r){ return '<div>&#8226; ' + r + '</div>'; }).join('');
 }
 function saveCategory() {
   var title = document.getElementById('f-title').value.trim();
