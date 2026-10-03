@@ -706,6 +706,7 @@ function startBingoDataListeners(){
         scheduleEntries.sort(function(a,b) { return a.date.localeCompare(b.date); });
         applyCheckoutCancellations();
         renderTimeline();
+        renderGrid(); // re-sort the category grid now that tonight's schedule is in
       });
       // Host roster — mirrored from HQ's Firestore roster into this same
       // Realtime DB project (HQ writes it, this app only ever reads it). Lets
@@ -817,6 +818,34 @@ function getGenres(c) {
   if (c.genre) return c.genre.split(',').map(function(g){return g.trim();}).filter(Boolean);
   return [];
 }
+// Whatever's scheduled here tonight floats to the front of the grid — a host
+// shouldn't have to hunt through the whole library for the categories
+// they're actually running. Venue comes from ?venue=<id> when linked in
+// from tonight.html; opened on its own, it falls back to matching today's
+// schedule entries by the signed-in account's own name (the same free-text
+// "host" field the Planner/HQ gig modal and this app's own scheduler use).
+function todayKeyBingo(){
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function getTonightScheduledCatIds() {
+  if (!scheduleEntries || !scheduleEntries.length) return [];
+  var today = todayKeyBingo();
+  var venueParam = new URLSearchParams(location.search).get('venue');
+  var entries;
+  if (venueParam) {
+    entries = scheduleEntries.filter(function(e){ return e.date === today && e.venueId === venueParam; });
+  } else {
+    var myName = bingoUserProfile && bingoUserProfile.name;
+    if (!myName) return [];
+    entries = scheduleEntries.filter(function(e){ return e.date === today && e.host === myName; });
+  }
+  var ids = [];
+  entries.forEach(function(e) {
+    (e.rounds || e.categoryIds || []).forEach(function(cid) { if (ids.indexOf(cid) === -1) ids.push(cid); });
+  });
+  return ids;
+}
 function renderGrid() {
   var q = document.getElementById('search-input').value.toLowerCase();
   var grid = document.getElementById('cat-grid');
@@ -827,6 +856,14 @@ function renderGrid() {
     var mf = activeFilter === 'all' || genres.map(function(g){return g.toLowerCase();}).indexOf(activeFilter.toLowerCase()) !== -1;
     return ms && mf;
   });
+  var scheduledIds = getTonightScheduledCatIds();
+  if (scheduledIds.length) {
+    filtered = filtered.slice().sort(function(a, b) {
+      var ai = scheduledIds.indexOf(a.id), bi = scheduledIds.indexOf(b.id);
+      var as = ai === -1 ? Infinity : ai, bs = bi === -1 ? Infinity : bi;
+      return as - bs; // scheduled ones first, in their scheduled round order — stable otherwise
+    });
+  }
   var countEl = document.getElementById('cat-count');
   countEl.textContent = filtered.length === 0 ? '' : filtered.length === 1 ? '1 playlist' : filtered.length + ' playlists';
   if (!filtered.length) {
@@ -841,11 +878,12 @@ function renderGrid() {
     var imgHTML = c.image
       ? '<img class="cat-banner" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="cat-banner-placeholder" style="display:none"><span>' + c.title + '</span></div>'
       : '<div class="cat-banner-placeholder"><span>' + c.title + '</span></div>';
+    var scheduledHTML = scheduledIds.indexOf(c.id) !== -1 ? '<span class="cat-genre" style="background:rgba(58,170,106,.18);border-color:rgba(58,170,106,.4);color:#3aaa6a">Tonight</span>' : '';
     var genreHTML = c.classicBingo ? '<span class="cat-genre" style="background:rgba(201,168,76,.2);border-color:var(--gold-border2);color:var(--gold2)">Classic Bingo</span>' : (genres.length ? '<span class="cat-genre">' + genres[0] + '</span>' : '');
     var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
     var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
     var href = isLive ? 'app.html?id=' + c.id : '#';
-    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
+    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + scheduledHTML + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
   });
   grid.innerHTML = html;
 }
