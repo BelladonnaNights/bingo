@@ -427,6 +427,10 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
             </div>
           </div>
           <div class="form-group" style="margin-bottom:1rem">
+            <label class="form-label">Host <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(same assignment HQ and the Planner app see)</span></label>
+            <select class="form-input" id="sched-host-select"><option value="">— Unassigned —</option></select>
+          </div>
+          <div class="form-group" style="margin-bottom:1rem">
             <label class="form-label">Rounds for this night</label>
             <div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:8px">Assign a category to each round. Round 3 is optional.</div>
             <div style="display:flex;flex-direction:column;gap:8px" id="sched-rounds-wrap">
@@ -551,7 +555,7 @@ const FIREBASE_CONFIG = {
   appId: "1:1021873183587:web:def283bb7b5ca48e4f9156"
 };
 
-let categories = [], venues = [], scheduleEntries = [];
+let categories = [], venues = [], scheduleEntries = [], hostRoster = {};
 let activeFilter = 'all', adminUnlocked = false, deleteTargetId = null, db = null;
 let bingoAuth = null, bingoDbFs = null, bingoUserProfile = null;
 // Checkout's cancel toggle writes to Firestore's `shifts` collection (no
@@ -702,6 +706,14 @@ function startBingoDataListeners(){
         scheduleEntries.sort(function(a,b) { return a.date.localeCompare(b.date); });
         applyCheckoutCancellations();
         renderTimeline();
+      });
+      // Host roster — mirrored from HQ's Firestore roster into this same
+      // Realtime DB project (HQ writes it, this app only ever reads it). Lets
+      // the "Host" field on a schedule entry pick from the real roster instead
+      // of free text, same list the Planner app's gig modal uses.
+      db.ref('hosts/roster').on('value', function(snap) {
+        hostRoster = snap.val() || {};
+        renderSchedHostOptions(document.getElementById('sched-host-select') ? document.getElementById('sched-host-select').value : '');
       });
       db.ref('bingo/landing/settings/logoUrl').on('value', function(snap) {
         var url = snap.val() || '';
@@ -1127,6 +1139,15 @@ function renderSchedCatChecks() {
 
 function updateRecentHint() {
   var venueId = document.getElementById('sched-venue-select').value;
+  // Default the Host field to this venue's usual host — but only when adding
+  // a brand-new entry; editing an existing one keeps whatever's already set
+  // on that specific date, so swapping a host for one night never touches
+  // the venue's regular assignment.
+  var editId = document.getElementById('sched-edit-id');
+  if (editId && !editId.value) {
+    var v = venues.find(function(x){return x.id===venueId;});
+    renderSchedHostOptions((v && v.host) || '');
+  }
   var wrap = document.getElementById('recent-hint-wrap');
   var list = document.getElementById('recent-hint-list');
   if (!venueId || !wrap || !list) { if (wrap) wrap.style.display = 'none'; return; }
@@ -1155,6 +1176,22 @@ function updateRecentHint() {
   list.innerHTML = html;
 }
 
+function renderSchedHostOptions(currentName) {
+  var sel = document.getElementById('sched-host-select');
+  if (!sel) return;
+  var names = Object.keys(hostRoster).map(function(id){return hostRoster[id];}).filter(function(h){return h && h.name && !h.retired;}).map(function(h){return h.name;});
+  var nameSet = {}; names.forEach(function(n){ nameSet[n] = true; });
+  names.sort(function(a,b){return a.localeCompare(b);});
+  var html = '<option value="">— Unassigned —</option>';
+  names.forEach(function(n){ html += '<option value="' + escapeAttr(n) + '"' + (n===currentName?' selected':'') + '>' + escapeAttr(n) + '</option>'; });
+  if (currentName && !nameSet[currentName]) {
+    html += '<option value="' + escapeAttr(currentName) + '" selected>' + escapeAttr(currentName) + ' (not on current roster)</option>';
+  }
+  sel.innerHTML = html;
+}
+function escapeAttr(str) {
+  var d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+}
 function saveSchedEntry() {
   var date = document.getElementById('sched-date').value;
   var venueId = document.getElementById('sched-venue-select').value;
@@ -1167,9 +1204,10 @@ function saveSchedEntry() {
   var rounds = [r1, r2, r3].filter(Boolean);
   var categoryIds = rounds.filter(function(id,i,a){return a.indexOf(id)===i;});
   var notes = document.getElementById('sched-notes').value.trim();
+  var host = document.getElementById('sched-host-select').value || null;
   var editId = document.getElementById('sched-edit-id').value;
   var id = editId || 'sched_' + Date.now();
-  db.ref('bingo/landing/schedule/' + id).set({id:id, date:date, venueId:venueId, rounds:rounds, categoryIds:categoryIds, notes:notes, locationId:bingoLocationId});
+  db.ref('bingo/landing/schedule/' + id).set({id:id, date:date, venueId:venueId, rounds:rounds, categoryIds:categoryIds, notes:notes, host:host, locationId:bingoLocationId});
   resetSchedForm(); showToast(editId ? 'Entry updated!' : 'Entry added!');
 }
 
@@ -1181,6 +1219,7 @@ function editSchedEntry(id) {
   document.getElementById('sched-date').value = e.date;
   document.getElementById('sched-venue-select').value = e.venueId;
   document.getElementById('sched-notes').value = e.notes || '';
+  renderSchedHostOptions(e.host || '');
   document.getElementById('sched-form-label').textContent = 'Editing Entry';
   document.getElementById('sched-cancel-btn').style.display = '';
   switchSchedTab('add');
@@ -1205,6 +1244,7 @@ function resetSchedForm() {
   document.getElementById('sched-date').value = '';
   document.getElementById('sched-venue-select').value = '';
   document.getElementById('sched-notes').value = '';
+  renderSchedHostOptions('');
   document.getElementById('sched-form-label').textContent = 'Add Schedule Entry';
   document.getElementById('sched-cancel-btn').style.display = 'none';
   document.getElementById('recent-hint-wrap').style.display = 'none';
@@ -1253,7 +1293,8 @@ function renderTimeline() {
       }).join('');
       var isPast = e.date < today;
       var cancelBadge = e.cancelled ? '<span style="font-size:9px;background:rgba(176,80,90,.15);border:1px solid rgba(176,80,90,.4);color:#d07090;border-radius:99px;padding:2px 8px;font-family:var(--cinzel);letter-spacing:.06em;margin-left:6px;">CANCELLED</span>' : '';
-      rows += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:.5px solid var(--border);opacity:' + (e.cancelled?'0.5':(isPast?'0.55':'1')) + '"><div style="min-width:36px;font-size:12px;font-weight:700;color:' + (isPast?'var(--text3)':'var(--gold)') + ';font-family:var(--cinzel);padding-top:2px">' + e.date.split('-')[2] + '</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px">' + vname + cancelBadge + '</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:' + (e.notes?'4px':'0') + '">' + pills + '</div>' + (e.notes?'<div style="font-size:11px;color:var(--gold2);font-style:italic;background:var(--gold-dim);border-radius:4px;padding:2px 6px;display:inline-block;margin-top:2px">📋 '+e.notes+'</div>':'') + '</div><div style="display:flex;gap:4px;flex-shrink:0"><button class="btn-accent" onclick="editSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">✕</button></div></div>';
+      var hostBadge = e.host ? '<span style="font-size:9px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);border-radius:99px;padding:2px 8px;font-family:var(--cinzel);letter-spacing:.06em;margin-left:6px;">' + e.host + '</span>' : '';
+      rows += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:.5px solid var(--border);opacity:' + (e.cancelled?'0.5':(isPast?'0.55':'1')) + '"><div style="min-width:36px;font-size:12px;font-weight:700;color:' + (isPast?'var(--text3)':'var(--gold)') + ';font-family:var(--cinzel);padding-top:2px">' + e.date.split('-')[2] + '</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px">' + vname + cancelBadge + hostBadge + '</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:' + (e.notes?'4px':'0') + '">' + pills + '</div>' + (e.notes?'<div style="font-size:11px;color:var(--gold2);font-style:italic;background:var(--gold-dim);border-radius:4px;padding:2px 6px;display:inline-block;margin-top:2px">📋 '+e.notes+'</div>':'') + '</div><div style="display:flex;gap:4px;flex-shrink:0"><button class="btn-accent" onclick="editSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">✕</button></div></div>';
     });
     var block = '<div style="margin-bottom:1.5rem"><div style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:' + (isUpcoming?'var(--gold)':'var(--text3)') + ';margin-bottom:4px;padding-bottom:6px;border-bottom:1px solid var(--border)">' + label + '</div>' + rows + '</div>';
     if (isUpcoming) upcoming.push(block); else past.push(block);
@@ -1434,6 +1475,8 @@ function bulkParse() {
 function bulkSave() {
   if (!bulkParsed.length) return;
   var venueId = document.getElementById('bulk-venue-select').value;
+  var v = venues.find(function(x){return x.id===venueId;});
+  var defaultHost = (v && v.host) || null;
   var saved = 0;
   bulkParsed.forEach(function(entry) {
     var rounds = entry.rounds.filter(function(r){return r.catId;}).map(function(r){return r.catId;});
@@ -1441,7 +1484,7 @@ function bulkSave() {
     var id = 'sched_' + Date.now() + '_' + Math.floor(Math.random()*9999);
     db.ref('bingo/landing/schedule/' + id).set({
       id: id, date: entry.date, venueId: venueId,
-      rounds: rounds, categoryIds: rounds, notes: entry.notes, locationId: bingoLocationId
+      rounds: rounds, categoryIds: rounds, notes: entry.notes, host: defaultHost, locationId: bingoLocationId
     });
     saved++;
   });
