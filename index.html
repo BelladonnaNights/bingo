@@ -855,6 +855,43 @@ function todayKeyBingo(){
   var d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
+// Every game gets ONE session per category + venue + night, so a host opening the
+// category and the players scanning that venue's QR land in the same game.
+function bingoVenueToken(name) {
+  return String(name || '').toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]/g, '');
+}
+function bingoNightKey() {
+  var d = new Date(); if (d.getHours() < 4) d.setDate(d.getDate() - 1); // until 4am still counts as last night
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function bingoLaunchUrl(catId, entry) {
+  var base = 'app.html?id=' + catId;
+  var night = bingoNightKey();
+  var venueParam = new URLSearchParams(location.search).get('venue');
+  var myName = bingoUserProfile && bingoUserProfile.name;
+  if (!entry) {
+    entry = (scheduleEntries || []).filter(function(e){
+      var cids = e.rounds || e.categoryIds || [];
+      if (e.date !== night || cids.indexOf(catId) === -1 || e.cancelled) return false;
+      if (venueParam) return e.venueId === venueParam;
+      return !myName || !e.host || e.host === myName;
+    })[0];
+  }
+  if (!entry) {
+    // Not on tonight's schedule for this category (host swapped it on arrival) — still tie the game to the
+    // venue this host is working tonight, so the venue QR follows whatever they actually play.
+    entry = (scheduleEntries || []).filter(function(e){
+      if (e.date !== bingoNightKey() || e.cancelled) return false;
+      if (venueParam) return e.venueId === venueParam;
+      return !!myName && e.host === myName;
+    })[0];
+  }
+  if (!entry) return base;
+  var v = (venues || []).filter(function(x){ return x.id === entry.venueId; })[0];
+  var tok = bingoVenueToken(v && v.name);
+  if (!tok) return base;
+  return base + '&session=' + encodeURIComponent(catId + '_' + tok + '-' + entry.date);
+}
 function getTonightScheduledCatIds() {
   if (!scheduleEntries || !scheduleEntries.length) return [];
   var today = todayKeyBingo();
@@ -901,7 +938,7 @@ function renderGrid() {
   filtered.forEach(function(c) {
     var isLive = c.status !== 'coming';
     var genres = getGenres(c);
-    var appUrl = 'app.html?id=' + c.id;
+    var appUrl = bingoLaunchUrl(c.id);
     var imgHTML = c.image
       ? '<img class="cat-banner" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="cat-banner-placeholder" style="display:none"><span>' + c.title + '</span></div>'
       : '<div class="cat-banner-placeholder"><span>' + c.title + '</span></div>';
@@ -909,7 +946,7 @@ function renderGrid() {
     var genreHTML = c.classicBingo ? '<span class="cat-genre" style="background:rgba(201,168,76,.2);border-color:var(--gold-border2);color:var(--gold2)">Classic Bingo</span>' : (genres.length ? '<span class="cat-genre">' + genres[0] + '</span>' : '');
     var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
     var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
-    var href = isLive ? 'app.html?id=' + c.id : '#';
+    var href = isLive ? appUrl : '#';
     html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + scheduledHTML + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
   });
   grid.innerHTML = html;
@@ -1403,7 +1440,7 @@ function renderHostSched() {
     rounds.forEach(function(catId, i) {
       var c = categories.find(function(x){return x.id===catId;});
       if (!c) return;
-      var appUrl = 'app.html?id=' + c.id;
+      var appUrl = bingoLaunchUrl(c.id, entry);
       var imgHTML = c.image ? '<img src="' + c.image + '" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;border-radius:6px 6px 0 0" onerror="this.style.display=\'none\'">' : '';
       var roundLabel = roundLabels[i] || ('Round ' + (i+1));
       html += '<div style="margin-bottom:12px">'
