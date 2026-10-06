@@ -198,6 +198,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <button class="nav-btn nav-btn-ghost" onclick="bingoGatewaySignOut()" style="font-size:9px;">Sign Out</button>
     <button class="nav-btn" onclick="openAdmin()">Admin ⚙</button>
     <button class="nav-btn nav-btn-sched" onclick="openScheduleBtn()">Schedule</button>
+    <button class="nav-btn nav-btn-sched" id="likes-nav-btn" onclick="openLikes()" style="display:none">&#9829; Venue Likes</button>
   </div>
 </nav>
 
@@ -542,6 +543,30 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
   </div>
 </div>
 
+<!-- VENUE LIKES OVERLAY: hosts heart the categories their venue likes -->
+<div class="overlay" id="likes-overlay">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">&#9829; Venue Likes</div>
+      <button class="modal-close" onclick="closeLikes()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.5">Tap a heart to mark a category this venue likes. The Planner's randomizer only picks from the hearted categories.</div>
+      <div class="form-group" id="likes-venue-wrap" style="margin-bottom:10px">
+        <label class="form-label">Venue</label>
+        <select class="form-input" id="likes-venue" onchange="renderLikes()"></select>
+      </div>
+      <input class="form-input" type="text" id="likes-search" placeholder="Search categories&hellip;" oninput="renderLikes()" style="margin-bottom:8px">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+        <button class="pill active" id="likes-only-btn" onclick="toggleLikesOnly()">All</button>
+        <span style="flex:1"></span>
+        <span id="likes-count" style="font-size:12px;color:var(--text3)"></span>
+      </div>
+      <div id="likes-list" style="max-height:48vh;overflow:auto"></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -699,6 +724,8 @@ function startBingoDataListeners(){
         venues.sort(function(a,b) { return a.name.localeCompare(b.name); });
         populateVenueDropdowns();
         renderVenueList();
+        refreshLikesButton();
+        if (document.getElementById('likes-overlay').classList.contains('show')) renderLikes();
       });
       db.ref('bingo/landing/schedule').on('value', function(snap) {
         var data = snap.val() || {};
@@ -1111,7 +1138,11 @@ function addVenue() {
   var status = document.getElementById('venue-status-input').value;
   if (!name || !db) return;
   var id = venueEditId || ('venue_' + Date.now());
-  db.ref('bingo/landing/venues/' + id).set({id:id, name:name, day:day, time:time, host:host, status:status, locationId:bingoLocationId});
+  var prevV = venues.find(function(x){return x.id===id;}) || {};
+  var venueRec = {id:id, name:name, day:day, time:time, host:host, status:status, locationId:bingoLocationId};
+  if (prevV.likedCategoryIds) venueRec.likedCategoryIds = prevV.likedCategoryIds;
+  ['cadence','cadenceAnchor'].forEach(function(k){ if (prevV[k]) venueRec[k] = prevV[k]; });
+  db.ref('bingo/landing/venues/' + id).set(venueRec);
   document.getElementById('venue-name-input').value = '';
   document.getElementById('venue-day-input').value = '';
   document.getElementById('venue-time-input').value = '';
@@ -1537,12 +1568,75 @@ function bulkClear() {
   document.getElementById('bulk-save-btn').style.display = 'none';
   bulkParsed = [];
 }
+// ── VENUE LIKES ── a host hearts the categories their venue likes. Stored on the
+// venue record (likedCategoryIds) — the same list the Planner's randomizer reads.
+var likesOnly = false;
+function likesNorm(s){ return (s||'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim(); }
+function likesIsAdmin(){ return !!(adminUnlocked || (bingoUserProfile && bingoUserProfile.adminAccess && bingoUserProfile.adminAccess.bingo) || (bingoUserProfile && bingoUserProfile.role === 'admin')); }
+function likesMyVenues(){
+  if (likesIsAdmin()) return venues.slice();
+  var me = likesNorm(bingoUserProfile && bingoUserProfile.name);
+  if (!me) return [];
+  var first = me.split(' ')[0];
+  return venues.filter(function(v){
+    var h = likesNorm(v.host);
+    if (!h) return false;
+    return h === me || h.indexOf(me + ' ') === 0 || me.indexOf(h + ' ') === 0 || (first.length > 2 && h.split(' ')[0] === first && (h === first || me === first || h.split(' ')[1] === me.split(' ')[1]));
+  });
+}
+function refreshLikesButton(){
+  var b = document.getElementById('likes-nav-btn');
+  if (b) b.style.display = likesMyVenues().length ? '' : 'none';
+}
+function openLikes(){
+  var mine = likesMyVenues();
+  if (!mine.length) { showToast('No venues are assigned to you yet.'); return; }
+  var sel = document.getElementById('likes-venue');
+  var cur = sel.value;
+  sel.innerHTML = mine.map(function(v){ return '<option value="' + v.id + '">' + esc(v.name) + '</option>'; }).join('');
+  if (cur && mine.some(function(v){return v.id===cur;})) sel.value = cur;
+  document.getElementById('likes-venue-wrap').style.display = mine.length > 1 ? '' : 'none';
+  document.getElementById('likes-search').value = '';
+  likesOnly = false;
+  document.getElementById('likes-overlay').classList.add('show');
+  renderLikes();
+}
+function closeLikes(){ document.getElementById('likes-overlay').classList.remove('show'); }
+function toggleLikesOnly(){ likesOnly = !likesOnly; renderLikes(); }
+function likesVenue(){ var id = document.getElementById('likes-venue').value; return venues.find(function(v){return v.id===id;}); }
+function renderLikes(){
+  var v = likesVenue(); var list = document.getElementById('likes-list');
+  if (!v) { list.innerHTML = ''; return; }
+  var liked = {}; (v.likedCategoryIds || []).forEach(function(id){ liked[id] = true; });
+  var q = document.getElementById('likes-search').value.trim().toLowerCase();
+  var cats = categories.filter(function(c){ return (!q || (c.title||'').toLowerCase().indexOf(q) !== -1) && (!likesOnly || liked[c.id]); })
+    .sort(function(a,b){ return (a.title||'').localeCompare(b.title||''); });
+  var n = Object.keys(liked).filter(function(id){ return categories.some(function(c){return c.id===id;}); }).length;
+  document.getElementById('likes-count').textContent = n + ' liked';
+  var btn = document.getElementById('likes-only-btn');
+  btn.textContent = likesOnly ? 'Liked only' : 'All'; btn.classList.toggle('active', !likesOnly);
+  list.innerHTML = cats.length ? cats.map(function(c){
+    var on = !!liked[c.id];
+    return '<div onclick="toggleLike(\'' + c.id + '\')" style="display:flex;align-items:center;gap:12px;padding:9px 6px;border-bottom:.5px solid var(--border);cursor:pointer">'
+      + '<span style="font-size:22px;line-height:1;width:26px;text-align:center;color:' + (on ? '#e05a86' : 'var(--text3)') + '">' + (on ? '&#9829;' : '&#9825;') + '</span>'
+      + '<span style="font-size:14px;color:' + (on ? 'var(--text)' : 'var(--text2)') + '">' + esc(c.title || '') + '</span></div>';
+  }).join('') : '<div style="font-size:13px;color:var(--text3);font-style:italic;padding:10px">' + (likesOnly ? 'No liked categories yet.' : 'No categories match.') + '</div>';
+}
+function toggleLike(catId){
+  var v = likesVenue(); if (!v || !db) return;
+  db.ref('bingo/landing/venues/' + v.id + '/likedCategoryIds').transaction(function(cur){
+    var arr = Array.isArray(cur) ? cur.slice() : [];
+    var i = arr.indexOf(catId);
+    if (i === -1) arr.push(catId); else arr.splice(i, 1);
+    return arr.length ? arr : null;
+  }, function(err){ if (err) showToast('Could not save — ' + (err.code || err.message || 'permission?')); });
+}
 function showToast(msg) {
   var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');}, 2200);
 }
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') { closeAdmin(); cancelDelete(); closeAdminSched(); document.getElementById('host-sched-overlay').classList.remove('show'); }
+  if (e.key === 'Escape') { closeAdmin(); cancelDelete(); closeAdminSched(); closeLikes(); document.getElementById('host-sched-overlay').classList.remove('show'); }
 });
 document.getElementById('admin-overlay').addEventListener('click', function(e) {
   if (e.target === document.getElementById('admin-overlay')) closeAdmin();
