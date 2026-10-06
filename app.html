@@ -227,6 +227,10 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
       <span style="font-size:18px">&#9835;</span>
       <span><strong>Media Player Linked</strong> &mdash; songs will auto-tick when played</span>
     </div>
+    <div id="venue-link-bar" style="margin-bottom:1.25rem;padding:10px 16px;background:rgba(201,168,76,.10);border:1.5px solid var(--gold);border-radius:var(--radius);font-family:var(--cinzel);font-size:11px;letter-spacing:.08em;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span id="venue-link-text"></span>
+      <select id="venue-link-select" onchange="linkToVenue(this.value)" style="display:none;font-family:inherit;font-size:12px;padding:6px 8px;border-radius:6px;max-width:100%"></select>
+    </div>
     <div class="host-tabs">
       <button class="host-tab active" id="htab-daub" onclick="switchHostTab('daub')">Live Daubing Board</button>
       <button class="host-tab" id="htab-log" onclick="switchHostTab('log')">Play Log</button>
@@ -273,6 +277,10 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
             <input type="text" id="host-search" placeholder="Search songs…" autocomplete="off" oninput="hostFilter()">
             <button class="search-clear" id="host-search-clear" onclick="clearHostSearch()" title="Clear">✕</button>
           </div>
+          <label class="auto-clear-wrap" id="auto-mark-wrap" title="When on, every song you tick is automatically marked on players' digital cards">
+            <input type="checkbox" class="auto-clear-cb" id="auto-mark-cb" onchange="setAutoMark(this.checked)">
+            <span class="auto-clear-label">Auto-mark players' cards</span>
+          </label>
           <label class="auto-clear-wrap" title="Clear search after ticking a song">
             <input type="checkbox" class="auto-clear-cb" id="auto-clear-cb">
             <span class="auto-clear-label">Clear on tick</span>
@@ -582,6 +590,7 @@ function loadCategory(data){
   const urlSession = new URLSearchParams(window.location.search).get('session');
   if (urlSession && urlSession.startsWith(categoryId + '_')) {
     sessionKey = urlSession;
+    window._urlSession = urlSession;
     sessionStorage.setItem('bella_venue_token', urlSession.slice(categoryId.length + 1));
     // Show linked banner — set a flag and apply when host page renders
     window._playerLinked = true;
@@ -650,6 +659,8 @@ function loadCategory(data){
   }
   renderHostGrid();renderPrintGrid();updateHostStats();
   setupFirebaseListeners();
+  initAutoMarkUI();
+  initVenueBar();
 
   // Load QR
   const qrScript=document.createElement('script');
@@ -698,7 +709,7 @@ function showPage(page,skipHistory){
   const backLink=document.getElementById('back-link');
   backLink.classList.toggle('hidden',page==='player');
   if(!skipHistory&&window.history){
-    const base=window.location.pathname+'?id='+categoryId;
+    const base=window.location.pathname+'?id='+categoryId+(window._urlSession?'&session='+encodeURIComponent(window._urlSession):'');
     window.history.pushState({},'',page==='host'?base:base+'&'+page);
   }
   // Show linked banner when host page is shown and player opened this
@@ -800,12 +811,75 @@ function undoReset(){
     activeBingoClaimKey=resetSnapshot.activeBingoClaimKey;
   }
   resetSnapshot=null;
+  syncCalled();
   document.getElementById('reset-undo-btn').style.display='none';
   showToast('Reset undone!');
 }
 function renderPrintGrid(){
   document.getElementById('host-print-grid').innerHTML=
     allSongs.map((s,i)=>`<div class="print-cell"><span class="cell-num">${i+1}.</span><div class="cell-label">${fmtLabel(s)}</div></div>`).join('');
+}
+// ── AUTO-MARK ── host publishes called song ids; digital player cards daub themselves
+let autoMarkOn=false;
+// ── VENUE LINK ── tells the venue QR page what THIS venue is really playing tonight
+function nightKey(){const d=new Date();if(d.getHours()<4)d.setDate(d.getDate()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function venueTok(n){return String(n||'').toLowerCase().replace(/^the\s+/,'').replace(/[^a-z0-9]/g,'');}
+function venueNightId(){ // '<token>-<date>' when this session belongs to a venue night, else null
+  const rest=sessionKey&&categoryId&&sessionKey.startsWith(categoryId+'_')?sessionKey.slice(categoryId.length+1):'';
+  return /^[a-z0-9]+-\d{4}-\d{2}-\d{2}$/.test(rest)?rest:null;
+}
+function announceActive(){
+  const id=venueNightId();if(!db||!id||new URLSearchParams(location.search).has('play'))return;
+  db.ref('bingo/sessions/_active/'+id).set({categoryId:categoryId,title:EVENT_TITLE,image:EVENT_IMAGE||'',sessionKey:sessionKey,at:Date.now()}).catch(e=>console.warn('announce failed',e));
+}
+function linkToVenue(tok){
+  if(!tok)return;
+  location.href=location.pathname+'?id='+encodeURIComponent(categoryId)+'&session='+encodeURIComponent(categoryId+'_'+tok+'-'+nightKey());
+}
+function initVenueBar(){
+  const bar=document.getElementById('venue-link-bar'),txt=document.getElementById('venue-link-text'),sel=document.getElementById('venue-link-select');
+  if(!bar)return;
+  const id=venueNightId();
+  if(id){
+    txt.innerHTML='<strong>\uD83D\uDCCD Venue QR linked</strong> \u2014 guests scanning the venue code join this game';
+    announceActive();return;
+  }
+  txt.innerHTML='<strong>\uD83D\uDCCD Not linked to a venue</strong> \u2014 pick tonight\'s venue so its QR code opens THIS game:';
+  sel.style.display='';sel.innerHTML='<option value="">Choose venue\u2026</option>';
+  if(!db)return;
+  db.ref('bingo/landing/venues').once('value').then(sn=>{
+    const seen={},list=[];
+    Object.values(sn.val()||{}).forEach(v=>{if(!v||!v.name)return;const t=venueTok(v.name);if(t&&!seen[t]){seen[t]=1;list.push({t,n:v.name});}});
+    list.sort((a,b)=>a.n.localeCompare(b.n));
+    sel.innerHTML='<option value="">Choose venue\u2026</option>'+list.map(x=>'<option value="'+x.t+'">'+x.n+'</option>').join('');
+  }).catch(()=>{});
+}
+function syncCalled(){
+  if(!db||!sessionKey)return;
+  if(hostPlayedOrder.length)announceActive();
+  db.ref(`bingo/sessions/${sessionKey}/autoMark`).set({auto:autoMarkOn,ids:autoMarkOn?hostPlayedOrder.slice():[],at:Date.now()}).catch(e=>console.warn('autoMark sync failed',e));
+}
+function setAutoMark(on){
+  autoMarkOn=!!on;
+  try{localStorage.setItem('bingo_automark',on?'1':'0');}catch(e){}
+  syncCalled();
+  showToast(on?'Auto-mark ON \u2014 players\' cards fill as you tick songs':'Auto-mark off \u2014 players mark their own cards');
+}
+function initAutoMarkUI(){
+  const cb=document.getElementById('auto-mark-cb');if(!cb)return;
+  if(CLASSIC_BINGO){const w=document.getElementById('auto-mark-wrap');if(w)w.style.display='none';return;}
+  let v=false;try{v=localStorage.getItem('bingo_automark')==='1';}catch(e){}
+  cb.checked=v;autoMarkOn=v;syncCalled();
+}
+let playerAutoApplied=new Set(),playerAutoOn=false;
+function applyAutoMark(d){
+  playerAutoOn=!!(d&&d.auto);
+  const ids=new Set(playerAutoOn?(d.ids||[]):[]);
+  let changed=false;
+  playerAutoApplied.forEach(id=>{if(!ids.has(id)){playerAutoApplied.delete(id);if(playerDaubed.has(id)){playerDaubed.delete(id);changed=true;}}});
+  playerCells.forEach(c=>{if(!c.free&&ids.has(c.id)&&!playerAutoApplied.has(c.id)){playerAutoApplied.add(c.id);if(!playerDaubed.has(c.id)){playerDaubed.add(c.id);changed=true;}}});
+  if(playerCells.length&&document.getElementById('player-bingo-card')&&changed)renderPlayerCard();
+  else if(playerCells.length)updatePlayerStatus();
 }
 function hostToggle(id){
   const s=allSongs.find(x=>x.id===id);if(!s)return;
@@ -816,6 +890,7 @@ function hostToggle(id){
   renderHostGrid(document.getElementById('host-search').value.toLowerCase());
   updateHostStats();renderHostFeed();
   if(document.getElementById('hpanel-log')&&document.getElementById('hpanel-log').style.display!=='none') renderPlayLog();
+  syncCalled();
 }
 function updateHostStats(){
   const p=allSongs.filter(s=>s.played).length;
@@ -860,6 +935,7 @@ function hostReset(){
     db.ref(`bingo/sessions/${sessionKey}/players`).remove();
     db.ref(`bingo/sessions/${sessionKey}/bingoClaims`).remove();
   }
+  syncCalled();
 
   // Show undo button
   document.getElementById('reset-undo-btn').style.display='';
@@ -882,6 +958,7 @@ function undoReset(){
     activeBingoClaimKey=resetSnapshot.activeBingoClaimKey;
   }
   resetSnapshot=null;
+  syncCalled();
   document.getElementById('reset-undo-btn').style.display='none';
   showToast('Reset undone!');
 }
@@ -1056,7 +1133,7 @@ function generateCards(){
   document.getElementById('cards-count-label').textContent=`${count} generated cards`;
   document.getElementById('cards-output').style.display='';
   requestAnimationFrame(()=>sizeAllCardGrids());
-  const playerURL=window.location.href.split('?')[0]+'?id='+categoryId+'&play';
+  const playerURL=playerLinkUrl();
   document.getElementById('qr-url-display').textContent=playerURL;
   generateQR(playerURL);
   showToast(`${count} cards generated!`);
@@ -1109,7 +1186,9 @@ function getQRSrc(size){
   return img?img.src:'';
 }
 function downloadQR(){const src=getQRSrc(400);if(!src)return;const a=document.createElement('a');a.download=`${EVENT_TITLE.replace(/\s+/g,'-').toLowerCase()}-qr.png`;a.href=src;a.click();showToast('QR downloaded!');}
-function copyPlayerURL(){navigator.clipboard.writeText(window.location.href.split('?')[0]+'?id='+categoryId+'&play').then(()=>showToast('Link copied!'));}
+// Player link is tied to THIS game's session so cards only talk to this host's game
+function playerLinkUrl(){return window.location.href.split('?')[0]+'?id='+encodeURIComponent(categoryId)+'&play&session='+encodeURIComponent(sessionKey);}
+function copyPlayerURL(){navigator.clipboard.writeText(playerLinkUrl()).then(()=>showToast('Link copied!'));}
 function openQRFullscreen(){
   document.getElementById('qr-fullscreen-inner').innerHTML=`<img src="${getQRSrc(420)}" style="width:420px;height:420px;display:block">`;
   document.getElementById('qr-fullscreen').classList.add('show');
@@ -1145,7 +1224,9 @@ function loadPlayerCard(){
   document.getElementById('player-card-screen').style.display='';
   document.getElementById('player-info-label').textContent=`${name} \u00b7 Card #${playerCardNum}`;
   document.getElementById('bingo-shout').classList.remove('show');
+  playerAutoApplied=new Set();
   renderPlayerCard();
+  if(db)db.ref(`bingo/sessions/${sessionKey}/autoMark`).once('value').then(sn=>applyAutoMark(sn.val()));
 }
 function renderPlayerCard(){
   const wrap=document.getElementById('player-bingo-card');
@@ -1172,7 +1253,7 @@ function playerDaubFree(){
   renderPlayerCard();
 }
 function updatePlayerStatus(){
-  document.getElementById('player-status').textContent=`${playerDaubed.size} of 25 squares daubed. Tap squares as songs are called.`;
+  document.getElementById('player-status').textContent=`${playerDaubed.size} of 25 squares daubed. `+(playerAutoOn?'Auto-mark is on \u2014 squares fill in as songs are played.':'Tap squares as songs are called.');
 }
 function checkBingo(){
   const g=playerCells.map(s=>s.free?playerDaubed.has('free'):playerDaubed.has(s.id));
@@ -1207,6 +1288,7 @@ function setupFirebaseListeners(){
     const c=snap.val();if(!c||c.dismissed)return;
     showBingoClaim(c.name,c.cardNum,snap.key,c.daubedSongs||[]);
   });
+  db.ref(`bingo/sessions/${sessionKey}/autoMark`).on('value',snap=>applyAutoMark(snap.val()));
   // Player bridge: auto-tick when media player plays a song
   const listenPath = 'sessions/'+sessionKey+'/nowPlaying';
   console.log('[Bingo bridge] Listening on:', listenPath);
@@ -1259,6 +1341,7 @@ function autoTickFromPlayer(title,artist){
   updateHostStats();renderHostFeed();
   if(document.getElementById('hpanel-log')&&document.getElementById('hpanel-log').style.display!=='none') renderPlayLog();
   showToast('\u266a Auto-ticked: '+fmtPlain(match));
+  syncCalled();
 }
 function fbWritePlayer(name,cardNum){
   if(!db)return;
