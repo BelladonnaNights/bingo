@@ -1593,9 +1593,12 @@ function openLikes(){
   if (!mine.length) { showToast('No venues are assigned to you yet.'); return; }
   var sel = document.getElementById('likes-venue');
   var cur = sel.value;
-  sel.innerHTML = mine.map(function(v){ return '<option value="' + v.id + '">' + esc(v.name) + '</option>'; }).join('');
-  if (cur && mine.some(function(v){return v.id===cur;})) sel.value = cur;
-  document.getElementById('likes-venue-wrap').style.display = mine.length > 1 ? '' : 'none';
+  // a venue with a record per night (e.g. two Coaster entries) shows once; hearts apply to every record of it
+  var seen = {}, uniq = [];
+  mine.forEach(function(v){ var k = likesNorm(v.name); if (!seen[k]) { seen[k] = true; uniq.push(v); } });
+  sel.innerHTML = uniq.map(function(v){ return '<option value="' + v.id + '">' + esc(v.name) + '</option>'; }).join('');
+  if (cur && uniq.some(function(v){return v.id===cur;})) sel.value = cur;
+  document.getElementById('likes-venue-wrap').style.display = uniq.length > 1 ? '' : 'none';
   document.getElementById('likes-search').value = '';
   likesOnly = false;
   document.getElementById('likes-overlay').classList.add('show');
@@ -1604,10 +1607,15 @@ function openLikes(){
 function closeLikes(){ document.getElementById('likes-overlay').classList.remove('show'); }
 function toggleLikesOnly(){ likesOnly = !likesOnly; renderLikes(); }
 function likesVenue(){ var id = document.getElementById('likes-venue').value; return venues.find(function(v){return v.id===id;}); }
+function likesGroup(){
+  var v = likesVenue(); if (!v) return [];
+  var k = likesNorm(v.name);
+  return venues.filter(function(x){ return likesNorm(x.name) === k; });
+}
 function renderLikes(){
   var v = likesVenue(); var list = document.getElementById('likes-list');
   if (!v) { list.innerHTML = ''; return; }
-  var liked = {}; (v.likedCategoryIds || []).forEach(function(id){ liked[id] = true; });
+  var liked = {}; likesGroup().forEach(function(g){ (g.likedCategoryIds || []).forEach(function(id){ liked[id] = true; }); });
   var q = document.getElementById('likes-search').value.trim().toLowerCase();
   var cats = categories.filter(function(c){ return (!q || (c.title||'').toLowerCase().indexOf(q) !== -1) && (!likesOnly || liked[c.id]); })
     .sort(function(a,b){ return (a.title||'').localeCompare(b.title||''); });
@@ -1624,12 +1632,17 @@ function renderLikes(){
 }
 function toggleLike(catId){
   var v = likesVenue(); if (!v || !db) return;
-  db.ref('bingo/landing/venues/' + v.id + '/likedCategoryIds').transaction(function(cur){
-    var arr = Array.isArray(cur) ? cur.slice() : [];
-    var i = arr.indexOf(catId);
-    if (i === -1) arr.push(catId); else arr.splice(i, 1);
-    return arr.length ? arr : null;
-  }, function(err){ if (err) showToast('Could not save — ' + (err.code || err.message || 'permission?')); });
+  var group = likesGroup();
+  var turnOn = !group.some(function(g){ return (g.likedCategoryIds || []).indexOf(catId) !== -1; });
+  group.forEach(function(g){
+    db.ref('bingo/landing/venues/' + g.id + '/likedCategoryIds').transaction(function(cur){
+      var arr = Array.isArray(cur) ? cur.slice() : [];
+      var i = arr.indexOf(catId);
+      if (turnOn && i === -1) arr.push(catId);
+      if (!turnOn && i !== -1) arr.splice(i, 1);
+      return arr.length ? arr : null;
+    }, function(err){ if (err) showToast('Could not save — ' + (err.code || err.message || 'permission?')); });
+  });
 }
 function showToast(msg) {
   var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
