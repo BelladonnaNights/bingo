@@ -1428,7 +1428,7 @@ function openMediaPlayer(){
   // Popup blockers only allow window.open during the click itself, so on a computer
   // that has never answered, open the tab NOW and decide later whether to use it.
   let webTab=null;
-  if(!seen){
+  if(!seen&&!window.bingoAPI?.isElectron){
     try{
       webTab=window.open('','_blank');
       if(webTab) webTab.document.write('<body style="background:#080705;color:#c9a84c;font-family:Georgia,serif;text-align:center;padding-top:20vh;letter-spacing:.1em">Looking for the Belladonna desktop player…</body>');
@@ -1449,8 +1449,13 @@ function openMediaPlayer(){
   }
   ref.on('value',onVal);
 
-  // Launch the installed desktop app (browser asks permission the first time — tick "always allow")
-  window.location.href=PLAYER_PROTOCOL+q+'&nonce='+nonce;
+  // Launch the installed desktop player. Inside the Electron Bingo app this goes through IPC;
+  // in a browser it uses the belladonnaplayer:// link (browser asks permission the first time — tick "always allow").
+  if(window.bingoAPI?.isElectron){
+    window.bingoAPI.openMediaPlayer(categoryId,sessionKey,nonce).catch(()=>{});
+  } else {
+    window.location.href=PLAYER_PROTOCOL+q+'&nonce='+nonce;
+  }
 
   timer=setTimeout(()=>{
     if(finished) return;
