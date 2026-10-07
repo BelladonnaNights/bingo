@@ -1415,13 +1415,53 @@ function showToast(msg){
 }
 // ── MEDIA PLAYER URL ─────────────────────────────────────────────
 const MEDIA_PLAYER_URL = 'https://belladonnanights.github.io/musicplayer/belladonna-player.html';
+const PLAYER_PROTOCOL  = 'belladonnaplayer://link';
 
+// Auto-detect: launch the desktop app, then wait for it to answer through Firebase
+// (bingo/sessions/<key>/playerReady, tagged with a one-time nonce). If nothing
+// answers, the desktop app isn't installed — fall back to the web player.
 function openMediaPlayer(){
-  const url=`${MEDIA_PLAYER_URL}?bingo=${encodeURIComponent(categoryId)}&session=${encodeURIComponent(sessionKey)}`;
-  window.open(url,'_blank');
-  // Show linked banner immediately — no need to wait for the player to respond
-  const ind = document.getElementById('player-link-indicator');
-  if (ind) ind.style.display = 'flex';
+  const q=`?bingo=${encodeURIComponent(categoryId)}&session=${encodeURIComponent(sessionKey)}`;
+  const nonce=Math.random().toString(36).slice(2,10);
+  const seen=(function(){try{return localStorage.getItem('bella_desktop_seen')==='1';}catch(e){return false;}})();
+
+  // Popup blockers only allow window.open during the click itself, so on a computer
+  // that has never answered, open the tab NOW and decide later whether to use it.
+  let webTab=null;
+  if(!seen){
+    try{
+      webTab=window.open('','_blank');
+      if(webTab) webTab.document.write('<body style="background:#080705;color:#c9a84c;font-family:Georgia,serif;text-align:center;padding-top:20vh;letter-spacing:.1em">Looking for the Belladonna desktop player…</body>');
+    }catch(e){}
+  }
+
+  const ref=db.ref(`bingo/sessions/${sessionKey}/playerReady`);
+  let finished=false, timer=null;
+  function finish(){ finished=true; clearTimeout(timer); ref.off('value',onVal); }
+  function onVal(snap){
+    const v=snap.val();
+    if(finished||!v||v.nonce!==nonce) return;
+    finish();
+    try{localStorage.setItem('bella_desktop_seen','1');}catch(e){}
+    if(webTab&&!webTab.closed) webTab.close();
+    showToast('Desktop player linked');
+    const ind=document.getElementById('player-link-indicator'); if(ind) ind.style.display='flex';
+  }
+  ref.on('value',onVal);
+
+  // Launch the installed desktop app (browser asks permission the first time — tick "always allow")
+  window.location.href=PLAYER_PROTOCOL+q+'&nonce='+nonce;
+
+  timer=setTimeout(()=>{
+    if(finished) return;
+    finish();
+    try{localStorage.removeItem('bella_desktop_seen');}catch(e){}
+    const webUrl=MEDIA_PLAYER_URL+q;
+    showToast('Desktop player not found — opening web player');
+    if(webTab&&!webTab.closed) webTab.location.href=webUrl;
+    else { const w=window.open(webUrl,'_blank'); if(!w) showToast('Popup blocked — click Open Media Player again'); }
+    const ind=document.getElementById('player-link-indicator'); if(ind) ind.style.display='flex';
+  },7000);
 }
 
 // ── TIEBREAKER ────────────────────────────────────────────────────────────────
