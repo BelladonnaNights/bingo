@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Music Bingo — Belladonna Audio Alchemies</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--surface:#131313;--surface2:#1c1c1c;--surface3:#252525;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);--border3:rgba(255,255,255,.22);
+  --text:#f0ede8;--text2:#b0a898;--text3:#5a5248;
+  --gold:#c9a84c;--gold2:#e8c96a;--gold3:#f5df90;
+  --gold-shine:linear-gradient(135deg,#c9a84c 0%,#f5df90 45%,#c9a84c 70%,#e2b84a 100%);
+  --gold-dim:rgba(201,168,76,.10);--gold-border:rgba(201,168,76,.28);--gold-border2:rgba(201,168,76,.5);
+  --radius:8px;--radius-lg:14px;
+  --font:'DM Sans',sans-serif;--display:'Bebas Neue',sans-serif;
+  --serif:'EB Garamond',serif;--cinzel:'Cinzel',serif;
+}
+html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var(--text)}
+
+/* ── Now Playing banner — shows all active host sessions publicly ── */
+@keyframes npb-fadein { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+#now-playing-banner {
+  display: none;
+  position: sticky; top: 64px; z-index: 190;
+  background: linear-gradient(90deg, rgba(10,10,10,.98), rgba(20,18,14,.98));
+  border-bottom: 1px solid var(--gold-border);
+  flex-direction: column;
+  gap: 0;
+  animation: npb-fadein .4s ease forwards;
+}
+#now-playing-banner.active { display: flex; }
+.npb-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 9px 2rem;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.npb-row:last-child { border-bottom: none; }
+.npb-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  background: var(--gold); box-shadow: 0 0 6px var(--gold);
+  animation: blink 1.4s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+.npb-label {
+  font-family: var(--cinzel); font-size: 9px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--gold); flex-shrink: 0; white-space: nowrap;
+}
+.npb-song {
+  font-family: var(--cinzel); font-size: 13px; font-weight: 600;
+  color: var(--gold2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.npb-sep { color: var(--text3); flex-shrink: 0; }
+.npb-artist {
+  font-family: var(--serif); font-size: 12px; font-style: italic;
+  color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.npb-board {
+  margin-left: auto; font-family: var(--cinzel); font-size: 9px;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--text3); flex-shrink: 0; white-space: nowrap;
+}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:rgba(201,168,76,.25);border-radius:3px}
+.nav{position:sticky;top:0;z-index:200;background:rgba(10,10,10,.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-left{display:flex;align-items:center;gap:14px}
+.nav-logo-img{height:40px;width:auto;object-fit:contain;display:none}
+.nav-title{font-family:var(--display);font-size:22px;letter-spacing:.06em;color:var(--text);line-height:1}
+.nav-title span{background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-right{display:flex;flex-direction:row;align-items:center;gap:10px;justify-content:flex-end}
+.nav-btn{background:none;border:1px solid var(--gold-border);border-radius:var(--radius);padding:7px 16px;font-size:11px;font-weight:500;font-family:var(--cinzel);letter-spacing:.1em;text-transform:uppercase;color:var(--gold);cursor:pointer;transition:all .2s;white-space:nowrap}
+.nav-btn:hover{background:var(--gold);color:#000;border-color:var(--gold)}
+.nav-btn-sched{font-size:12px;padding:5px 14px;letter-spacing:.06em}
+.hero{position:relative;padding:4rem 2rem 3rem;max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:3rem;flex-wrap:wrap;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:800px;height:360px;background:radial-gradient(ellipse at 50% 0%,rgba(201,168,76,.06) 0%,transparent 68%);pointer-events:none}
+.hero-logo-wrap{flex-shrink:0;position:relative;z-index:1}
+.hero-logo-wrap.pending{min-width:130px;min-height:130px}
+.hero-logo-img{width:160px;height:160px;object-fit:contain;display:none}
+.hero-logo-placeholder{display:none;width:130px;height:130px;border-radius:var(--radius-lg);border:1px dashed var(--gold-border);align-items:center;justify-content:center;flex-direction:column;gap:6px;cursor:pointer;background:var(--surface);transition:border-color .2s}
+.hero-logo-placeholder:hover{border-color:var(--gold-border2)}
+.hero-logo-placeholder span{font-size:11px;color:var(--text3);text-align:center;padding:0 10px;line-height:1.4}
+.hero-text{flex:1;min-width:240px;position:relative;z-index:1}
+.hero-eyebrow{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--gold);margin-bottom:8px;letter-spacing:.04em}
+.hero-title{font-family:var(--display);font-size:clamp(52px,8vw,100px);line-height:.92;letter-spacing:.03em;color:var(--text);margin-bottom:14px}
+.hero-title span{background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--text2);max-width:420px;line-height:1.6;letter-spacing:.02em}
+.ornament{display:flex;align-items:center;gap:10px;max-width:1100px;margin:0 auto;padding:0 2rem}
+.ornament-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.35),transparent)}
+.ornament-diamond{width:6px;height:6px;background:var(--gold);transform:rotate(45deg);flex-shrink:0;box-shadow:0 0 5px rgba(201,168,76,.45)}
+.toolbar{max-width:1100px;margin:0 auto;padding:1.75rem 2rem .75rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.search-box{flex:1;min-width:200px;position:relative}
+.search-box input{width:100%;background:var(--surface);border:1px solid var(--gold-border);border-radius:99px;padding:11px 18px 11px 42px;font-size:14px;font-family:var(--serif);font-style:italic;color:var(--text);transition:border-color .2s,box-shadow .2s;letter-spacing:.02em}
+.search-box input:focus{outline:none;border-color:var(--gold-border2);box-shadow:0 0 0 3px rgba(201,168,76,.07)}
+.search-box input::placeholder{color:var(--text3);font-style:italic}
+.search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:15px;pointer-events:none;opacity:.7}
+.filter-pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{background:transparent;border:1px solid var(--border2);border-radius:99px;padding:7px 16px;font-size:11px;font-weight:500;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap}
+.pill:hover{border-color:var(--gold-border);color:var(--gold2)}
+.pill.active{background:var(--gold-dim);border-color:var(--gold-border2);color:var(--gold2)}
+.cat-count{max-width:1100px;margin:0 auto;padding:0 2rem .5rem;font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text3)}
+.grid{max-width:1100px;margin:0 auto;padding:0 2rem 5rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:18px}
+.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;transition:border-color .25s,transform .2s,box-shadow .25s;text-decoration:none;display:block;position:relative}
+.cat-card:hover{border-color:var(--gold-border2);transform:translateY(-3px);box-shadow:0 10px 36px rgba(201,168,76,.1),0 2px 10px rgba(0,0,0,.5)}
+.cat-card.coming-soon{opacity:.45;cursor:default;pointer-events:none}
+.cat-banner{width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;background:var(--surface2)}
+.cat-banner-placeholder{width:100%;aspect-ratio:1554/319;background:var(--surface2);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border)}
+.cat-banner-placeholder span{font-family:var(--display);font-size:22px;letter-spacing:.1em;color:var(--text3)}
+.cat-body{padding:12px 16px 14px;border-top:1px solid var(--border)}
+.cat-title{font-family:var(--cinzel);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text);margin-bottom:5px}
+.cat-meta{display:flex;align-items:center;gap:8px}
+.cat-genre{font-size:10px;background:var(--gold-dim);border-radius:99px;padding:2px 10px;border:1px solid var(--gold-border);font-family:var(--cinzel);letter-spacing:.06em;text-transform:uppercase;color:var(--gold2)}
+.cat-coming{font-size:11px;color:var(--text3);font-family:var(--serif);font-style:italic}
+.cat-arrow{position:absolute;top:10px;right:10px;background:rgba(10,10,10,.8);border:1px solid var(--gold-border);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--gold2);opacity:0;transition:opacity .2s}
+.cat-card:hover .cat-arrow{opacity:1}
+.empty{grid-column:1/-1;text-align:center;padding:5rem 1rem}
+.empty-icon{font-size:36px;margin-bottom:14px;display:block;color:var(--text3)}
+.empty-text{font-family:var(--serif);font-style:italic;color:var(--text3);font-size:16px}
+.footer{padding:3rem 2rem;text-align:center;border-top:1px solid var(--border);background:var(--surface)}
+.footer-logo{font-family:var(--cinzel);font-size:14px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+.footer-tagline{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);margin-bottom:1.25rem}
+.footer-links{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-bottom:1.25rem}
+.footer-links a{font-family:var(--cinzel);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);text-decoration:none;transition:color .15s}
+.footer-links a:hover{color:var(--gold2)}
+.ornament-footer{display:flex;align-items:center;gap:8px;max-width:300px;margin:0 auto 16px}
+.ornament-footer .ornament-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.3),transparent)}
+.ornament-footer .ornament-diamond{width:5px;height:5px;background:var(--gold);transform:rotate(45deg);flex-shrink:0}
+.footer-copy{font-size:11px;color:var(--text3);letter-spacing:.03em}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);width:min(680px,95vw);max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-family:var(--cinzel);font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2)}
+.modal-close{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px}
+.modal-close:hover{background:var(--surface2);color:var(--text)}
+.modal-body{padding:1.5rem;overflow-y:auto;flex:1}
+.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+.form-group{margin-bottom:1.25rem}
+.form-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:6px;font-family:var(--cinzel)}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 13px;font-size:14px;font-family:var(--font);color:var(--text);transition:border-color .15s}
+.form-input:focus{outline:none;border-color:var(--gold-border)}
+.form-input::placeholder{color:var(--text3)}
+.form-row{display:flex;gap:12px}
+.form-row .form-group{flex:1;margin-bottom:0}
+.form-hint{font-size:11px;color:var(--text3);margin-top:4px;font-style:italic}
+.banner-preview{width:100%;aspect-ratio:1554/319;object-fit:cover;border-radius:var(--radius);background:var(--surface2);display:block;margin-top:8px;border:1px solid var(--border)}
+.btn{border-radius:var(--radius);padding:9px 18px;font-size:12px;font-family:var(--cinzel);font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s;white-space:nowrap;border:1px solid}
+.btn-primary{background:var(--gold);color:#000;border-color:var(--gold)}
+.btn-primary:hover{background:var(--gold2);border-color:var(--gold2)}
+.btn-ghost{background:none;border-color:var(--border2);color:var(--text2)}
+.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-danger{background:none;border-color:rgba(220,60,60,.3);color:#e05050}
+.btn-danger:hover{background:rgba(220,60,60,.1)}
+.btn-sm{padding:5px 12px;font-size:10px}
+.btn-accent{background:var(--gold-dim);border:1px solid var(--gold-border);color:var(--gold2);font-size:10px;padding:5px 12px;border-radius:var(--radius);font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.btn-accent:hover{background:var(--gold);color:#000;border-color:var(--gold)}
+.admin-list{display:flex;flex-direction:column;gap:8px;margin-bottom:1.5rem}
+.admin-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;gap:12px}
+.admin-item-thumb{width:72px;aspect-ratio:1554/319;object-fit:cover;border-radius:3px;background:var(--surface3);flex-shrink:0}
+.admin-item-info{flex:1;min-width:0}
+.admin-item-title{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--cinzel);letter-spacing:.04em}
+.admin-item-meta{font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-item-actions{display:flex;gap:6px;flex-shrink:0}
+.password-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2.5rem;width:min(400px,100%);text-align:center}
+.password-box h2{font-family:var(--display);font-size:34px;letter-spacing:.06em;margin-bottom:6px;background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.password-box p{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--text2);margin-bottom:1.5rem}
+.logo-field{display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px}
+.logo-preview{width:56px;height:56px;object-fit:contain;border-radius:var(--radius);background:var(--surface3);flex-shrink:0;display:none}
+.logo-preview.show{display:block}
+.logo-field-inputs{flex:1}
+.sched-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.25rem}
+.sched-tab{padding:8px 16px;font-size:10px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;transition:all .15s}
+.sched-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--gold);color:#000;font-size:12px;font-weight:700;padding:9px 22px;border-radius:99px;transition:transform .22s;pointer-events:none;z-index:9999;white-space:nowrap;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase}
+.toast.show{transform:translateX(-50%) translateY(0)}
+@media(max-width:640px){
+  .nav{padding:0 1rem}
+  .hero{padding:2.5rem 1rem 2rem;gap:1.5rem;flex-direction:column}
+  .hero-logo-img,.hero-logo-placeholder{width:120px;height:120px}
+  .hero-title{font-size:56px}
+  .toolbar,.cat-count,.grid,.ornament{padding-left:1rem;padding-right:1rem}
+  .grid{grid-template-columns:1fr}
+  .form-row{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-left">
+    <img class="nav-logo-img" id="nav-logo-img" src="" alt="Logo" onerror="this.style.display='none'">
+    <div class="nav-title">MUSIC<span>BINGO</span></div>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user-label" id="bingo-user-label" style="font-size:11px;color:var(--text3);margin-right:6px;"></span>
+    <select id="bingo-location-select" onchange="setBingoLocation(this.value)" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:999px;color:var(--gold);padding:4px 10px;font-size:11px;margin-right:6px;"></select>
+    <a href="https://belladonnanights.github.io/belladonna-gateway/accounts.html?view=account" class="nav-btn nav-btn-ghost" style="font-size:9px;text-decoration:none;">My Account</a>
+    <button class="nav-btn nav-btn-ghost" onclick="bingoGatewaySignOut()" style="font-size:9px;">Sign Out</button>
+    <button class="nav-btn" onclick="openAdmin()">Admin ⚙</button>
+    <button class="nav-btn nav-btn-sched" onclick="openScheduleBtn()">Schedule</button>
+    <button class="nav-btn nav-btn-sched" id="likes-nav-btn" onclick="openLikes()" style="display:none">&#9829; Venue Likes</button>
+  </div>
+</nav>
+
+<!-- Now Playing banner — shows all currently active host sessions -->
+<div id="now-playing-banner" role="status" aria-live="polite">
+  <!-- rows injected dynamically by renderActiveSessions() -->
+</div>
+
+<div class="hero">
+  <div class="hero-logo-wrap pending" id="hero-logo-wrap">
+    <img class="hero-logo-img" id="hero-logo-img" src="" alt="Belladonna Audio Alchemies" onerror="this.style.display='none'">
+    <div class="hero-logo-placeholder" id="hero-logo-placeholder" onclick="openAdmin()" title="Add logo in Admin">
+      <span style="font-size:22px;color:var(--text3)">+</span>
+      <span>Add logo<br>in Admin</span>
+    </div>
+  </div>
+  <div class="hero-text">
+    <div class="hero-eyebrow">Belladonna Audio Alchemies presents</div>
+    <div class="hero-title">MUSIC<br><span>BINGO</span></div>
+    <div class="hero-sub">Choose your playlist. Your host will take it from there.</div>
+  </div>
+</div>
+
+<div class="ornament" style="margin-bottom:.5rem">
+  <div class="ornament-line"></div>
+  <div class="ornament-diamond"></div>
+  <div class="ornament-diamond"></div>
+  <div class="ornament-diamond"></div>
+  <div class="ornament-line"></div>
+</div>
+
+<div class="toolbar">
+  <div class="search-box">
+    <span class="search-icon">♪</span>
+    <input type="text" id="search-input" placeholder="Search playlists…" oninput="renderGrid()">
+  </div>
+  <div class="filter-pills" id="filter-pills"></div>
+</div>
+<div class="cat-count" id="cat-count"></div>
+<div class="grid" id="cat-grid"></div>
+
+<footer class="footer">
+  <div class="footer-logo">Belladonna Audio Alchemies</div>
+  <div class="footer-tagline">Live entertainment for bars, breweries &amp; events — Seattle–Tacoma</div>
+  <div class="footer-links">
+    <a href="https://www.belladonnanights.com" target="_blank">Main Site</a>
+    <a href="https://www.belladonnanights.com/calendar" target="_blank">Event Calendar</a>
+    <a href="https://www.instagram.com/belladonnaaudioalchemies" target="_blank">Instagram</a>
+    <a href="https://www.facebook.com/belladonnaaudioalchemies" target="_blank">Facebook</a>
+    <a href="mailto:contact@belladonnanights.com">Contact HQ</a>
+  </div>
+  <div class="ornament-footer">
+    <div class="ornament-line"></div>
+    <div class="ornament-diamond"></div>
+    <div class="ornament-line"></div>
+  </div>
+  <div class="footer-copy">© 2026 Belladonna Entertainment LLC — All Rights Reserved</div>
+</footer>
+
+<!-- ADMIN OVERLAY -->
+<div class="overlay" id="admin-overlay">
+  <div id="pw-screen" class="password-box">
+    <h2>ADMIN</h2>
+    <p id="pw-screen-msg">Checking your Belladonna Gateway access…</p>
+    <button class="btn btn-ghost btn-sm" onclick="closeAdmin()" style="margin-top:12px;width:100%">Cancel</button>
+  </div>
+  <div class="modal" id="admin-panel" style="display:none">
+    <div class="modal-header">
+      <div class="modal-title">Manage Categories</div>
+      <div style="display:flex;align-items:center;gap:0.6rem;">
+        <button class="btn btn-ghost btn-sm" onclick="bingoGatewaySignOut()">Sign Out</button>
+        <button class="modal-close" onclick="closeAdmin()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:1.5rem">
+        <div class="form-label">Site logo</div>
+        <div class="logo-field">
+          <img class="logo-preview" id="logo-preview-img" src="" alt="">
+          <div class="logo-field-inputs">
+            <input class="form-input" type="text" id="logo-url-input" placeholder="https://yoursite.com/logo.png" oninput="previewLogo()" style="margin-bottom:6px">
+            <div style="font-size:11px;color:var(--text3);font-style:italic">Paste your logo URL — appears in the nav and hero.</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveLogo()">Save logo</button>
+      </div>
+      <div style="border-top:1px solid var(--border);margin-bottom:1.5rem"></div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.5rem" id="cat-form-wrap">
+        <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:1rem;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase" id="form-mode-label">Add New Category</div>
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+          <label class="form-label">Category title</label>
+          <input class="form-input" type="text" id="f-title" placeholder="e.g. 90s Hip Hop">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Genre tags <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(comma separated)</span></label>
+          <input class="form-input" type="text" id="f-genre" placeholder="e.g. Hip Hop, R&B">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-input" id="f-status">
+            <option value="live">Live</option>
+            <option value="coming">Coming soon</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)">
+            <input type="checkbox" id="f-classic-bingo" style="accent-color:var(--gold);width:15px;height:15px">
+            Classic Bingo (B-I-N-G-O numbers instead of songs)
+          </label>
+          <div class="form-hint">Check this for a traditional numbered bingo card. No song list needed — numbers 1–75 are generated automatically.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Spotify playlist URL <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+          <input class="form-input" type="text" id="f-spotify" placeholder="https://open.spotify.com/playlist/...">
+          <div class="form-hint">Players see a Spotify button on their card screen.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Spotify QR code image URL <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+          <input class="form-input" type="text" id="f-spotify-qr" placeholder="https://yoursite.com/spotify-qr.png">
+          <div class="form-hint">Appears on printed host sheets and player cards.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Banner image URL</label>
+          <input class="form-input" type="text" id="f-image" placeholder="https://yoursite.com/banner.jpg" oninput="previewBanner()">
+          <div class="form-hint">Use your Wix published image URL (1554×319px)</div>
+          <img class="banner-preview" id="banner-preview-img" src="" alt="" style="display:none">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Square image URL <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+          <input class="form-input" type="text" id="f-square-image" placeholder="https://yoursite.com/square.jpg" oninput="previewSquareImage()">
+          <div class="form-hint">A square (1:1) crop — this is what the Planner app shows for this category, since the banner's wide shape doesn't work as a small thumbnail.</div>
+          <img class="banner-preview" id="square-preview-img" src="" alt="" style="display:none;width:80px;height:80px;object-fit:cover;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Song list</label>
+          <textarea class="form-input" id="f-songs" rows="8" placeholder="Song Name – Artist&#10;Song Name – Artist&#10;(one per line, minimum 25)" style="resize:vertical;font-family:var(--mono,monospace);font-size:12px;line-height:1.5" oninput="updateSongCount()"></textarea>
+          <div id="song-count-label" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+        </div>
+        <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1rem">
+          <div style="font-size:11px;font-weight:600;color:var(--gold);margin-bottom:.75rem;font-family:var(--cinzel);letter-spacing:.1em;text-transform:uppercase">Venue Menu</div>
+          <div class="form-group">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="f-vm-show" style="accent-color:var(--gold);width:15px;height:15px">
+              <span class="form-label" style="margin:0">Show this category on the Venue Menu</span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description for venues</label>
+            <textarea class="form-input" id="f-vm-description" rows="3" style="resize:vertical" placeholder="What venues see on the menu — a short pitch for this category…"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Venue Menu Banner URL <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional — reuses the Banner image above if left blank)</span></label>
+            <input class="form-input" type="text" id="f-vm-banner" placeholder="https://…">
+          </div>
+        </div>
+        <!-- WHERE THIS SHOWS — read-only cross-app reference. Same doc
+             everywhere, so this just says where else it's already living. -->
+        <div id="where-shows-box" style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1rem;display:none">
+          <div style="font-size:11px;font-weight:600;color:var(--gold);margin-bottom:.5rem;font-family:var(--cinzel);letter-spacing:.1em;text-transform:uppercase">Where This Shows</div>
+          <div id="where-shows-list" style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text3)"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:.5rem">
+          <button class="btn btn-primary" onclick="saveCategory()">Save Category</button>
+          <button class="btn btn-ghost btn-sm" onclick="resetForm()" id="cancel-edit-btn" style="display:none">Cancel Edit</button>
+        </div>
+      </div>
+      <div class="form-label">Your categories</div>
+      <div class="admin-list" id="admin-list"></div>
+    </div>
+    <div class="modal-footer">
+      <div style="flex:1;font-size:11px;color:var(--text3);">Admin access is managed in Belladonna HQ → Accounts now, not a shared password here.</div>
+      <button class="btn btn-ghost" onclick="closeAdmin()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="overlay" id="delete-confirm-overlay">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <div class="modal-title">Remove Category?</div>
+      <button class="modal-close" onclick="cancelDelete()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--text2);font-family:var(--serif);font-style:italic;line-height:1.6">This will permanently remove <strong id="delete-name" style="color:var(--gold2)"></strong> from the landing page.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cancelDelete()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN SCHEDULE OVERLAY -->
+<div class="overlay" id="admin-sched-overlay">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:12px;flex:1">
+        <div class="modal-title">Schedule Manager</div>
+        <select class="form-input" id="sched-venue-filter" onchange="renderTimeline()" style="max-width:180px;font-size:12px;padding:5px 10px"></select>
+      </div>
+      <button class="modal-close" onclick="closeAdminSched()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="sched-tabs">
+        <button class="sched-tab active" id="stab-timeline" onclick="switchSchedTab('timeline')">Timeline</button>
+        <button class="sched-tab" id="stab-add" onclick="switchSchedTab('add')">Add Entry</button>
+        <button class="sched-tab" id="stab-bulk" onclick="switchSchedTab('bulk')">Bulk Add</button>
+        <button class="sched-tab" id="stab-venues" onclick="switchSchedTab('venues')">Venues</button>
+      </div>
+      <div id="spanel-timeline"><div id="sched-timeline-content"></div></div>
+      <div id="spanel-add" style="display:none">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem">
+          <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:1rem;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase" id="sched-form-label">Add Schedule Entry</div>
+          <input type="hidden" id="sched-edit-id">
+          <div class="form-row" style="margin-bottom:1rem">
+            <div class="form-group">
+              <label class="form-label">Date</label>
+              <input class="form-input" type="date" id="sched-date" onchange="updateRecentHint()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Venue</label>
+              <select class="form-input" id="sched-venue-select" onchange="updateRecentHint()">
+                <option value="">— select venue —</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label class="form-label">Host <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(same assignment HQ and the Planner app see)</span></label>
+            <select class="form-input" id="sched-host-select"><option value="">— Unassigned —</option></select>
+          </div>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label class="form-label">Rounds for this night</label>
+            <div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:8px">Assign a category to each round. Round 3 is optional.</div>
+            <div style="display:flex;flex-direction:column;gap:8px" id="sched-rounds-wrap">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);min-width:56px">Round 1</div>
+                <select class="form-input" id="sched-round-1" style="flex:1"><option value="">— pick a category —</option></select>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);min-width:56px">Round 2</div>
+                <select class="form-input" id="sched-round-2" style="flex:1"><option value="">— pick a category —</option></select>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="font-family:var(--cinzel);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);min-width:56px">Round 3</div>
+                <select class="form-input" id="sched-round-3" style="flex:1"><option value="">(none)</option></select>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+            <input class="form-input" type="text" id="sched-notes" placeholder="e.g. Private event, double session…">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:.75rem">
+            <button class="btn btn-primary" onclick="saveSchedEntry()">Save Entry</button>
+            <button class="btn btn-ghost btn-sm" onclick="resetSchedForm()" id="sched-cancel-btn" style="display:none">Cancel Edit</button>
+          </div>
+        </div>
+        <div id="recent-hint-wrap" style="display:none">
+          <div class="form-label" style="margin-bottom:8px">Recent history at this venue</div>
+          <div id="recent-hint-list"></div>
+        </div>
+      </div>
+      <div id="spanel-venues" style="display:none">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem;align-items:flex-end;">
+          <div style="flex:2;min-width:140px;"><label class="form-label">Venue Name</label><input class="form-input" type="text" id="venue-name-input" placeholder="e.g. The Coaster" onkeydown="if(event.key==='Enter')addVenue()"></div>
+          <div style="flex:1;min-width:100px;"><label class="form-label">Day</label>
+            <select class="form-input" id="venue-day-input">
+              <option value="">—</option>
+              <option value="Sun">Sun</option><option value="Mon">Mon</option><option value="Tue">Tue</option>
+              <option value="Wed">Wed</option><option value="Thu">Thu</option><option value="Fri">Fri</option><option value="Sat">Sat</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:100px;"><label class="form-label">Time</label><input class="form-input" type="time" id="venue-time-input"></div>
+          <div style="flex:1;min-width:120px;"><label class="form-label">Host</label><input class="form-input" type="text" id="venue-host-input" placeholder="Host name"></div>
+          <div style="flex:1;min-width:110px;"><label class="form-label">Status</label>
+            <select class="form-input" id="venue-status-input">
+              <option value="active">Active</option><option value="seasonal">Seasonal</option><option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="venue-add-btn" onclick="addVenue()">Add Venue</button>
+        </div>
+        <div id="venue-list"></div>
+      </div>
+
+      <div id="spanel-bulk" style="display:none">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem">
+          <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:.75rem;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase">Bulk Schedule Import</div>
+          <div class="form-group">
+            <label class="form-label">Venue</label>
+            <select class="form-input" id="bulk-venue-select" style="margin-bottom:.5rem">
+              <option value="">— select venue —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Paste your schedule</label>
+            <div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:6px;line-height:1.6">
+              One entry per line. Format:<br>
+              <code style="background:var(--surface3);padding:1px 5px;border-radius:3px;font-size:11px">Apr 5 - Round 1: 90s Hip Hop, Round 2: Disney</code><br>
+              Optional notes after a pipe: <code style="background:var(--surface3);padding:1px 5px;border-radius:3px;font-size:11px">| private event</code><br>
+              Round 3 is optional. Year defaults to current year if not included.
+            </div>
+            <textarea class="form-input" id="bulk-text" rows="10"
+              style="font-family:var(--mono,monospace);font-size:12px;line-height:1.6;resize:vertical"
+              placeholder="Apr 5 - Round 1: 90s Hip Hop, Round 2: Disney&#10;Apr 12 - Round 1: Country, Round 2: 90s Hip Hop&#10;Apr 19 - Round 1: Disney, Round 2: Country, Round 3: 80s Pop | special night"></textarea>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:.75rem">
+            <button class="btn btn-ghost" onclick="bulkParse()">Preview</button>
+            <button class="btn btn-primary" id="bulk-save-btn" onclick="bulkSave()" style="display:none">Save all entries</button>
+            <button class="btn btn-ghost btn-sm" onclick="bulkClear()" style="color:var(--text3)">Clear</button>
+          </div>
+        </div>
+        <div id="bulk-preview"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOST SCHEDULE OVERLAY (no password) -->
+<div class="overlay" id="host-sched-overlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Tonight's Schedule</div>
+      <button class="modal-close" onclick="document.getElementById('host-sched-overlay').classList.remove('show')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row" style="margin-bottom:1.25rem">
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" type="date" id="host-sched-date" onchange="renderHostSched()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your venue</label>
+          <select class="form-input" id="host-sched-venue" onchange="renderHostSched()">
+            <option value="">— select your venue —</option>
+          </select>
+        </div>
+      </div>
+      <div id="host-sched-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- VENUE LIKES OVERLAY: hosts heart the categories their venue likes -->
+<div class="overlay" id="likes-overlay">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">&#9829; Venue Likes</div>
+      <button class="modal-close" onclick="closeLikes()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.5">Tap a heart to mark a category this venue likes. The Planner's randomizer only picks from the hearted categories.</div>
+      <div class="form-group" id="likes-venue-wrap" style="margin-bottom:10px">
+        <label class="form-label">Venue</label>
+        <select class="form-input" id="likes-venue" onchange="renderLikes()"></select>
+      </div>
+      <input class="form-input" type="text" id="likes-search" placeholder="Search categories&hellip;" oninput="renderLikes()" style="margin-bottom:8px">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+        <button class="pill active" id="likes-only-btn" onclick="toggleLikesOnly()">All</button>
+        <span style="flex:1"></span>
+        <span id="likes-count" style="font-size:12px;color:var(--text3)"></span>
+      </div>
+      <div id="likes-list" style="max-height:48vh;overflow:auto"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCIfAE1JGHsUGzzVH2pz1Vyj5b5OhA0tDQ",
+  authDomain: "belladonna-hq.firebaseapp.com",
+  databaseURL: "https://belladonna-hq-default-rtdb.firebaseio.com",
+  projectId: "belladonna-hq",
+  storageBucket: "belladonna-hq.firebasestorage.app",
+  messagingSenderId: "1021873183587",
+  appId: "1:1021873183587:web:def283bb7b5ca48e4f9156"
+};
+
+let categories = [], venues = [], scheduleEntries = [], hostRoster = {};
+let activeFilter = 'all', adminUnlocked = false, deleteTargetId = null, db = null;
+let bingoAuth = null, bingoDbFs = null, bingoUserProfile = null;
+// Checkout's cancel toggle writes to Firestore's `shifts` collection (no
+// login on checkin/checkout, so this is the only place a cancellation can
+// land). Loaded once and overlaid onto scheduleEntries by venue name + date.
+let shiftsCancelledBingo = [];
+function loadShiftsCancelledBingo(){
+  bingoDbFs.collection('shifts').where('cancelled','==',true).get().then(function(snap){
+    shiftsCancelledBingo = snap.docs.map(function(d){ return d.data(); });
+    applyCheckoutCancellations();
+  }).catch(function(e){ console.warn('Could not load shifts:', e); });
+}
+function normVenueBingo(s){ return (s||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,' ').trim(); }
+function applyCheckoutCancellations(){
+  if(!shiftsCancelledBingo.length || !scheduleEntries.length) return;
+  scheduleEntries.forEach(function(e){
+    var v = venues.find(function(x){ return x.id===e.venueId; });
+    if(!v) return;
+    e.cancelled = shiftsCancelledBingo.some(function(s){ return normVenueBingo(s.venue)===normVenueBingo(v.name) && s.date===e.date; });
+  });
+  renderTimeline();
+}
+
+// ── GATEWAY LOGIN GATE (admin panel only — the public schedule stays open to everyone) ──
+const GATEWAY_APP_KEY = 'bingo';
+const GATEWAY_SESSION_MS = 6 * 60 * 60 * 1000;
+function hasValidGatewaySession(){
+  try{
+    const raw = localStorage.getItem('gatewaySession_'+GATEWAY_APP_KEY);
+    if(!raw) return false;
+    const s = JSON.parse(raw);
+    return (Date.now()-s.ts) < GATEWAY_SESSION_MS;
+  }catch(e){ return false; }
+}
+function bingoGatewaySignOut(){
+  try{Object.keys(localStorage).filter(function(k){return k.indexOf('gatewaySession_')===0;}).forEach(function(k){localStorage.removeItem(k);});}catch(e){}
+  if(bingoAuth) bingoAuth.signOut().then(function(){ window.location.href='https://belladonnanights.github.io/belladonna-gateway/accounts.html?return='+encodeURIComponent(location.href)+'&app='+GATEWAY_APP_KEY; });
+}
+
+// ── FIREBASE ──────────────────────────────────────────────────────────────────
+function initFirebase() {
+  var s1 = document.createElement('script');
+  s1.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js';
+  s1.onload = function() {
+    var s2 = document.createElement('script');
+    s2.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js';
+    s2.onload = function() {
+      var s3 = document.createElement('script');
+      s3.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js';
+      s3.onload = function() {
+        var s4 = document.createElement('script');
+        s4.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js';
+        s4.onload = function() {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.database();
+      bingoAuth = firebase.auth();
+      bingoDbFs = firebase.firestore();
+
+      // ── FULL-APP GATEWAY GATE ──
+      // The whole app requires a signed-in Belladonna Gateway account now —
+      // same as HQ and Trivia, checked once up front, not just for Admin.
+      if (!hasValidGatewaySession()) {
+        window.location.href = 'https://belladonnanights.github.io/belladonna-gateway/accounts.html?return=' + encodeURIComponent(location.href.split('?')[0]) + '&app=' + GATEWAY_APP_KEY;
+        return;
+      }
+      bingoAuth.onAuthStateChanged(function(user) {
+        if (!user) {
+          window.location.href = 'https://belladonnanights.github.io/belladonna-gateway/accounts.html?return=' + encodeURIComponent(location.href.split('?')[0]) + '&app=' + GATEWAY_APP_KEY;
+          return;
+        }
+        bingoDbFs.collection('users').doc(user.uid).get().then(function(snap) {
+          bingoUserProfile = snap.exists ? snap.data() : {};
+          if (bingoUserProfile.status === 'banned') {
+            document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:#b0505a;font-family:sans-serif;padding:2rem;text-align:center;">This account is currently restricted.</div>';
+            return;
+          }
+          var label = document.getElementById('bingo-user-label');
+          if (label) label.textContent = bingoUserProfile.name || user.email || 'account';
+          loadBingoLocations();
+          loadShiftsCancelledBingo();
+          if (new URLSearchParams(location.search).get('openadmin') === '1') setTimeout(openAdmin, 300);
+        }).catch(function(){
+          document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:#b0505a;font-family:sans-serif;padding:2rem;text-align:center;">Could not verify your account. Please refresh and try again.</div>';
+        });
+      });
+    };
+    document.head.appendChild(s4);
+  };
+  document.head.appendChild(s3);
+    };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s1);
+}
+// ── LOCATIONS ── same shared list HQ manages, and the same enforcement as
+// HQ: locked to the account's own assigned location unless it's flagged
+// allLocations, in which case a picker shows up. Every signed-in user gets
+// filtered to their location, not just admins — a host in one territory
+// shouldn't see another territory's venues cluttering their app.
+var bingoLocations = [{code:'wa-southsound',label:'WA - South Sound'}];
+var bingoLocationId = null;
+function loadBingoLocations(){
+  bingoDbFs.collection('hq_data').doc('locations').get().then(function(snap){
+    if (snap.exists && Array.isArray(snap.data().list) && snap.data().list.length) bingoLocations = snap.data().list;
+    var sel = document.getElementById('bingo-location-select');
+    if (bingoUserProfile.allLocations) {
+      sel.style.display = '';
+      sel.disabled = false;
+      sel.innerHTML = bingoLocations.map(function(l){ return '<option value="'+l.code+'">'+l.label+'</option>'; }).join('');
+      bingoLocationId = (bingoUserProfile.locationId && bingoLocations.some(function(l){return l.code===bingoUserProfile.locationId;})) ? bingoUserProfile.locationId : bingoLocations[0].code;
+      sel.value = bingoLocationId;
+    } else {
+      bingoLocationId = bingoUserProfile.locationId || bingoLocations[0].code;
+      sel.style.display = 'none';
+    }
+    startBingoDataListeners();
+  }).catch(function(){
+    bingoLocationId = bingoUserProfile.locationId || 'wa-southsound';
+    startBingoDataListeners();
+  });
+}
+function setBingoLocation(code){
+  if (!bingoUserProfile.allLocations) return;
+  bingoLocationId = code;
+  startBingoDataListeners();
+}
+function bingoLocationMatches(recordLocId){
+  return !recordLocId || recordLocId === bingoLocationId;
+}
+function startBingoDataListeners(){
+      db.ref('bingo/landing/categories').on('value', function(snap) {
+        var data = snap.val() || {};
+        categories = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
+        categories.sort(function(a,b) { if (a.classicBingo && !b.classicBingo) return -1; if (!a.classicBingo && b.classicBingo) return 1; return (a.order||0)-(b.order||0); });
+        renderGrid(); buildFilterPills();
+        if (adminUnlocked) renderAdminList();
+      });
+      db.ref('bingo/landing/venues').on('value', function(snap) {
+        var data = snap.val() || {};
+        venues = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); }).filter(function(v){ return bingoLocationMatches(v.locationId); });
+        venues.sort(function(a,b) { return a.name.localeCompare(b.name); });
+        populateVenueDropdowns();
+        renderVenueList();
+        refreshLikesButton();
+        if (document.getElementById('likes-overlay').classList.contains('show')) renderLikes();
+      });
+      db.ref('bingo/landing/schedule').on('value', function(snap) {
+        var data = snap.val() || {};
+        scheduleEntries = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); }).filter(function(e){ return venues.some(function(v){return v.id===e.venueId;}); });
+        scheduleEntries.sort(function(a,b) { return a.date.localeCompare(b.date); });
+        applyCheckoutCancellations();
+        renderTimeline();
+        renderGrid(); // re-sort the category grid now that tonight's schedule is in
+      });
+      // Host roster — mirrored from HQ's Firestore roster into this same
+      // Realtime DB project (HQ writes it, this app only ever reads it). Lets
+      // the "Host" field on a schedule entry pick from the real roster instead
+      // of free text, same list the Planner app's gig modal uses.
+      db.ref('hosts/roster').on('value', function(snap) {
+        hostRoster = snap.val() || {};
+        renderSchedHostOptions(document.getElementById('sched-host-select') ? document.getElementById('sched-host-select').value : '');
+      });
+      db.ref('bingo/landing/settings/logoUrl').on('value', function(snap) {
+        var url = snap.val() || '';
+        applyLogo(url);
+        document.getElementById('logo-url-input').value = url;
+        if (url) { var pi = document.getElementById('logo-preview-img'); pi.src = url; pi.classList.add('show'); }
+      });
+
+      // ── Now Playing: watch ALL active host sessions ─────────────────────────
+      // The media player writes to sessions/active/{sessionKey} when a bingo
+      // link is activated, and removes it when unlinked/logged out.
+      // This lets the public landing page show every board currently in use,
+      // so hosts and guests can see at a glance which categories are live.
+      db.ref('bingo/sessions/active').on('value', function(snap) {
+        renderActiveSessions(snap.val());
+      });
+}
+
+// ── NOW PLAYING — renders all active host sessions into the banner ────────────
+function renderActiveSessions(data) {
+  var banner = document.getElementById('now-playing-banner');
+  if (!banner) return;
+  if (!data || Object.keys(data).length === 0) {
+    banner.classList.remove('active');
+    banner.innerHTML = '';
+    return;
+  }
+  var sessions = Object.entries(data);
+  // Only show sessions that have a nowPlaying entry (i.e. a song has been played)
+  var FOUR_HOURS = 4 * 60 * 60 * 1000;
+  var now = Date.now();
+  var active = sessions.filter(function(e) {
+    if (!e[1] || !e[1].nowPlaying || !e[1].nowPlaying.title) return false;
+    // Ignore stale sessions — covers the case where beforeunload didn't fire
+    // (hard crash, force-kill, power loss). Any session silent for 4+ hours
+    // is treated as gone, no server-side cleanup needed.
+    var lastSeen = e[1].nowPlaying.at || e[1].at || 0;
+    return (now - lastSeen) < FOUR_HOURS;
+  });
+  if (active.length === 0) {
+    banner.classList.remove('active');
+    banner.innerHTML = '';
+    return;
+  }
+  // Sort by most recently updated
+  active.sort(function(a, b) { return (b[1].at || 0) - (a[1].at || 0); });
+  banner.innerHTML = active.map(function(entry) {
+    var session = entry[1];
+    var np = session.nowPlaying || {};
+    var catName = session.categoryName || '';
+    return '<div class="npb-row">' +
+      '<div class="npb-dot"></div>' +
+      '<div class="npb-label">Now Playing</div>' +
+      '<div class="npb-song">' + esc(np.title || '—') + '</div>' +
+      (np.artist ? '<div class="npb-sep">·</div><div class="npb-artist">' + esc(np.artist) + '</div>' : '') +
+      (catName ? '<div class="npb-board">⊞ ' + esc(catName) + '</div>' : '') +
+    '</div>';
+  }).join('');
+  banner.classList.add('active');
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── LOGO ──────────────────────────────────────────────────────────────────────
+function applyLogo(url) {
+  var ni = document.getElementById('nav-logo-img');
+  var hi = document.getElementById('hero-logo-img');
+  var ph = document.getElementById('hero-logo-placeholder');
+  var wrap = document.getElementById('hero-logo-wrap');
+  if (wrap) wrap.classList.remove('pending');
+  try { localStorage.setItem('bingoLogoUrl', url || ''); } catch(e) {}
+  if (url) { ni.src=url; ni.style.display='block'; hi.src=url; hi.style.display='block'; ph.style.display='none'; }
+  else { ni.style.display='none'; hi.style.display='none'; ph.style.display='flex'; }
+}
+// Show the last-known logo instantly (no empty placeholder while Firebase loads)
+(function(){
+  try {
+    var u = localStorage.getItem('bingoLogoUrl');
+    if (u) {
+      var ni = document.getElementById('nav-logo-img'), hi = document.getElementById('hero-logo-img');
+      ni.src = u; ni.style.display = 'block'; hi.src = u; hi.style.display = 'block';
+    }
+  } catch(e) {}
+})();
+function saveLogo() {
+  if (!db) return;
+  db.ref('bingo/landing/settings/logoUrl').set(document.getElementById('logo-url-input').value.trim());
+  showToast('Logo saved!');
+}
+function previewLogo() {
+  var url = document.getElementById('logo-url-input').value.trim();
+  var img = document.getElementById('logo-preview-img');
+  if (url) { img.src=url; img.classList.add('show'); img.onerror=function(){img.classList.remove('show');}; }
+  else img.classList.remove('show');
+}
+
+// ── FIREBASE HELPERS ──────────────────────────────────────────────────────────
+function saveToFirebase(cat) {
+  if (!db) return;
+  // .update(), not .set() — this category doc is the SAME record the
+  // Planner and the Venue Menu read/write (plannerTier, pairsWith,
+  // plannerUsage, venueMenu). A .set() here would silently wipe all of
+  // that out every time a category is saved from this admin panel.
+  var id = cat.id; var data = Object.assign({}, cat); delete data.id;
+  db.ref('bingo/landing/categories/' + id).update(data);
+}
+function deleteFromFirebase(id) { if (db) db.ref('bingo/landing/categories/' + id).remove(); }
+
+// ── GRID ──────────────────────────────────────────────────────────────────────
+function getGenres(c) {
+  if (Array.isArray(c.genres) && c.genres.length) return c.genres;
+  if (c.genre) return c.genre.split(',').map(function(g){return g.trim();}).filter(Boolean);
+  return [];
+}
+// Whatever's scheduled here tonight floats to the front of the grid — a host
+// shouldn't have to hunt through the whole library for the categories
+// they're actually running. Venue comes from ?venue=<id> when linked in
+// from tonight.html; opened on its own, it falls back to matching today's
+// schedule entries by the signed-in account's own name (the same free-text
+// "host" field the Planner/HQ gig modal and this app's own scheduler use).
+function todayKeyBingo(){
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+// Every game gets ONE session per category + venue + night, so a host opening the
+// category and the players scanning that venue's QR land in the same game.
+function bingoVenueToken(name) {
+  return String(name || '').toLowerCase().replace(/^the\s+/, '').replace(/[^a-z0-9]/g, '');
+}
+function bingoNightKey() {
+  var d = new Date(); if (d.getHours() < 4) d.setDate(d.getDate() - 1); // until 4am still counts as last night
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function bingoLaunchUrl(catId, entry) {
+  var base = 'app.html?id=' + catId;
+  var night = bingoNightKey();
+  var venueParam = new URLSearchParams(location.search).get('venue');
+  var myName = bingoUserProfile && bingoUserProfile.name;
+  if (!entry) {
+    entry = (scheduleEntries || []).filter(function(e){
+      var cids = e.rounds || e.categoryIds || [];
+      if (e.date !== night || cids.indexOf(catId) === -1 || e.cancelled) return false;
+      if (venueParam) return e.venueId === venueParam;
+      return !myName || !e.host || e.host === myName;
+    })[0];
+  }
+  if (!entry) {
+    // Not on tonight's schedule for this category (host swapped it on arrival) — still tie the game to the
+    // venue this host is working tonight, so the venue QR follows whatever they actually play.
+    entry = (scheduleEntries || []).filter(function(e){
+      if (e.date !== bingoNightKey() || e.cancelled) return false;
+      if (venueParam) return e.venueId === venueParam;
+      return !!myName && e.host === myName;
+    })[0];
+  }
+  if (!entry) return base;
+  var v = (venues || []).filter(function(x){ return x.id === entry.venueId; })[0];
+  var tok = bingoVenueToken(v && v.name);
+  if (!tok) return base;
+  return base + '&session=' + encodeURIComponent(catId + '_' + tok + '-' + entry.date);
+}
+function getTonightScheduledCatIds() {
+  if (!scheduleEntries || !scheduleEntries.length) return [];
+  var today = todayKeyBingo();
+  var venueParam = new URLSearchParams(location.search).get('venue');
+  var entries;
+  if (venueParam) {
+    entries = scheduleEntries.filter(function(e){ return e.date === today && e.venueId === venueParam; });
+  } else {
+    var myName = bingoUserProfile && bingoUserProfile.name;
+    if (!myName) return [];
+    entries = scheduleEntries.filter(function(e){ return e.date === today && e.host === myName; });
+  }
+  var ids = [];
+  entries.forEach(function(e) {
+    (e.rounds || e.categoryIds || []).forEach(function(cid) { if (ids.indexOf(cid) === -1) ids.push(cid); });
+  });
+  return ids;
+}
+function renderGrid() {
+  var q = document.getElementById('search-input').value.toLowerCase();
+  var grid = document.getElementById('cat-grid');
+  var filtered = categories.filter(function(c) {
+    if (c.unified !== true) return false; // only categories that have been through category-unification.html show publicly
+    var genres = getGenres(c);
+    var ms = !q || c.title.toLowerCase().includes(q) || genres.join(' ').toLowerCase().includes(q);
+    var mf = activeFilter === 'all' || genres.map(function(g){return g.toLowerCase();}).indexOf(activeFilter.toLowerCase()) !== -1;
+    return ms && mf;
+  });
+  var scheduledIds = getTonightScheduledCatIds();
+  if (scheduledIds.length) {
+    filtered = filtered.slice().sort(function(a, b) {
+      var ai = scheduledIds.indexOf(a.id), bi = scheduledIds.indexOf(b.id);
+      var as = ai === -1 ? Infinity : ai, bs = bi === -1 ? Infinity : bi;
+      return as - bs; // scheduled ones first, in their scheduled round order — stable otherwise
+    });
+  }
+  var countEl = document.getElementById('cat-count');
+  countEl.textContent = filtered.length === 0 ? '' : filtered.length === 1 ? '1 playlist' : filtered.length + ' playlists';
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty"><span class="empty-icon">♪</span><div class="empty-text">' + (categories.length === 0 ? 'No playlists yet — open Admin to add your first one.' : 'No playlists match your search.') + '</div></div>';
+    return;
+  }
+  var html = '';
+  filtered.forEach(function(c) {
+    var isLive = c.status !== 'coming';
+    var genres = getGenres(c);
+    var appUrl = bingoLaunchUrl(c.id);
+    var imgHTML = c.image
+      ? '<img class="cat-banner" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="cat-banner-placeholder" style="display:none"><span>' + c.title + '</span></div>'
+      : '<div class="cat-banner-placeholder"><span>' + c.title + '</span></div>';
+    var scheduledHTML = scheduledIds.indexOf(c.id) !== -1 ? '<span class="cat-genre" style="background:rgba(58,170,106,.18);border-color:rgba(58,170,106,.4);color:#3aaa6a">Tonight</span>' : '';
+    var genreHTML = c.classicBingo ? '<span class="cat-genre" style="background:rgba(201,168,76,.2);border-color:var(--gold-border2);color:var(--gold2)">Classic Bingo</span>' : (genres.length ? '<span class="cat-genre">' + genres[0] + '</span>' : '');
+    var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
+    var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
+    var href = isLive ? appUrl : '#';
+    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + scheduledHTML + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
+  });
+  grid.innerHTML = html;
+}
+function buildFilterPills() {
+  var allGenres = [];
+  categories.forEach(function(c) { getGenres(c).forEach(function(g) { if (allGenres.indexOf(g) === -1) allGenres.push(g); }); });
+  allGenres.sort();
+  var pills = ['All'].concat(allGenres);
+  document.getElementById('filter-pills').innerHTML = pills.map(function(g) {
+    var val = g === 'All' ? 'all' : g;
+    return '<button class="pill' + (activeFilter === val ? ' active' : '') + '" onclick="setFilter(\'' + val + '\')">' + g + '</button>';
+  }).join('');
+}
+function setFilter(val) { activeFilter = val; buildFilterPills(); renderGrid(); }
+
+// ── ADMIN ─────────────────────────────────────────────────────────────────────
+function openAdmin() {
+  document.getElementById('admin-overlay').classList.add('show');
+  // The whole app already required signing in to load at all, so by the time
+  // anyone can click this button they're a known, verified account — no
+  // further redirect or re-sign-in, just a direct check of that account's
+  // own Bingo admin flag.
+  var isBingoAdmin = !!(bingoUserProfile && bingoUserProfile.adminAccess && bingoUserProfile.adminAccess.bingo);
+  var isBanned = !!(bingoUserProfile && bingoUserProfile.status === 'banned');
+  if (adminUnlocked || isBingoAdmin) {
+    adminUnlocked = true;
+    document.getElementById('pw-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = '';
+    renderAdminList();
+    return;
+  }
+  document.getElementById('pw-screen').style.display = '';
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('pw-screen-msg').textContent = isBanned
+    ? 'This account is currently restricted.'
+    : (bingoUserProfile && bingoUserProfile.name ? bingoUserProfile.name + ', your' : 'Your') + ' account doesn\'t have Bingo admin access. Ask Belladonna to grant it from the Accounts tab in HQ.';
+}
+function closeAdmin() { document.getElementById('admin-overlay').classList.remove('show'); resetForm(); }
+function renderAdminList() {
+  var list = document.getElementById('admin-list');
+  // Only categories that have been through category-unification.html
+  // (created there, or matched/merged there) show here — a category that
+  // predates the unification project just doesn't show until it's been
+  // through that tool. Nothing here touches Firebase.
+  var visible = categories.filter(function(c) { return c.unified === true; });
+  if (!visible.length) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0;font-style:italic">' + (categories.length ? 'No unified categories yet — run category-unification.html to bring your existing categories in.' : 'No categories yet. Add one above.') + '</div>';
+    return;
+  }
+  var html = '';
+  visible.forEach(function(c) {
+    var thumb = c.image ? '<img class="admin-item-thumb" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.background=\'var(--surface3)\'">' : '<div class="admin-item-thumb"></div>';
+    var genres = getGenres(c);
+    var meta = (genres.length ? genres.join(', ') : 'No genre') + ' · ' + (c.status === 'coming' ? 'Coming soon' : 'Live');
+    html += '<div class="admin-item">' + thumb + '<div class="admin-item-info"><div class="admin-item-title">' + c.title + '</div><div class="admin-item-meta">' + meta + '</div></div><div class="admin-item-actions"><button class="btn-accent" onclick="editCategory(\'' + c.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="promptDelete(\'' + c.id + '\',\'' + c.title.replace(/'/g, "\\'") + '\')">✕</button></div></div>';
+  });
+  list.innerHTML = html;
+}
+
+function updateSongCount() {
+  var lines = document.getElementById('f-songs').value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  var el = document.getElementById('song-count-label');
+  el.textContent = lines.length + ' song' + (lines.length === 1 ? '' : 's') + (lines.length < 25 ? ' — need at least 25' : '');
+  el.style.color = lines.length >= 25 ? '#4a9' : '#e05050';
+}
+function resetForm() {
+  ['edit-id','f-title','f-genre','f-image','f-square-image','f-songs','f-spotify','f-spotify-qr','f-vm-description','f-vm-banner'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('f-classic-bingo').checked = false;
+  document.getElementById('f-vm-show').checked = false;
+  document.getElementById('f-status').value = 'live';
+  document.getElementById('banner-preview-img').style.display = 'none';
+  document.getElementById('square-preview-img').style.display = 'none';
+  document.getElementById('form-mode-label').textContent = 'Add New Category';
+  document.getElementById('cancel-edit-btn').style.display = 'none';
+  var wsBox = document.getElementById('where-shows-box'); if (wsBox) wsBox.style.display = 'none';
+  document.getElementById('song-count-label').textContent = '';
+}
+function editCategory(id) {
+  var c = categories.find(function(x){return x.id===id;});
+  if (!c) return;
+  document.getElementById('edit-id').value = id;
+  document.getElementById('f-title').value = c.title || '';
+  document.getElementById('f-genre').value = getGenres(c).join(', ');
+  document.getElementById('f-image').value = c.image || '';
+  document.getElementById('f-square-image').value = c.squareImage || '';
+  document.getElementById('f-songs').value = c.songs || '';
+  document.getElementById('f-spotify').value = c.spotifyUrl || '';
+  document.getElementById('f-spotify-qr').value = c.spotifyQrUrl || '';
+  document.getElementById('f-status').value = c.status || 'live';
+  document.getElementById('f-classic-bingo').checked = !!(c.classicBingo);
+  document.getElementById('f-vm-show').checked = !!(c.venueMenu && c.venueMenu.show);
+  document.getElementById('f-vm-description').value = (c.venueMenu && c.venueMenu.description) || '';
+  document.getElementById('f-vm-banner').value = (c.venueMenu && c.venueMenu.bannerUrl) || '';
+  document.getElementById('form-mode-label').textContent = 'Editing: ' + c.title;
+  document.getElementById('cancel-edit-btn').style.display = '';
+  updateSongCount(); previewBanner(); previewSquareImage();
+  renderWhereShows(c);
+  document.getElementById('cat-form-wrap').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+// Read-only cross-app reference — this doc IS the category everywhere, so
+// this just tells you which other apps are already reading it. Never
+// writes anything; derived purely from fields already on the doc.
+function renderWhereShows(c) {
+  var box = document.getElementById('where-shows-box');
+  var list = document.getElementById('where-shows-list');
+  if (!c) { box.style.display = 'none'; return; }
+  // Venue Menu admin shows EVERY live category regardless of the "show on
+  // Venue Menu" checkbox — that checkbox only controls the public venue.html
+  // — so "Venue Menu admin" always applies; only the public row is conditional.
+  var rows = ['Planner — as Bingo', 'Venue Menu admin — as Bingo'];
+  if (c.venueMenu && c.venueMenu.show) {
+    rows.push('Venue Menu (public) — as a Bingo category');
+  }
+  box.style.display = 'block';
+  list.innerHTML = rows.map(function(r){ return '<div>&#8226; ' + r + '</div>'; }).join('');
+}
+function saveCategory() {
+  var title = document.getElementById('f-title').value.trim();
+  if (!title) { showToast('Title required'); return; }
+  var isClassic = document.getElementById('f-classic-bingo').checked;
+  var songs = document.getElementById('f-songs').value.trim();
+  if (!isClassic) { var songCount = songs.split('\n').map(function(s){return s.trim();}).filter(Boolean).length; if (songCount < 25) { showToast('Need at least 25 songs (have ' + songCount + ')'); return; } }
+  var genreRaw = document.getElementById('f-genre').value.trim();
+  var genres = genreRaw ? genreRaw.split(',').map(function(g){return g.trim();}).filter(Boolean) : [];
+  var editId = document.getElementById('edit-id').value;
+  var id = editId || 'cat_' + Date.now();
+  var order = editId ? (function(){ var c = categories.find(function(x){return x.id===editId;}); return c ? (c.order||0) : categories.length; })() : categories.length;
+  var venueMenu = {
+    show: document.getElementById('f-vm-show').checked,
+    description: document.getElementById('f-vm-description').value.trim(),
+    bannerUrl: document.getElementById('f-vm-banner').value.trim()
+  };
+  var catData = {id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), squareImage:document.getElementById('f-square-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic, venueMenu:venueMenu};
+  // unified:true on brand-new categories so they show up in this same
+  // library view immediately — that view only shows categories that have
+  // been through the unification process, and a category made fresh here
+  // counts as one. Left untouched on edits (saveToFirebase merges, so an
+  // existing category's unified flag, whatever it is, survives an edit).
+  if (!editId) catData.unified = true;
+  saveToFirebase(catData);
+  resetForm(); showToast(editId ? 'Updated!' : 'Category added!');
+}
+function previewBanner() {
+  var url = document.getElementById('f-image').value.trim();
+  var img = document.getElementById('banner-preview-img');
+  if (url) { img.src=url; img.style.display='block'; img.onerror=function(){img.style.display='none';}; }
+  else img.style.display = 'none';
+}
+function previewSquareImage() {
+  var url = document.getElementById('f-square-image').value.trim();
+  var img = document.getElementById('square-preview-img');
+  if (url) { img.src=url; img.style.display='block'; img.onerror=function(){img.style.display='none';}; }
+  else img.style.display = 'none';
+}
+function promptDelete(id, title) {
+  deleteTargetId = id;
+  document.getElementById('delete-name').textContent = '"' + title + '"';
+  document.getElementById('delete-confirm-overlay').classList.add('show');
+}
+function cancelDelete() { deleteTargetId = null; document.getElementById('delete-confirm-overlay').classList.remove('show'); }
+function confirmDelete() {
+  if (!deleteTargetId) return;
+  deleteFromFirebase(deleteTargetId); deleteTargetId = null;
+  document.getElementById('delete-confirm-overlay').classList.remove('show');
+  showToast('Removed');
+}
+
+// ── SCHEDULE ──────────────────────────────────────────────────────────────────
+// Three tiers now: full admin sees everything including Venues; scheduleAccess
+// (a host specifically granted just this) sees the schedule editor minus
+// Venues; everyone else gets the read-only "what's on tonight" lookup.
+function hasBingoScheduleAccess(){
+  return !!(bingoUserProfile && bingoUserProfile.scheduleAccess && bingoUserProfile.scheduleAccess.bingo);
+}
+function openScheduleBtn() {
+  if (adminUnlocked || hasBingoScheduleAccess()) {
+    document.getElementById('admin-sched-overlay').classList.add('show');
+    var venuesTabBtn = document.getElementById('stab-venues');
+    if (venuesTabBtn) venuesTabBtn.style.display = adminUnlocked ? '' : 'none';
+    if (!adminUnlocked && document.getElementById('spanel-venues').style.display !== 'none') switchSchedTab('timeline');
+    renderTimeline(); renderSchedCatChecks();
+  } else {
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('host-sched-date').value = today;
+    document.getElementById('host-sched-overlay').classList.add('show');
+    renderHostSched();
+  }
+}
+function closeAdminSched() { document.getElementById('admin-sched-overlay').classList.remove('show'); }
+
+function switchSchedTab(tab) {
+  ['timeline','add','bulk','venues'].forEach(function(t) {
+    document.getElementById('spanel-' + t).style.display = t === tab ? '' : 'none';
+    var btn = document.getElementById('stab-' + t);
+    if (btn) { btn.classList.toggle('active', t === tab); }
+  });
+  if (tab === 'add') renderSchedCatChecks();
+  if (tab === 'venues') renderVenueList();
+  if (tab === 'bulk') bulkPopulateVenue();
+}
+
+function populateVenueDropdowns() {
+  var opts = '<option value="">— select venue —</option>';
+  venues.forEach(function(v) { opts += '<option value="' + v.id + '">' + v.name + '</option>'; });
+  var filterOpts = '<option value="all">All venues</option>';
+  venues.forEach(function(v) { filterOpts += '<option value="' + v.id + '">' + v.name + '</option>'; });
+  var selects = ['sched-venue-select', 'host-sched-venue', 'bulk-venue-select'];
+  selects.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var cur = el.value;
+    el.innerHTML = opts;
+    if (cur) el.value = cur;
+  });
+  var filterEl = document.getElementById('sched-venue-filter');
+  if (filterEl) { var cur = filterEl.value; filterEl.innerHTML = filterOpts; if (cur) filterEl.value = cur; }
+}
+
+let venueEditId = null;
+function addVenue() {
+  var name = document.getElementById('venue-name-input').value.trim();
+  var day = document.getElementById('venue-day-input').value;
+  var time = document.getElementById('venue-time-input').value;
+  var host = document.getElementById('venue-host-input').value.trim();
+  var status = document.getElementById('venue-status-input').value;
+  if (!name || !db) return;
+  var id = venueEditId || ('venue_' + Date.now());
+  var prevV = venues.find(function(x){return x.id===id;}) || {};
+  var venueRec = {id:id, name:name, day:day, time:time, host:host, status:status, locationId:bingoLocationId};
+  if (prevV.likedCategoryIds) venueRec.likedCategoryIds = prevV.likedCategoryIds;
+  ['cadence','cadenceAnchor'].forEach(function(k){ if (prevV[k]) venueRec[k] = prevV[k]; });
+  db.ref('bingo/landing/venues/' + id).set(venueRec);
+  document.getElementById('venue-name-input').value = '';
+  document.getElementById('venue-day-input').value = '';
+  document.getElementById('venue-time-input').value = '';
+  document.getElementById('venue-host-input').value = '';
+  document.getElementById('venue-status-input').value = 'active';
+  var wasEdit = !!venueEditId;
+  venueEditId = null;
+  document.getElementById('venue-add-btn').textContent = 'Add Venue';
+  showToast(wasEdit ? 'Venue updated!' : 'Venue added!');
+}
+function editVenue(id) {
+  var v = venues.find(function(x){return x.id===id;});
+  if (!v) return;
+  venueEditId = id;
+  document.getElementById('venue-name-input').value = v.name || '';
+  document.getElementById('venue-day-input').value = v.day || '';
+  document.getElementById('venue-time-input').value = v.time || '';
+  document.getElementById('venue-host-input').value = v.host || '';
+  document.getElementById('venue-status-input').value = v.status || 'active';
+  document.getElementById('venue-add-btn').textContent = 'Save Changes';
+}
+function deleteVenue(id) {
+  if (!db || !confirm('Remove this venue?')) return;
+  db.ref('bingo/landing/venues/' + id).remove();
+  showToast('Venue removed');
+}
+function renderVenueList() {
+  var list = document.getElementById('venue-list');
+  if (!list) return;
+  if (!venues.length) { list.innerHTML = '<div style="font-size:13px;color:var(--text3);font-style:italic">No venues yet.</div>'; return; }
+  var html = '';
+  venues.forEach(function(v) {
+    var pattern = (v.day ? v.day : '') + (v.time ? ' ' + v.time : '');
+    var sub = [pattern.trim(), v.host ? 'Host: ' + v.host : '', v.status && v.status !== 'active' ? v.status : ''].filter(Boolean).join(' · ');
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;margin-bottom:6px">'
+      + '<div><div style="font-size:13px;color:var(--text)">' + v.name + '</div>'
+      + (sub ? '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + sub + '</div>' : '') + '</div>'
+      + '<div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="editVenue(\'' + v.id + '\')">✎</button><button class="btn btn-danger btn-sm" onclick="deleteVenue(\'' + v.id + '\')">✕</button></div>'
+      + '</div>';
+  });
+  list.innerHTML = html;
+}
+
+function renderSchedCatChecks() {
+  var editIdEl = document.getElementById('sched-edit-id');
+  if (!editIdEl) return; // overlay not in DOM yet
+  var opts = '<option value="">— pick a category —</option>';
+  categories.forEach(function(c) { opts += '<option value="' + c.id + '">' + c.title + '</option>'; });
+  var opts3 = '<option value="">(none)</option>';
+  categories.forEach(function(c) { opts3 += '<option value="' + c.id + '">' + c.title + '</option>'; });
+  var editId = editIdEl.value;
+  var entry = editId ? scheduleEntries.find(function(e){return e.id===editId;}) : null;
+  var rounds = entry ? (entry.rounds || []) : [];
+  ['sched-round-1','sched-round-2'].forEach(function(id, i) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = opts;
+    el.value = rounds[i] || '';
+  });
+  var el3 = document.getElementById('sched-round-3');
+  if (el3) { el3.innerHTML = opts3; el3.value = rounds[2] || ''; }
+}
+
+function updateRecentHint() {
+  var venueId = document.getElementById('sched-venue-select').value;
+  // Default the Host field to this venue's usual host — but only when adding
+  // a brand-new entry; editing an existing one keeps whatever's already set
+  // on that specific date, so swapping a host for one night never touches
+  // the venue's regular assignment.
+  var editId = document.getElementById('sched-edit-id');
+  if (editId && !editId.value) {
+    var v = venues.find(function(x){return x.id===venueId;});
+    renderSchedHostOptions((v && v.host) || '');
+  }
+  var wrap = document.getElementById('recent-hint-wrap');
+  var list = document.getElementById('recent-hint-list');
+  if (!venueId || !wrap || !list) { if (wrap) wrap.style.display = 'none'; return; }
+  var recent = scheduleEntries.filter(function(e){return e.venueId === venueId;}).slice(-6).reverse();
+  if (!recent.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  var today = new Date().toISOString().split('T')[0];
+  var html = '';
+  recent.forEach(function(e) {
+    var roundLabels = ['Round 1','Round 2','Round 3'];
+    var rounds = e.rounds || e.categoryIds || [];
+    var isPast = e.date < today;
+    var roundsHTML = rounds.map(function(id, i) {
+      var cat = categories.find(function(x){return x.id===id;});
+      var label = roundLabels[i] || ('Round '+(i+1));
+      return '<span style="color:var(--gold);font-size:10px;font-family:var(--cinzel);letter-spacing:.06em">' + label + ':</span> ' + (cat ? cat.title : '—');
+    }).join(' &nbsp;·&nbsp; ');
+    html += '<div style="font-size:12px;padding:7px 10px;background:var(--surface2);border-radius:var(--radius);margin-bottom:4px;border-left:3px solid ' + (isPast ? 'var(--border2)' : 'var(--gold)') + '">'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:' + (roundsHTML?'4px':'0') + '">'
+      + '<span style="color:' + (isPast ? 'var(--text2)' : 'var(--gold)') + ';font-weight:600">' + formatDate(e.date) + '</span>'
+      + (e.notes ? '<span style="color:var(--text3);font-style:italic;font-size:11px"> — ' + e.notes + '</span>' : '')
+      + '</div>'
+      + (roundsHTML ? '<div style="color:var(--text);line-height:1.6">' + roundsHTML + '</div>' : '')
+      + '</div>';
+  });
+  list.innerHTML = html;
+}
+
+function renderSchedHostOptions(currentName) {
+  var sel = document.getElementById('sched-host-select');
+  if (!sel) return;
+  var names = Object.keys(hostRoster).map(function(id){return hostRoster[id];}).filter(function(h){return h && h.name && !h.retired;}).map(function(h){return h.name;});
+  var nameSet = {}; names.forEach(function(n){ nameSet[n] = true; });
+  names.sort(function(a,b){return a.localeCompare(b);});
+  var html = '<option value="">— Unassigned —</option>';
+  names.forEach(function(n){ html += '<option value="' + escapeAttr(n) + '"' + (n===currentName?' selected':'') + '>' + escapeAttr(n) + '</option>'; });
+  if (currentName && !nameSet[currentName]) {
+    html += '<option value="' + escapeAttr(currentName) + '" selected>' + escapeAttr(currentName) + ' (not on current roster)</option>';
+  }
+  sel.innerHTML = html;
+}
+function escapeAttr(str) {
+  var d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+}
+function saveSchedEntry() {
+  var date = document.getElementById('sched-date').value;
+  var venueId = document.getElementById('sched-venue-select').value;
+  if (!date) { showToast('Pick a date'); return; }
+  if (!venueId) { showToast('Pick a venue'); return; }
+  var r1 = document.getElementById('sched-round-1').value;
+  var r2 = document.getElementById('sched-round-2').value;
+  var r3 = document.getElementById('sched-round-3').value;
+  if (!r1 && !r2) { showToast('Pick at least one round'); return; }
+  var rounds = [r1, r2, r3].filter(Boolean);
+  var categoryIds = rounds.filter(function(id,i,a){return a.indexOf(id)===i;});
+  var notes = document.getElementById('sched-notes').value.trim();
+  var host = document.getElementById('sched-host-select').value || null;
+  var editId = document.getElementById('sched-edit-id').value;
+  var id = editId || 'sched_' + Date.now();
+  db.ref('bingo/landing/schedule/' + id).set({id:id, date:date, venueId:venueId, rounds:rounds, categoryIds:categoryIds, notes:notes, host:host, locationId:bingoLocationId});
+  resetSchedForm(); showToast(editId ? 'Entry updated!' : 'Entry added!');
+}
+
+function editSchedEntry(id) {
+  var e = scheduleEntries.find(function(x){return x.id===id;});
+  if (!e) return;
+  // Set the edit ID first so renderSchedCatChecks can read it
+  document.getElementById('sched-edit-id').value = id;
+  document.getElementById('sched-date').value = e.date;
+  document.getElementById('sched-venue-select').value = e.venueId;
+  document.getElementById('sched-notes').value = e.notes || '';
+  renderSchedHostOptions(e.host || '');
+  document.getElementById('sched-form-label').textContent = 'Editing Entry';
+  document.getElementById('sched-cancel-btn').style.display = '';
+  switchSchedTab('add');
+  // Rebuild dropdowns with category options, then restore saved rounds
+  renderSchedCatChecks();
+  // Explicitly set the saved round values after dropdowns are populated
+  var rounds = e.rounds || e.categoryIds || [];
+  ['sched-round-1','sched-round-2','sched-round-3'].forEach(function(elId, i) {
+    var el = document.getElementById(elId);
+    if (el && rounds[i]) el.value = rounds[i];
+  });
+  updateRecentHint();
+}
+function deleteSchedEntry(id) {
+  if (!db || !confirm('Delete this entry?')) return;
+  db.ref('bingo/landing/schedule/' + id).remove();
+  showToast('Entry removed');
+}
+function resetSchedForm() {
+  if (!document.getElementById('sched-edit-id')) return;
+  document.getElementById('sched-edit-id').value = '';
+  document.getElementById('sched-date').value = '';
+  document.getElementById('sched-venue-select').value = '';
+  document.getElementById('sched-notes').value = '';
+  renderSchedHostOptions('');
+  document.getElementById('sched-form-label').textContent = 'Add Schedule Entry';
+  document.getElementById('sched-cancel-btn').style.display = 'none';
+  document.getElementById('recent-hint-wrap').style.display = 'none';
+  renderSchedCatChecks();
+}
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  var parts = dateStr.split('-');
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[parseInt(parts[1])-1] + ' ' + parseInt(parts[2]) + ', ' + parts[0];
+}
+
+function renderTimeline() {
+  var tl = document.getElementById('sched-timeline-content');
+  if (!tl) return;
+  var filterEl = document.getElementById('sched-venue-filter');
+  var venueFilter = filterEl ? filterEl.value : 'all';
+  var today = new Date().toISOString().split('T')[0];
+  var filtered = venueFilter === 'all' ? scheduleEntries : scheduleEntries.filter(function(e){return e.venueId===venueFilter;});
+  if (!filtered.length) {
+    tl.innerHTML = '<div style="font-size:14px;color:var(--text3);font-style:italic;padding:1rem 0">No schedule entries yet. Use Add Entry to plan your nights.</div>';
+    return;
+  }
+  var groups = {};
+  filtered.forEach(function(e) {
+    var key = e.date.slice(0,7);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(e);
+  });
+  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var upcoming = []; var past = [];
+  Object.keys(groups).sort().forEach(function(month) {
+    var entries = groups[month];
+    var mp = month.split('-');
+    var label = monthNames[parseInt(mp[1])-1] + ' ' + mp[0];
+    var isUpcoming = month >= today.slice(0,7);
+    var rows = '';
+    entries.forEach(function(e) {
+      var vname = (venues.find(function(v){return v.id===e.venueId;}) || {}).name || 'Unknown';
+      var roundLabelsT = ['R1','R2','R3'];
+      var rounds = e.rounds || e.categoryIds || [];
+      var pills = rounds.map(function(id, ri) {
+        var c = categories.find(function(x){return x.id===id;});
+        var label = roundLabelsT[ri] ? '<span style="font-size:9px;color:var(--text3);margin-right:3px">' + roundLabelsT[ri] + '</span>' : '';
+        return '<span style="font-size:11px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:99px;padding:2px 8px;color:var(--gold2);font-family:var(--cinzel);letter-spacing:.04em">' + label + (c?c.title:id) + '</span>';
+      }).join('');
+      var isPast = e.date < today;
+      var cancelBadge = e.cancelled ? '<span style="font-size:9px;background:rgba(176,80,90,.15);border:1px solid rgba(176,80,90,.4);color:#d07090;border-radius:99px;padding:2px 8px;font-family:var(--cinzel);letter-spacing:.06em;margin-left:6px;">CANCELLED</span>' : '';
+      var hostBadge = e.host ? '<span style="font-size:9px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);border-radius:99px;padding:2px 8px;font-family:var(--cinzel);letter-spacing:.06em;margin-left:6px;">' + e.host + '</span>' : '';
+      rows += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:.5px solid var(--border);opacity:' + (e.cancelled?'0.5':(isPast?'0.55':'1')) + '"><div style="min-width:36px;font-size:12px;font-weight:700;color:' + (isPast?'var(--text3)':'var(--gold)') + ';font-family:var(--cinzel);padding-top:2px">' + e.date.split('-')[2] + '</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px">' + vname + cancelBadge + hostBadge + '</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:' + (e.notes?'4px':'0') + '">' + pills + '</div>' + (e.notes?'<div style="font-size:11px;color:var(--gold2);font-style:italic;background:var(--gold-dim);border-radius:4px;padding:2px 6px;display:inline-block;margin-top:2px">📋 '+e.notes+'</div>':'') + '</div><div style="display:flex;gap:4px;flex-shrink:0"><button class="btn-accent" onclick="editSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSchedEntry(\'' + e.id + '\')" style="font-size:10px;padding:3px 8px">✕</button></div></div>';
+    });
+    var block = '<div style="margin-bottom:1.5rem"><div style="font-family:var(--cinzel);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:' + (isUpcoming?'var(--gold)':'var(--text3)') + ';margin-bottom:4px;padding-bottom:6px;border-bottom:1px solid var(--border)">' + label + '</div>' + rows + '</div>';
+    if (isUpcoming) upcoming.push(block); else past.push(block);
+  });
+  var html = '';
+  if (upcoming.length) html += '<div style="margin-bottom:2rem">' + upcoming.join('') + '</div>';
+  if (past.length) html += '<div style="opacity:.8"><div style="font-size:10px;font-family:var(--cinzel);letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Past</div>' + past.join('') + '</div>';
+  tl.innerHTML = html;
+}
+
+function renderHostSched() {
+  var res = document.getElementById('host-sched-results');
+  if (!res) return;
+  var date = document.getElementById('host-sched-date').value;
+  var venueId = document.getElementById('host-sched-venue').value;
+  if (!date || !venueId) {
+    res.innerHTML = '<div style="font-size:14px;color:var(--text3);font-style:italic;text-align:center;padding:1rem">Select a date and venue to see tonight\'s schedule.</div>';
+    return;
+  }
+  var entries = scheduleEntries.filter(function(e){return e.date===date && e.venueId===venueId;});
+  if (!entries.length) {
+    res.innerHTML = '<div style="font-size:14px;color:var(--text3);font-style:italic;text-align:center;padding:1rem">Nothing scheduled for this date and venue.</div>';
+    return;
+  }
+  var html = '';
+  entries.forEach(function(entry) {
+    if (entry.cancelled) {
+      html += '<div style="background:rgba(176,80,90,.12);border:1px solid rgba(176,80,90,.35);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-family:var(--cinzel);font-size:12px;letter-spacing:.06em;color:#d07090;">⚠ This gig was marked CANCELLED at checkout.</div>';
+    }
+    // Notes block
+    if (entry.notes) {
+      html += '<div style="background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:var(--radius);padding:8px 12px;margin-bottom:12px;font-family:var(--serif);font-style:italic;font-size:13px;color:var(--text2)">📋 ' + entry.notes + '</div>';
+    }
+    // Rounds
+    var rounds = entry.rounds || entry.categoryIds || [];
+    var roundLabels = ['Round 1', 'Round 2', 'Round 3'];
+    rounds.forEach(function(catId, i) {
+      var c = categories.find(function(x){return x.id===catId;});
+      if (!c) return;
+      var appUrl = bingoLaunchUrl(c.id, entry);
+      var imgHTML = c.image ? '<img src="' + c.image + '" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;border-radius:6px 6px 0 0" onerror="this.style.display=\'none\'">' : '';
+      var roundLabel = roundLabels[i] || ('Round ' + (i+1));
+      html += '<div style="margin-bottom:12px">'
+        + '<div style="font-family:var(--cinzel);font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:4px">' + roundLabel + '</div>'
+        + '<div onclick="window.open(\'' + appUrl + '\',\'_blank\')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:border-color .2s" onmouseover="this.style.borderColor=\'var(--gold-border)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'
+        + imgHTML
+        + '<div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between"><div style="font-family:var(--cinzel);font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--text)">' + c.title + '</div><span style="font-size:12px;color:var(--gold)">Open ↗</span></div>'
+        + '</div></div>';
+    });
+  });
+  res.innerHTML = html || '<div style="font-size:14px;color:var(--text3);font-style:italic;text-align:center;padding:1rem">Nothing scheduled for this date and venue.</div>';
+}
+
+// ── BULK SCHEDULE IMPORT ──────────────────────────────────────────────────────
+var bulkParsed = [];
+
+function bulkPopulateVenue() {
+  var sel = document.getElementById('bulk-venue-select');
+  if (!sel) return;
+  var cur = sel.value;
+  var opts = '<option value="">— select venue —</option>';
+  venues.forEach(function(v) { opts += '<option value="' + v.id + '">' + v.name + '</option>'; });
+  sel.innerHTML = opts;
+  if (cur) sel.value = cur;
+}
+
+function bulkParse() {
+  var venueId = document.getElementById('bulk-venue-select').value;
+  var text = document.getElementById('bulk-text').value.trim();
+  var preview = document.getElementById('bulk-preview');
+  var saveBtn = document.getElementById('bulk-save-btn');
+  if (!venueId) { preview.innerHTML = '<div style="color:#e05050;font-size:13px;padding:.5rem 0">Pick a venue first.</div>'; return; }
+  if (!text) { preview.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:.5rem 0">Paste some schedule entries above.</div>'; return; }
+
+  var vname = (venues.find(function(v){return v.id===venueId;})||{}).name||'';
+  var year = new Date().getFullYear();
+  var monthMap = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11,
+    january:0,february:1,march:2,april:3,june:5,july:6,august:7,september:8,october:9,november:10,december:11};
+
+  bulkParsed = [];
+  var errors = [];
+  var lines = text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+
+  lines.forEach(function(line, li) {
+    // Split notes
+    var noteParts = line.split('|');
+    var main = noteParts[0].trim();
+    var notes = noteParts[1] ? noteParts[1].trim() : '';
+
+    // Parse date — expect "Month Day" or "Month Day Year" before a dash
+    var dashIdx = main.indexOf('-');
+    if (dashIdx === -1) { errors.push('Line ' + (li+1) + ': no dash found after date'); return; }
+    var datePart = main.slice(0, dashIdx).trim();
+    var roundsPart = main.slice(dashIdx+1).trim();
+
+    // Parse date
+    var dateTokens = datePart.replace(',','').split(/\s+/);
+    var parsedDate = null;
+    if (dateTokens.length >= 2) {
+      var mKey = dateTokens[0].toLowerCase().slice(0,3);
+      var mNum = monthMap[mKey];
+      var day = parseInt(dateTokens[1]);
+      var yr = dateTokens[2] ? parseInt(dateTokens[2]) : year;
+      if (mNum !== undefined && !isNaN(day)) {
+        parsedDate = yr + '-' + String(mNum+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+      }
+    }
+    if (!parsedDate) { errors.push('Line ' + (li+1) + ': could not parse date "' + datePart + '"'); return; }
+
+    // Parse rounds — "Round 1: Title, Round 2: Title, Round 3: Title"
+    var rounds = [];
+    var roundMatches = roundsPart.split(',');
+    roundMatches.forEach(function(seg) {
+      seg = seg.trim();
+      var colonIdx = seg.indexOf(':');
+      if (colonIdx === -1) return;
+      var catName = seg.slice(colonIdx+1).trim().toLowerCase();
+      // Fuzzy match category name
+      var match = categories.find(function(c){ return c.title.toLowerCase() === catName; });
+      if (!match) {
+        // Try partial match
+        match = categories.find(function(c){ return c.title.toLowerCase().indexOf(catName) !== -1 || catName.indexOf(c.title.toLowerCase()) !== -1; });
+      }
+      rounds.push({ raw: seg.slice(colonIdx+1).trim(), catId: match ? match.id : null, catTitle: match ? match.title : null });
+    });
+
+    if (!rounds.length) { errors.push('Line ' + (li+1) + ': no rounds found'); return; }
+
+    bulkParsed.push({ date: parsedDate, venueId: venueId, rounds: rounds, notes: notes, raw: line });
+  });
+
+  // Build preview HTML
+  var html = '';
+  if (errors.length) {
+    html += '<div style="background:rgba(220,60,60,.08);border:1px solid rgba(220,60,60,.25);border-radius:var(--radius);padding:10px 14px;margin-bottom:1rem">';
+    html += '<div style="font-size:11px;font-weight:600;color:#e05050;margin-bottom:6px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase">Parse errors</div>';
+    errors.forEach(function(e){ html += '<div style="font-size:12px;color:#e05050;margin-bottom:2px">⚠ ' + e + '</div>'; });
+    html += '</div>';
+  }
+
+  if (bulkParsed.length) {
+    html += '<div style="font-family:var(--cinzel);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">'
+      + bulkParsed.length + ' entr' + (bulkParsed.length===1?'y':'ies') + ' ready to save for ' + vname + '</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:6px">';
+    bulkParsed.forEach(function(entry) {
+      var roundsHTML = entry.rounds.map(function(r, i) {
+        var label = ['Round 1','Round 2','Round 3'][i] || ('Round '+(i+1));
+        var ok = r.catId !== null;
+        return '<span style="font-size:11px;' + (ok?'color:var(--text)':'color:#e05050;text-decoration:line-through') + '">'
+          + '<span style="color:var(--gold);font-family:var(--cinzel);font-size:9px">' + label + ':</span> '
+          + (ok ? r.catTitle : r.raw + ' ⚠ not found') + '</span>';
+      }).join(' &nbsp;·&nbsp; ');
+      var hasError = entry.rounds.some(function(r){return !r.catId;});
+      html += '<div style="background:' + (hasError?'rgba(220,60,60,.06)':'var(--surface2)') + ';border:1px solid '
+        + (hasError?'rgba(220,60,60,.2)':'var(--border)') + ';border-radius:var(--radius);padding:8px 12px">'
+        + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+        + '<span style="font-family:var(--cinzel);font-size:11px;font-weight:600;color:var(--gold);min-width:72px">' + formatDate(entry.date) + '</span>'
+        + '<span>' + roundsHTML + '</span>'
+        + (entry.notes ? '<span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:auto">📋 ' + entry.notes + '</span>' : '')
+        + '</div></div>';
+    });
+    html += '</div>';
+
+    var allOk = bulkParsed.every(function(e){return e.rounds.every(function(r){return r.catId;});});
+    saveBtn.style.display = '';
+    saveBtn.textContent = 'Save ' + bulkParsed.length + ' entr' + (bulkParsed.length===1?'y':'ies');
+    if (!allOk) {
+      html += '<div style="font-size:11px;color:#e05050;margin-top:8px;font-style:italic">⚠ Some categories weren\'t matched — fix the names and re-preview, or save anyway and edit later.</div>';
+      saveBtn.textContent += ' (some unmatched)';
+    }
+  } else {
+    saveBtn.style.display = 'none';
+  }
+
+  preview.innerHTML = html;
+}
+
+function bulkSave() {
+  if (!bulkParsed.length) return;
+  var venueId = document.getElementById('bulk-venue-select').value;
+  var v = venues.find(function(x){return x.id===venueId;});
+  var defaultHost = (v && v.host) || null;
+  var saved = 0;
+  bulkParsed.forEach(function(entry) {
+    var rounds = entry.rounds.filter(function(r){return r.catId;}).map(function(r){return r.catId;});
+    if (!rounds.length) return;
+    var id = 'sched_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+    db.ref('bingo/landing/schedule/' + id).set({
+      id: id, date: entry.date, venueId: venueId,
+      rounds: rounds, categoryIds: rounds, notes: entry.notes, host: defaultHost, locationId: bingoLocationId
+    });
+    saved++;
+  });
+  showToast(saved + ' entr' + (saved===1?'y':'ies') + ' saved!');
+  bulkClear();
+  switchSchedTab('timeline');
+}
+
+function bulkClear() {
+  document.getElementById('bulk-text').value = '';
+  document.getElementById('bulk-preview').innerHTML = '';
+  document.getElementById('bulk-save-btn').style.display = 'none';
+  bulkParsed = [];
+}
+// ── VENUE LIKES ── a host hearts the categories their venue likes. Stored on the
+// venue record (likedCategoryIds) — the same list the Planner's randomizer reads.
+var likesOnly = false;
+function likesNorm(s){ return (s||'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim(); }
+function likesIsAdmin(){ return !!(adminUnlocked || (bingoUserProfile && bingoUserProfile.adminAccess && bingoUserProfile.adminAccess.bingo) || (bingoUserProfile && bingoUserProfile.role === 'admin')); }
+function likesMyVenues(){
+  if (likesIsAdmin()) return venues.slice();
+  var me = likesNorm(bingoUserProfile && bingoUserProfile.name);
+  if (!me) return [];
+  var first = me.split(' ')[0];
+  return venues.filter(function(v){
+    var h = likesNorm(v.host);
+    if (!h) return false;
+    return h === me || h.indexOf(me + ' ') === 0 || me.indexOf(h + ' ') === 0 || (first.length > 2 && h.split(' ')[0] === first && (h === first || me === first || h.split(' ')[1] === me.split(' ')[1]));
+  });
+}
+function refreshLikesButton(){
+  var b = document.getElementById('likes-nav-btn');
+  if (b) b.style.display = likesMyVenues().length ? '' : 'none';
+}
+function openLikes(){
+  var mine = likesMyVenues();
+  if (!mine.length) { showToast('No venues are assigned to you yet.'); return; }
+  var sel = document.getElementById('likes-venue');
+  var cur = sel.value;
+  // a venue with a record per night (e.g. two Coaster entries) shows once; hearts apply to every record of it
+  var seen = {}, uniq = [];
+  mine.forEach(function(v){ var k = likesNorm(v.name); if (!seen[k]) { seen[k] = true; uniq.push(v); } });
+  sel.innerHTML = uniq.map(function(v){ return '<option value="' + v.id + '">' + esc(v.name) + '</option>'; }).join('');
+  if (cur && uniq.some(function(v){return v.id===cur;})) sel.value = cur;
+  document.getElementById('likes-venue-wrap').style.display = uniq.length > 1 ? '' : 'none';
+  document.getElementById('likes-search').value = '';
+  likesOnly = false;
+  document.getElementById('likes-overlay').classList.add('show');
+  renderLikes();
+}
+function closeLikes(){ document.getElementById('likes-overlay').classList.remove('show'); }
+function toggleLikesOnly(){ likesOnly = !likesOnly; renderLikes(); }
+function likesVenue(){ var id = document.getElementById('likes-venue').value; return venues.find(function(v){return v.id===id;}); }
+function likesGroup(){
+  var v = likesVenue(); if (!v) return [];
+  var k = likesNorm(v.name);
+  return venues.filter(function(x){ return likesNorm(x.name) === k; });
+}
+function renderLikes(){
+  var v = likesVenue(); var list = document.getElementById('likes-list');
+  if (!v) { list.innerHTML = ''; return; }
+  var liked = {}; likesGroup().forEach(function(g){ (g.likedCategoryIds || []).forEach(function(id){ liked[id] = true; }); });
+  var q = document.getElementById('likes-search').value.trim().toLowerCase();
+  var cats = categories.filter(function(c){ return (!q || (c.title||'').toLowerCase().indexOf(q) !== -1) && (!likesOnly || liked[c.id]); })
+    .sort(function(a,b){ return (a.title||'').localeCompare(b.title||''); });
+  var n = Object.keys(liked).filter(function(id){ return categories.some(function(c){return c.id===id;}); }).length;
+  document.getElementById('likes-count').textContent = n + ' liked';
+  var btn = document.getElementById('likes-only-btn');
+  btn.textContent = likesOnly ? 'Liked only' : 'All'; btn.classList.toggle('active', !likesOnly);
+  list.innerHTML = cats.length ? cats.map(function(c){
+    var on = !!liked[c.id];
+    return '<div onclick="toggleLike(\'' + c.id + '\')" style="display:flex;align-items:center;gap:12px;padding:9px 6px;border-bottom:.5px solid var(--border);cursor:pointer">'
+      + '<span style="font-size:22px;line-height:1;width:26px;text-align:center;color:' + (on ? '#e05a86' : 'var(--text3)') + '">' + (on ? '&#9829;' : '&#9825;') + '</span>'
+      + '<span style="font-size:14px;color:' + (on ? 'var(--text)' : 'var(--text2)') + '">' + esc(c.title || '') + '</span></div>';
+  }).join('') : '<div style="font-size:13px;color:var(--text3);font-style:italic;padding:10px">' + (likesOnly ? 'No liked categories yet.' : 'No categories match.') + '</div>';
+}
+function toggleLike(catId){
+  var v = likesVenue(); if (!v || !db) return;
+  var group = likesGroup();
+  var turnOn = !group.some(function(g){ return (g.likedCategoryIds || []).indexOf(catId) !== -1; });
+  group.forEach(function(g){
+    db.ref('bingo/landing/venues/' + g.id + '/likedCategoryIds').transaction(function(cur){
+      var arr = Array.isArray(cur) ? cur.slice() : [];
+      var i = arr.indexOf(catId);
+      if (turnOn && i === -1) arr.push(catId);
+      if (!turnOn && i !== -1) arr.splice(i, 1);
+      return arr.length ? arr : null;
+    }, function(err){ if (err) showToast('Could not save — ' + (err.code || err.message || 'permission?')); });
+  });
+}
+function showToast(msg) {
+  var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');}, 2200);
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeAdmin(); cancelDelete(); closeAdminSched(); closeLikes(); document.getElementById('host-sched-overlay').classList.remove('show'); }
+});
+document.getElementById('admin-overlay').addEventListener('click', function(e) {
+  if (e.target === document.getElementById('admin-overlay')) closeAdmin();
+});
+
+initFirebase();
+</script>
+</body>
+</html>
