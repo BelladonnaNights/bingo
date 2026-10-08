@@ -1421,7 +1421,23 @@ const PLAYER_PROTOCOL  = 'belladonnaplayer://link';
 // Auto-detect: launch the desktop app, then wait for it to answer through Firebase
 // (bingo/sessions/<key>/playerReady, tagged with a one-time nonce). If nothing
 // answers, the desktop app isn't installed — fall back to the web player.
-function openMediaPlayer(){
+// One-time sign-in code for the desktop player, so the host isn't asked to sign in again.
+const HANDOFF_BASE='https://us-central1-belladonna-hq.cloudfunctions.net/';
+function _loadScriptOnce(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+async function mintHandoff(){
+  try{
+    if(!firebase.auth) await _loadScriptOnce('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js');
+    const auth=firebase.auth();
+    const user=auth.currentUser||await new Promise(function(res){var un=auth.onAuthStateChanged(function(u){un();res(u);});setTimeout(function(){res(null);},3000);});
+    if(!user) return null;
+    const idToken=await user.getIdToken();
+    const r=await fetch(HANDOFF_BASE+'createHandoff',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},body:JSON.stringify({data:{}})});
+    const j=await r.json();
+    return (j&&j.result&&j.result.code)||null;
+  }catch(e){console.warn('[handoff] could not create a sign-in code:',e);return null;}
+}
+
+async function openMediaPlayer(){
   const q=`?bingo=${encodeURIComponent(categoryId)}&session=${encodeURIComponent(sessionKey)}`;
   const nonce=Math.random().toString(36).slice(2,10);
   const seen=(function(){try{return localStorage.getItem('bella_desktop_seen')==='1';}catch(e){return false;}})();
@@ -1450,12 +1466,13 @@ function openMediaPlayer(){
   }
   ref.on('value',onVal);
 
+  const handoff=await mintHandoff(); // null if not signed in here — the player then just shows its own sign-in
   // Launch the installed desktop player. Inside the Electron Bingo app this goes through IPC;
   // in a browser it uses the belladonnaplayer:// link (browser asks permission the first time — tick "always allow").
   if(window.bingoAPI?.isElectron){
-    window.bingoAPI.openMediaPlayer(categoryId,sessionKey,nonce).catch(()=>{});
+    window.bingoAPI.openMediaPlayer(categoryId,sessionKey,nonce,handoff).catch(()=>{});
   } else {
-    window.location.href=PLAYER_PROTOCOL+q+'&nonce='+nonce;
+    window.location.href=PLAYER_PROTOCOL+q+'&nonce='+nonce+(handoff?'&handoff='+encodeURIComponent(handoff):'');
   }
 
   timer=setTimeout(()=>{
