@@ -607,6 +607,28 @@ function applyCheckoutCancellations(){
 
 // ── GATEWAY LOGIN GATE (admin panel only — the public schedule stays open to everyone) ──
 const GATEWAY_APP_KEY = 'bingo';
+// ── ONE-SIGN-IN HANDOFF ── Host Hub / Tonight (already signed in) can launch this app with
+// ?handoff=<one-time code>. We trade it for a sign-in so the host never sees a login screen.
+// Functions: createHandoff / redeemHandoff in the belladonna-hq Firebase project.
+const HANDOFF_BASE = 'https://us-central1-belladonna-hq.cloudfunctions.net/';
+function bingoRedeemHandoff(code){
+  return fetch(HANDOFF_BASE+'redeemHandoff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:{code:code}})})
+    .then(function(r){return r.json();})
+    .then(function(j){
+      if(!j||!j.result||!j.result.token) throw new Error((j&&j.error&&j.error.message)||'no token');
+      return bingoAuth.signInWithCustomToken(j.result.token);
+    })
+    .then(function(cred){
+      return bingoDbFs.collection('users').doc(cred.user.uid).get().then(function(snap){
+        var p=snap.exists?snap.data():{};
+        var until=p.banUntil?(p.banUntil.toMillis?p.banUntil.toMillis():p.banUntil):null;
+        var banned=p.status==='banned'&&(until===null||until===undefined||until>Date.now());
+        if(banned||!(p.entitlements&&p.entitlements[GATEWAY_APP_KEY])){ return bingoAuth.signOut(); } // no Bingo access: normal Gateway screen explains it
+        try{localStorage.setItem('gatewaySession_'+GATEWAY_APP_KEY,JSON.stringify({ts:Date.now(),uid:cred.user.uid}));}catch(e){}
+      });
+    })
+    .catch(function(e){ console.warn('Handoff sign-in failed — using the normal Gateway sign-in', e); });
+}
 const GATEWAY_SESSION_MS = 6 * 60 * 60 * 1000;
 function hasValidGatewaySession(){
   try{
@@ -643,6 +665,13 @@ function initFirebase() {
       // ── FULL-APP GATEWAY GATE ──
       // The whole app requires a signed-in Belladonna Gateway account now —
       // same as HQ and Trivia, checked once up front, not just for Admin.
+      // A handoff code in the address means a host who is already signed in elsewhere launched us.
+      var _hoCode = new URLSearchParams(location.search).get('handoff');
+      if (_hoCode) { // never leave the code in the address bar or history
+        try { var _hu = new URL(location.href); _hu.searchParams.delete('handoff'); history.replaceState({}, '', _hu.pathname + _hu.search + _hu.hash); } catch(e) {}
+      }
+      var _hoDone = (_hoCode && !hasValidGatewaySession()) ? bingoRedeemHandoff(_hoCode) : Promise.resolve();
+      _hoDone.then(function(){
       if (!hasValidGatewaySession()) {
         window.location.href = 'https://belladonnanights.github.io/belladonna-gateway/accounts.html?return=' + encodeURIComponent(location.href.split('?')[0]) + '&app=' + GATEWAY_APP_KEY;
         return;
@@ -667,6 +696,7 @@ function initFirebase() {
           document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:#b0505a;font-family:sans-serif;padding:2rem;text-align:center;">Could not verify your account. Please refresh and try again.</div>';
         });
       });
+      }); // end handoff .then
     };
     document.head.appendChild(s4);
   };
