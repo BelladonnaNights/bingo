@@ -382,6 +382,7 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <div id="cards-output" style="display:none">
       <div class="btn-row cards-card" style="margin-bottom:1rem">
         <button class="btn btn-primary" onclick="printCards()">Print all cards</button>
+        <button class="btn btn-primary" onclick="printCards(true)" title="Same cards, but the colour banner is replaced by the category title in Bebas Neue">Print cards — title only</button>
         <button class="btn btn-ghost" onclick="generateCards()">Regenerate</button>
         <button class="btn btn-accent" onclick="showPage('player');document.body.classList.add('player-mode-host')">Preview player card ↗</button>
       </div>
@@ -1033,7 +1034,7 @@ ${qrBlock}
   win.onload=()=>setTimeout(()=>win.print(),300);
 }
 
-function printCards(){
+function printCards(titleOnly){
   if(!generatedCards.length){showToast('Generate cards first!');return;}
   const liveGrids=document.querySelectorAll('#cards-preview .bingo-grid');
 
@@ -1044,11 +1045,14 @@ function printCards(){
       if(firstCell) fontSize=parseFloat(firstCell.style.fontSize)||9;
     }
     // Scale font size up proportionally since our card is now larger
-    const scaledFont=Math.round(fontSize*1.8);
-    const scaledArtist=Math.round(Math.max(6,fontSize-2)*1.8);
+    const scaledFont=Math.round(fontSize*1.8*1.1);
+    const scaledArtist=Math.round(Math.max(6,fontSize-2)*1.8*1.1);
 
-    const imgHTML=EVENT_IMAGE
-      ?`<img style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block" src="${EVENT_IMAGE}" onerror="this.style.display='none'">`:'';
+    const safeTitle=String(EVENT_TITLE||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const imgHTML=titleOnly
+      ?`<div class="tbar"><span class="ttl" id="ttl">${safeTitle}</span></div>`
+      :(EVENT_IMAGE
+      ?`<img style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block" src="${EVENT_IMAGE}" onerror="this.style.display='none'">`:'');
 
     const cellsHTML=cells.map(s=>{
       if(s.free) return`<div class="bc free"><div class="fsi"><div class="frt"><div class="fr" style="transform:rotate(-35deg)"></div><div class="fr" style="transform:rotate(-12deg)"></div><div class="fr"></div><div class="fr" style="transform:rotate(12deg)"></div><div class="fr" style="transform:rotate(35deg)"></div></div><div class="fw"><span class="fword">FREE</span><span class="fword">SPACE</span></div><div class="frb"><div class="fr" style="transform:rotate(35deg)"></div><div class="fr" style="transform:rotate(12deg)"></div><div class="fr"></div><div class="fr" style="transform:rotate(-12deg)"></div><div class="fr" style="transform:rotate(-35deg)"></div></div></div></div>`;
@@ -1059,11 +1063,13 @@ function printCards(){
     const qr=SPOTIFY_QR_URL
       ?`<div style="position:absolute;top:5px;left:5px;background:rgba(255,255,255,.9);border-radius:3px;padding:2px;line-height:0"><img src="${SPOTIFY_QR_URL}" style="width:60px;height:60px;display:block;border-radius:2px" onerror="this.style.display='none'"></div>`:'';
 
-    return`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    return`<!DOCTYPE html><html><head><meta charset="UTF-8">${titleOnly?'<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">':''}<style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 @page{size:letter portrait;margin:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;padding:0.75in 0.5in 0.5in 0.5in}
-.card{width:70%;position:relative;border:1.5px solid #888;border-radius:8px;overflow:hidden;margin:0}
+.tbar{width:100%;padding:14px 6% 8px;text-align:center;background:#fff;overflow:hidden}
+.ttl{display:inline-block;white-space:nowrap;font-family:'Bebas Neue',Impact,'Arial Narrow',sans-serif;font-weight:400;line-height:1;color:#000;letter-spacing:.02em;font-size:100px}
+.card{width:77%;position:relative;border:1.5px solid #888;border-radius:8px;overflow:hidden;margin:0}
 .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:4px}
 .bc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid #ccc;border-radius:4px;padding:4px;font-weight:500;background:#f8f8f8;overflow:hidden}
 .bc.free{background:#fff;border:1px solid #bbb}
@@ -1076,6 +1082,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fword{font-size:9px;font-weight:900;letter-spacing:.01em;text-transform:uppercase;color:#000}
 </style></head><body>
 <div class="card">${imgHTML}<div class="grid">${cellsHTML}</div>${qr}</div>
+${titleOnly?`<script>
+function fitTitle(){var t=document.getElementById('ttl');if(!t)return;var box=t.parentNode;var avail=box.clientWidth-box.clientWidth*0.12;t.style.fontSize='100px';var w=t.getBoundingClientRect().width;if(w>0){var fs=100*avail/w;fs=Math.min(fs,150);t.style.fontSize=fs+'px';}window.__fitted=true;}
+(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(fitTitle);window.addEventListener('load',function(){setTimeout(fitTitle,50);});
+<\/script>`:''}
 </body></html>`;
   });
 
@@ -1091,7 +1101,14 @@ iframe:last-child{page-break-after:auto;break-after:auto}
 ${pages.map(p=>`<iframe srcdoc="${p.replace(/"/g,'&quot;').replace(/\n/g,' ')}"></iframe>`).join('\n')}
 </body></html>`);
   win.document.close();
-  setTimeout(()=>win.print(),1200);
+  if(titleOnly){
+    // wait for Bebas Neue to load and the titles to be sized in every card, then print
+    setTimeout(async ()=>{
+      try{ await Promise.all([...win.document.querySelectorAll('iframe')].map(f=>f.contentDocument&&f.contentDocument.fonts?f.contentDocument.fonts.ready:null)); }catch(e){}
+      win.document.querySelectorAll('iframe').forEach(f=>{ try{ f.contentWindow.fitTitle&&f.contentWindow.fitTitle(); }catch(e){} });
+      setTimeout(()=>win.print(),400);
+    },1500);
+  } else setTimeout(()=>win.print(),1200);
 }
 function hostCopyList(){
   navigator.clipboard.writeText(hostPlayedOrder.map((id,i)=>`${i+1}. ${fmtPlain(allSongs.find(x=>x.id===id))}`).join('\n')).then(()=>showToast('Copied!'));
@@ -1421,23 +1438,7 @@ const PLAYER_PROTOCOL  = 'belladonnaplayer://link';
 // Auto-detect: launch the desktop app, then wait for it to answer through Firebase
 // (bingo/sessions/<key>/playerReady, tagged with a one-time nonce). If nothing
 // answers, the desktop app isn't installed — fall back to the web player.
-// One-time sign-in code for the desktop player, so the host isn't asked to sign in again.
-const HANDOFF_BASE='https://us-central1-belladonna-hq.cloudfunctions.net/';
-function _loadScriptOnce(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
-async function mintHandoff(){
-  try{
-    if(!firebase.auth) await _loadScriptOnce('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js');
-    const auth=firebase.auth();
-    const user=auth.currentUser||await new Promise(function(res){var un=auth.onAuthStateChanged(function(u){un();res(u);});setTimeout(function(){res(null);},3000);});
-    if(!user) return null;
-    const idToken=await user.getIdToken();
-    const r=await fetch(HANDOFF_BASE+'createHandoff',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},body:JSON.stringify({data:{}})});
-    const j=await r.json();
-    return (j&&j.result&&j.result.code)||null;
-  }catch(e){console.warn('[handoff] could not create a sign-in code:',e);return null;}
-}
-
-async function openMediaPlayer(){
+function openMediaPlayer(){
   const q=`?bingo=${encodeURIComponent(categoryId)}&session=${encodeURIComponent(sessionKey)}`;
   const nonce=Math.random().toString(36).slice(2,10);
   const seen=(function(){try{return localStorage.getItem('bella_desktop_seen')==='1';}catch(e){return false;}})();
@@ -1466,13 +1467,12 @@ async function openMediaPlayer(){
   }
   ref.on('value',onVal);
 
-  const handoff=await mintHandoff(); // null if not signed in here — the player then just shows its own sign-in
   // Launch the installed desktop player. Inside the Electron Bingo app this goes through IPC;
   // in a browser it uses the belladonnaplayer:// link (browser asks permission the first time — tick "always allow").
   if(window.bingoAPI?.isElectron){
-    window.bingoAPI.openMediaPlayer(categoryId,sessionKey,nonce,handoff).catch(()=>{});
+    window.bingoAPI.openMediaPlayer(categoryId,sessionKey,nonce).catch(()=>{});
   } else {
-    window.location.href=PLAYER_PROTOCOL+q+'&nonce='+nonce+(handoff?'&handoff='+encodeURIComponent(handoff):'');
+    window.location.href=PLAYER_PROTOCOL+q+'&nonce='+nonce;
   }
 
   timer=setTimeout(()=>{
