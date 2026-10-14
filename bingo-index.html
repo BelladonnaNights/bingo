@@ -76,9 +76,8 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 .hero{position:relative;padding:4rem 2rem 3rem;max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:3rem;flex-wrap:wrap;overflow:hidden}
 .hero::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:800px;height:360px;background:radial-gradient(ellipse at 50% 0%,rgba(201,168,76,.06) 0%,transparent 68%);pointer-events:none}
 .hero-logo-wrap{flex-shrink:0;position:relative;z-index:1}
-.hero-logo-wrap.pending{min-width:130px;min-height:130px}
 .hero-logo-img{width:160px;height:160px;object-fit:contain;display:none}
-.hero-logo-placeholder{display:none;width:130px;height:130px;border-radius:var(--radius-lg);border:1px dashed var(--gold-border);align-items:center;justify-content:center;flex-direction:column;gap:6px;cursor:pointer;background:var(--surface);transition:border-color .2s}
+.hero-logo-placeholder{width:130px;height:130px;border-radius:var(--radius-lg);border:1px dashed var(--gold-border);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;cursor:pointer;background:var(--surface);transition:border-color .2s}
 .hero-logo-placeholder:hover{border-color:var(--gold-border2)}
 .hero-logo-placeholder span{font-size:11px;color:var(--text3);text-align:center;padding:0 10px;line-height:1.4}
 .hero-text{flex:1;min-width:240px;position:relative;z-index:1}
@@ -209,7 +208,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 </div>
 
 <div class="hero">
-  <div class="hero-logo-wrap pending" id="hero-logo-wrap">
+  <div class="hero-logo-wrap">
     <img class="hero-logo-img" id="hero-logo-img" src="" alt="Belladonna Audio Alchemies" onerror="this.style.display='none'">
     <div class="hero-logo-placeholder" id="hero-logo-placeholder" onclick="openAdmin()" title="Add logo in Admin">
       <span style="font-size:22px;color:var(--text3)">+</span>
@@ -367,7 +366,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
           <button class="btn btn-ghost btn-sm" onclick="resetForm()" id="cancel-edit-btn" style="display:none">Cancel Edit</button>
         </div>
       </div>
-      <div class="form-label">Your categories</div>
+      <div class="form-label" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">Your categories <button class="btn btn-ghost btn-sm" onclick="showAllOnVenueMenu()" title="Turns on 'Show on Venue Menu' for every category that has it off">Show all on Venue Menu</button></div>
       <div class="admin-list" id="admin-list"></div>
     </div>
     <div class="modal-footer">
@@ -607,28 +606,6 @@ function applyCheckoutCancellations(){
 
 // ── GATEWAY LOGIN GATE (admin panel only — the public schedule stays open to everyone) ──
 const GATEWAY_APP_KEY = 'bingo';
-// ── ONE-SIGN-IN HANDOFF ── Host Hub / Tonight (already signed in) can launch this app with
-// ?handoff=<one-time code>. We trade it for a sign-in so the host never sees a login screen.
-// Functions: createHandoff / redeemHandoff in the belladonna-hq Firebase project.
-const HANDOFF_BASE = 'https://us-central1-belladonna-hq.cloudfunctions.net/';
-function bingoRedeemHandoff(code){
-  return fetch(HANDOFF_BASE+'redeemHandoff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:{code:code}})})
-    .then(function(r){return r.json();})
-    .then(function(j){
-      if(!j||!j.result||!j.result.token) throw new Error((j&&j.error&&j.error.message)||'no token');
-      return bingoAuth.signInWithCustomToken(j.result.token);
-    })
-    .then(function(cred){
-      return bingoDbFs.collection('users').doc(cred.user.uid).get().then(function(snap){
-        var p=snap.exists?snap.data():{};
-        var until=p.banUntil?(p.banUntil.toMillis?p.banUntil.toMillis():p.banUntil):null;
-        var banned=p.status==='banned'&&(until===null||until===undefined||until>Date.now());
-        if(banned||!(p.entitlements&&p.entitlements[GATEWAY_APP_KEY])){ return bingoAuth.signOut(); } // no Bingo access: normal Gateway screen explains it
-        try{localStorage.setItem('gatewaySession_'+GATEWAY_APP_KEY,JSON.stringify({ts:Date.now(),uid:cred.user.uid}));}catch(e){}
-      });
-    })
-    .catch(function(e){ console.warn('Handoff sign-in failed — using the normal Gateway sign-in', e); });
-}
 const GATEWAY_SESSION_MS = 6 * 60 * 60 * 1000;
 function hasValidGatewaySession(){
   try{
@@ -665,13 +642,6 @@ function initFirebase() {
       // ── FULL-APP GATEWAY GATE ──
       // The whole app requires a signed-in Belladonna Gateway account now —
       // same as HQ and Trivia, checked once up front, not just for Admin.
-      // A handoff code in the address means a host who is already signed in elsewhere launched us.
-      var _hoCode = new URLSearchParams(location.search).get('handoff');
-      if (_hoCode) { // never leave the code in the address bar or history
-        try { var _hu = new URL(location.href); _hu.searchParams.delete('handoff'); history.replaceState({}, '', _hu.pathname + _hu.search + _hu.hash); } catch(e) {}
-      }
-      var _hoDone = (_hoCode && !hasValidGatewaySession()) ? bingoRedeemHandoff(_hoCode) : Promise.resolve();
-      _hoDone.then(function(){
       if (!hasValidGatewaySession()) {
         window.location.href = 'https://belladonnanights.github.io/belladonna-gateway/accounts.html?return=' + encodeURIComponent(location.href.split('?')[0]) + '&app=' + GATEWAY_APP_KEY;
         return;
@@ -696,7 +666,6 @@ function initFirebase() {
           document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:#b0505a;font-family:sans-serif;padding:2rem;text-align:center;">Could not verify your account. Please refresh and try again.</div>';
         });
       });
-      }); // end handoff .then
     };
     document.head.appendChild(s4);
   };
@@ -843,22 +812,9 @@ function applyLogo(url) {
   var ni = document.getElementById('nav-logo-img');
   var hi = document.getElementById('hero-logo-img');
   var ph = document.getElementById('hero-logo-placeholder');
-  var wrap = document.getElementById('hero-logo-wrap');
-  if (wrap) wrap.classList.remove('pending');
-  try { localStorage.setItem('bingoLogoUrl', url || ''); } catch(e) {}
   if (url) { ni.src=url; ni.style.display='block'; hi.src=url; hi.style.display='block'; ph.style.display='none'; }
   else { ni.style.display='none'; hi.style.display='none'; ph.style.display='flex'; }
 }
-// Show the last-known logo instantly (no empty placeholder while Firebase loads)
-(function(){
-  try {
-    var u = localStorage.getItem('bingoLogoUrl');
-    if (u) {
-      var ni = document.getElementById('nav-logo-img'), hi = document.getElementById('hero-logo-img');
-      ni.src = u; ni.style.display = 'block'; hi.src = u; hi.style.display = 'block';
-    }
-  } catch(e) {}
-})();
 function saveLogo() {
   if (!db) return;
   db.ref('bingo/landing/settings/logoUrl').set(document.getElementById('logo-url-input').value.trim());
@@ -880,6 +836,17 @@ function saveToFirebase(cat) {
   // that out every time a category is saved from this admin panel.
   var id = cat.id; var data = Object.assign({}, cat); delete data.id;
   db.ref('bingo/landing/categories/' + id).update(data);
+}
+// One click: turn 'Show on Venue Menu' on for every category that has it off.
+// Only touches venueMenu/show — descriptions and banners already saved are left alone.
+function showAllOnVenueMenu() {
+  if (!db) return;
+  var off = categories.filter(function(c){ return !(c.venueMenu && c.venueMenu.show); });
+  if (!off.length) { showToast('Every category is already on the Venue Menu'); return; }
+  if (!confirm('Turn on "Show on Venue Menu" for ' + off.length + ' categor' + (off.length===1?'y':'ies') + '?')) return;
+  var up = {};
+  off.forEach(function(c){ up[c.id + '/venueMenu/show'] = true; });
+  db.ref('bingo/landing/categories').update(up).then(function(){ showToast(off.length + ' now showing on the Venue Menu'); }).catch(function(){ showToast('Could not save — check your connection'); });
 }
 function deleteFromFirebase(id) { if (db) db.ref('bingo/landing/categories/' + id).remove(); }
 
@@ -1060,7 +1027,7 @@ function updateSongCount() {
 function resetForm() {
   ['edit-id','f-title','f-genre','f-image','f-square-image','f-songs','f-spotify','f-spotify-qr','f-vm-description','f-vm-banner'].forEach(function(id){ document.getElementById(id).value = ''; });
   document.getElementById('f-classic-bingo').checked = false;
-  document.getElementById('f-vm-show').checked = false;
+  document.getElementById('f-vm-show').checked = true;   // new categories show on the Venue Menu unless you untick it
   document.getElementById('f-status').value = 'live';
   document.getElementById('banner-preview-img').style.display = 'none';
   document.getElementById('square-preview-img').style.display = 'none';
