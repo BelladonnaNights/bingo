@@ -925,7 +925,6 @@ function renderGrid() {
   var q = document.getElementById('search-input').value.toLowerCase();
   var grid = document.getElementById('cat-grid');
   var filtered = categories.filter(function(c) {
-    if (c.unified !== true) return false; // only categories that have been through category-unification.html show publicly
     var genres = getGenres(c);
     var ms = !q || c.title.toLowerCase().includes(q) || genres.join(' ').toLowerCase().includes(q);
     var mf = activeFilter === 'all' || genres.map(function(g){return g.toLowerCase();}).indexOf(activeFilter.toLowerCase()) !== -1;
@@ -1003,7 +1002,8 @@ function renderAdminList() {
   // (created there, or matched/merged there) show here — a category that
   // predates the unification project just doesn't show until it's been
   // through that tool. Nothing here touches Firebase.
-  var visible = categories.filter(function(c) { return c.unified === true; });
+  var visible = categories;   // every category shows, whether or not it went through the unification tool
+  var titleCount = {}; categories.forEach(function(c){ var k=(c.title||'').trim().toLowerCase(); titleCount[k]=(titleCount[k]||0)+1; });
   if (!visible.length) {
     list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0;font-style:italic">' + (categories.length ? 'No unified categories yet — run category-unification.html to bring your existing categories in.' : 'No categories yet. Add one above.') + '</div>';
     return;
@@ -1012,7 +1012,7 @@ function renderAdminList() {
   visible.forEach(function(c) {
     var thumb = c.image ? '<img class="admin-item-thumb" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.background=\'var(--surface3)\'">' : '<div class="admin-item-thumb"></div>';
     var genres = getGenres(c);
-    var meta = (genres.length ? genres.join(', ') : 'No genre') + ' · ' + (c.status === 'coming' ? 'Coming soon' : 'Live');
+    var meta = (genres.length ? genres.join(', ') : 'No genre') + ' · ' + (c.status === 'coming' ? 'Coming soon' : 'Live') + (titleCount[(c.title||'').trim().toLowerCase()]>1 ? ' · <span style="color:#E0A44F">⚠ duplicate title</span>' : '') + (c.unified===true ? '' : ' · <span style="color:var(--text3)">older record</span>');
     html += '<div class="admin-item">' + thumb + '<div class="admin-item-info"><div class="admin-item-title">' + c.title + '</div><div class="admin-item-meta">' + meta + '</div></div><div class="admin-item-actions"><button class="btn-accent" onclick="editCategory(\'' + c.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="promptDelete(\'' + c.id + '\',\'' + c.title.replace(/'/g, "\\'") + '\')">✕</button></div></div>';
   });
   list.innerHTML = html;
