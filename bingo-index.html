@@ -334,6 +334,15 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
           <img class="banner-preview" id="square-preview-img" src="" alt="" style="display:none;width:80px;height:80px;object-fit:cover;">
         </div>
         <div class="form-group">
+          <label class="form-label">4:5 portrait image URL <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+          <input class="form-input" type="text" id="f-p45-image" placeholder="https://yoursite.com/portrait-4x5.jpg">
+        </div>
+        <div class="form-group">
+          <label class="form-label">5:4 landscape image URL <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+          <input class="form-input" type="text" id="f-l54-image" placeholder="https://yoursite.com/landscape-5x4.jpg">
+          <div class="form-hint">Used on the Venue Menu Browse and Trivia pages. All four image shapes save under this category's ID.</div>
+        </div>
+        <div class="form-group">
           <label class="form-label">Song list</label>
           <textarea class="form-input" id="f-songs" rows="8" placeholder="Song Name – Artist&#10;Song Name – Artist&#10;(one per line, minimum 25)" style="resize:vertical;font-family:var(--mono,monospace);font-size:12px;line-height:1.5" oninput="updateSongCount()"></textarea>
           <div id="song-count-label" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
@@ -1025,7 +1034,7 @@ function updateSongCount() {
   el.style.color = lines.length >= 25 ? '#4a9' : '#e05050';
 }
 function resetForm() {
-  ['edit-id','f-title','f-genre','f-image','f-square-image','f-songs','f-spotify','f-spotify-qr','f-vm-description','f-vm-banner'].forEach(function(id){ document.getElementById(id).value = ''; });
+  ['edit-id','f-title','f-genre','f-image','f-square-image','f-p45-image','f-l54-image','f-songs','f-spotify','f-spotify-qr','f-vm-description','f-vm-banner'].forEach(function(id){ document.getElementById(id).value = ''; });
   document.getElementById('f-classic-bingo').checked = false;
   document.getElementById('f-vm-show').checked = true;   // new categories show on the Venue Menu unless you untick it
   document.getElementById('f-status').value = 'live';
@@ -1044,6 +1053,7 @@ function editCategory(id) {
   document.getElementById('f-genre').value = getGenres(c).join(', ');
   document.getElementById('f-image').value = c.image || '';
   document.getElementById('f-square-image').value = c.squareImage || '';
+  { var im = c.images || {}; document.getElementById('f-p45-image').value = im.p45 || (c.venueMenu && c.venueMenu.miniGameImage) || ''; document.getElementById('f-l54-image').value = im.l54 || ''; }
   document.getElementById('f-songs').value = c.songs || '';
   document.getElementById('f-spotify').value = c.spotifyUrl || '';
   document.getElementById('f-spotify-qr').value = c.spotifyQrUrl || '';
@@ -1092,6 +1102,8 @@ function saveCategory() {
     bannerUrl: document.getElementById('f-vm-banner').value.trim()
   };
   var catData = {id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), squareImage:document.getElementById('f-square-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic, venueMenu:venueMenu};
+  catData.images = { banner: catData.image || null, p45: document.getElementById('f-p45-image').value.trim() || null, l54: document.getElementById('f-l54-image').value.trim() || null, square: catData.squareImage || null };
+  if (catData.images.p45) venueMenu.miniGameImage = catData.images.p45; else if (venueMenu.miniGameImage) delete venueMenu.miniGameImage;
   // unified:true on brand-new categories so they show up in this same
   // library view immediately — that view only shows categories that have
   // been through the unification process, and a category made fresh here
