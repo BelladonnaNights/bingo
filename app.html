@@ -1049,8 +1049,13 @@ function printCards(titleOnly){
     const scaledArtist=Math.round(Math.max(6,fontSize-2)*1.8*1.1);
 
     const safeTitle=String(EVENT_TITLE||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // QR codes printed in the card's top corners. The title bar keeps clear space on BOTH sides whenever either corner
+    // has a code (so the title stays centred between them and is never covered), sized to the code + its margin.
+    const QR_SLOT=84; // 5px offset + 60px code + padding/border + breathing room
+    const hasQrL=!!SPOTIFY_QR_URL, hasQrR=false; // right corner reserved for a second code if one is ever printed there
+    const sideReserve=(hasQrL||hasQrR)?QR_SLOT:0;
     const imgHTML=titleOnly
-      ?`<div class="tbar"><span class="ttl" id="ttl">${safeTitle}</span></div>`
+      ?`<div class="tbar" style="${sideReserve?`padding-left:${sideReserve}px;padding-right:${sideReserve}px;min-height:${QR_SLOT}px;display:flex;align-items:center;justify-content:center;`:''}"><span class="ttl" id="ttl">${safeTitle}</span></div>`
       :(EVENT_IMAGE
       ?`<img style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block" src="${EVENT_IMAGE}" onerror="this.style.display='none'">`:'');
 
@@ -1083,7 +1088,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </style></head><body>
 <div class="card">${imgHTML}<div class="grid">${cellsHTML}</div>${qr}</div>
 ${titleOnly?`<script>
-function fitTitle(){var t=document.getElementById('ttl');if(!t)return;var box=t.parentNode;var avail=box.clientWidth-box.clientWidth*0.12;t.style.fontSize='100px';var w=t.getBoundingClientRect().width;if(w>0){var fs=100*avail/w;fs=Math.min(fs,150);t.style.fontSize=fs+'px';}window.__fitted=true;}
+function fitTitle(){var t=document.getElementById('ttl');if(!t)return;var box=t.parentNode;var cs=getComputedStyle(box);var avail=box.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);t.style.fontSize='100px';var w=t.getBoundingClientRect().width;if(w>0){var fs=100*avail/w;fs=Math.min(fs,150);t.style.fontSize=fs+'px';}window.__fitted=true;}
 (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(fitTitle);window.addEventListener('load',function(){setTimeout(fitTitle,50);});
 <\/script>`:''}
 </body></html>`;
