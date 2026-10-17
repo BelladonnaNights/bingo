@@ -1078,6 +1078,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:4px}
 .bc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid #ccc;border-radius:4px;padding:4px;font-weight:500;background:#f8f8f8;overflow:hidden}
 .bc.free{background:#fff;border:1px solid #bbb}
+.site{text-align:center;font-size:10px;letter-spacing:.08em;color:#666;padding:2px 0 6px}
 .ct{line-height:1.25;text-align:center;overflow-wrap:break-word;word-break:normal;white-space:normal}
 .cs{display:block}.ca{display:block;opacity:.6}
 .fsi{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:1px}
@@ -1086,7 +1087,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fw{display:flex;flex-direction:column;align-items:center;line-height:1.05}
 .fword{font-size:9px;font-weight:900;letter-spacing:.01em;text-transform:uppercase;color:#000}
 </style></head><body>
-<div class="card">${imgHTML}<div class="grid">${cellsHTML}</div>${qr}</div>
+<div class="card">${imgHTML}<div class="grid">${cellsHTML}</div><div class="site">www.belladonnanights.com</div>${qr}</div>
 ${titleOnly?`<script>
 function fitTitle(){var t=document.getElementById('ttl');if(!t)return;var box=t.parentNode;var cs=getComputedStyle(box);var avail=box.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);t.style.fontSize='100px';var w=t.getBoundingClientRect().width;if(w>0){var fs=100*avail/w;fs=Math.min(fs,150);t.style.fontSize=fs+'px';}window.__fitted=true;}
 (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(fitTitle);window.addEventListener('load',function(){setTimeout(fitTitle,50);});
