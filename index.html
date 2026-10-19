@@ -1042,14 +1042,14 @@ function getTonightScheduledCatIds() {
 }
 // ── Banner mode: colour images, or a plain white banner with just the category name (Bebas Neue, like the "title only" print) ──
 var TEXT_BANNERS = false;
-var BANNER_MODE = 'img';
-try { var _bm = localStorage.getItem('bella_banner_mode'); BANNER_MODE = _bm || (localStorage.getItem('bella_text_banners') === '1' ? 'bw' : 'img'); } catch (e) {}
+var BANNER_MODE = 'gb';   // default for everyone: gold on black (a saved choice, made after this default, wins)
+try { var _bm = localStorage.getItem('bella_banner_mode_v2'); if (_bm) BANNER_MODE = _bm; } catch (e) {}
 var BANNER_STYLES = { bw: { bg: '#fff', fg: '#000', label: 'Black on white' }, wb: { bg: 'var(--bg)', fg: '#fff', label: 'White on black' }, gb: { bg: 'var(--bg)', fg: '#c9a84c', shine: true, label: 'Gold on black' } };
 function bannerStyleAttr() { var st = BANNER_STYLES[BANNER_MODE]; return st ? 'background:' + st.bg + ';' : ''; }
 function bannerTextAttr() { var st = BANNER_STYLES[BANNER_MODE]; if (!st) return ''; return st.shine ? 'background:var(--gold-shine);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;' : 'color:' + st.fg + ';'; }
 function setBannerMode(m) {
   BANNER_MODE = m; TEXT_BANNERS = m !== 'img';
-  try { localStorage.setItem('bella_banner_mode', m); localStorage.setItem('bella_text_banners', TEXT_BANNERS ? '1' : '0'); } catch (e) {}
+  try { localStorage.setItem('bella_banner_mode_v2', m); } catch (e) {}
   syncBannerToggle(); renderGrid(); try { renderHostSched(); } catch (e) {}
 }
 function openBannerMenu(btn, ev) {
