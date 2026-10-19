@@ -956,11 +956,20 @@ function textBannerHTML(title, style) {
   return '<div class="txt-banner" style="' + bannerStyleAttr() + (style || '') + '"><span class="txt-banner-t" style="' + bannerTextAttr() + '">' + t + '</span></div>';
 }
 function fitTextBanners() {
+  var groups = new Map();
   document.querySelectorAll('.txt-banner').forEach(function(b) {
     var t = b.querySelector('.txt-banner-t'); if (!t || !b.clientWidth) return;
     var cs = getComputedStyle(b), aw = b.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), ah = b.clientHeight * 0.8;
     t.style.fontSize = '100px'; var r = t.getBoundingClientRect(); if (!r.width) return;
-    t.style.fontSize = Math.max(8, Math.min(100 * aw / r.width, 100 * ah / r.height, 150)) + 'px';
+    var fs = Math.max(8, Math.min(100 * aw / r.width, 100 * ah / r.height, 150));
+    var key = b.closest('.grid') || b.closest('.modal') || document.body;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({ t: t, fs: fs });
+  });
+  // every title fits its own banner first; then they all drop to the smallest size so they match
+  groups.forEach(function(list) {
+    var min = Math.min.apply(null, list.map(function(x) { return x.fs; }));
+    list.forEach(function(x) { x.t.style.fontSize = min + 'px'; });
   });
 }
 function syncBannerToggle() { document.querySelectorAll('.banner-toggle-btn').forEach(function(b) { b.classList.toggle('banner-on', TEXT_BANNERS); b.textContent = TEXT_BANNERS ? 'Banners: ' + BANNER_STYLES[BANNER_MODE].label + ' ▾' : 'Banners: Images ▾'; }); }
@@ -1004,7 +1013,7 @@ function renderGrid() {
     var comingHTML = !isLive ? '<span class="cat-coming">Coming soon</span>' : '';
     var arrowHTML = isLive ? '<div class="cat-arrow">↗</div>' : '';
     var href = isLive ? appUrl : '#';
-    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + scheduledHTML + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
+    html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + imgHTML + (TEXT_BANNERS ? '' : '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + scheduledHTML + genreHTML + comingHTML + '</div></div>') + arrowHTML + '</a>';
   });
   grid.innerHTML = html;
   fitTextBanners();
