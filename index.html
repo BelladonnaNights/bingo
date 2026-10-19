@@ -927,9 +927,9 @@ function getTonightScheduledCatIds() {
 var TEXT_BANNERS = false;
 var BANNER_MODE = 'img';
 try { var _bm = localStorage.getItem('bella_banner_mode'); BANNER_MODE = _bm || (localStorage.getItem('bella_text_banners') === '1' ? 'bw' : 'img'); } catch (e) {}
-var BANNER_STYLES = { bw: { bg: '#fff', fg: '#000', label: 'Black on white' }, wb: { bg: '#000', fg: '#fff', label: 'White on black' }, gb: { bg: '#000', fg: '#c9a84c', label: 'Gold on black' } };
+var BANNER_STYLES = { bw: { bg: '#fff', fg: '#000', label: 'Black on white' }, wb: { bg: 'var(--bg)', fg: '#fff', label: 'White on black' }, gb: { bg: 'var(--bg)', fg: '#c9a84c', shine: true, label: 'Gold on black' } };
 function bannerStyleAttr() { var st = BANNER_STYLES[BANNER_MODE]; return st ? 'background:' + st.bg + ';' : ''; }
-function bannerTextAttr() { var st = BANNER_STYLES[BANNER_MODE]; return st ? 'color:' + st.fg + ';' : ''; }
+function bannerTextAttr() { var st = BANNER_STYLES[BANNER_MODE]; if (!st) return ''; return st.shine ? 'background:var(--gold-shine);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;' : 'color:' + st.fg + ';'; }
 function setBannerMode(m) {
   BANNER_MODE = m; TEXT_BANNERS = m !== 'img';
   try { localStorage.setItem('bella_banner_mode', m); localStorage.setItem('bella_text_banners', TEXT_BANNERS ? '1' : '0'); } catch (e) {}
