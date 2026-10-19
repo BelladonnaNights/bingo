@@ -103,6 +103,9 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 .cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;transition:border-color .25s,transform .2s,box-shadow .25s;text-decoration:none;display:block;position:relative}
 .cat-card:hover{border-color:var(--gold-border2);transform:translateY(-3px);box-shadow:0 10px 36px rgba(201,168,76,.1),0 2px 10px rgba(0,0,0,.5)}
 .cat-card.coming-soon{opacity:.45;cursor:default;pointer-events:none}
+.txt-banner{width:100%;aspect-ratio:1554/319;background:#fff;display:flex;align-items:center;justify-content:center;padding:0 6%;overflow:hidden;line-height:1}
+.txt-banner-t{display:inline-block;white-space:nowrap;font-family:'Bebas Neue',Impact,'Arial Narrow',sans-serif;font-weight:400;line-height:1;color:#000;letter-spacing:.02em;font-size:100px}
+.nav-btn.banner-on{background:var(--gold-dim);border-color:var(--gold-border2);color:var(--gold2)}
 .cat-banner{width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;background:var(--surface2)}
 .cat-banner-placeholder{width:100%;aspect-ratio:1554/319;background:var(--surface2);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border)}
 .cat-banner-placeholder span{font-family:var(--display);font-size:22px;letter-spacing:.1em;color:var(--text3)}
@@ -196,6 +199,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <select id="bingo-location-select" onchange="setBingoLocation(this.value)" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:999px;color:var(--gold);padding:4px 10px;font-size:11px;margin-right:6px;"></select>
     <a href="https://belladonnanights.github.io/belladonna-gateway/accounts.html?view=account" class="nav-btn nav-btn-ghost" style="font-size:9px;text-decoration:none;">My Account</a>
     <button class="nav-btn nav-btn-ghost" onclick="bingoGatewaySignOut()" style="font-size:9px;">Sign Out</button>
+    <button class="nav-btn" id="banner-toggle-btn" onclick="toggleTextBanners()" title="Switch between the colour banner images and a plain white banner showing just the category name">Banners: Images</button>
     <button class="nav-btn" onclick="openAdmin()">Admin ⚙</button>
     <button class="nav-btn nav-btn-sched" onclick="openScheduleBtn()">Schedule</button>
     <button class="nav-btn nav-btn-sched" id="likes-nav-btn" onclick="openLikes()" style="display:none">&#9829; Venue Likes</button>
@@ -334,15 +338,6 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
           <img class="banner-preview" id="square-preview-img" src="" alt="" style="display:none;width:80px;height:80px;object-fit:cover;">
         </div>
         <div class="form-group">
-          <label class="form-label">4:5 portrait image URL <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
-          <input class="form-input" type="text" id="f-p45-image" placeholder="https://yoursite.com/portrait-4x5.jpg">
-        </div>
-        <div class="form-group">
-          <label class="form-label">5:4 landscape image URL <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
-          <input class="form-input" type="text" id="f-l54-image" placeholder="https://yoursite.com/landscape-5x4.jpg">
-          <div class="form-hint">Used on the Venue Menu Browse and Trivia pages. All four image shapes save under this category's ID.</div>
-        </div>
-        <div class="form-group">
           <label class="form-label">Song list</label>
           <textarea class="form-input" id="f-songs" rows="8" placeholder="Song Name – Artist&#10;Song Name – Artist&#10;(one per line, minimum 25)" style="resize:vertical;font-family:var(--mono,monospace);font-size:12px;line-height:1.5" oninput="updateSongCount()"></textarea>
           <div id="song-count-label" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
@@ -375,7 +370,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
           <button class="btn btn-ghost btn-sm" onclick="resetForm()" id="cancel-edit-btn" style="display:none">Cancel Edit</button>
         </div>
       </div>
-      <div class="form-label" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">Your categories <button class="btn btn-ghost btn-sm" onclick="showAllOnVenueMenu()" title="Turns on 'Show on Venue Menu' for every category that has it off">Show all on Venue Menu</button></div>
+      <div class="form-label">Your categories</div>
       <div class="admin-list" id="admin-list"></div>
     </div>
     <div class="modal-footer">
@@ -846,17 +841,6 @@ function saveToFirebase(cat) {
   var id = cat.id; var data = Object.assign({}, cat); delete data.id;
   db.ref('bingo/landing/categories/' + id).update(data);
 }
-// One click: turn 'Show on Venue Menu' on for every category that has it off.
-// Only touches venueMenu/show — descriptions and banners already saved are left alone.
-function showAllOnVenueMenu() {
-  if (!db) return;
-  var off = categories.filter(function(c){ return !(c.venueMenu && c.venueMenu.show); });
-  if (!off.length) { showToast('Every category is already on the Venue Menu'); return; }
-  if (!confirm('Turn on "Show on Venue Menu" for ' + off.length + ' categor' + (off.length===1?'y':'ies') + '?')) return;
-  var up = {};
-  off.forEach(function(c){ up[c.id + '/venueMenu/show'] = true; });
-  db.ref('bingo/landing/categories').update(up).then(function(){ showToast(off.length + ' now showing on the Venue Menu'); }).catch(function(){ showToast('Could not save — check your connection'); });
-}
 function deleteFromFirebase(id) { if (db) db.ref('bingo/landing/categories/' + id).remove(); }
 
 // ── GRID ──────────────────────────────────────────────────────────────────────
@@ -930,10 +914,36 @@ function getTonightScheduledCatIds() {
   });
   return ids;
 }
+// ── Banner mode: colour images, or a plain white banner with just the category name (Bebas Neue, like the "title only" print) ──
+var TEXT_BANNERS = false;
+try { TEXT_BANNERS = localStorage.getItem('bella_text_banners') === '1'; } catch (e) {}
+function textBannerHTML(title, style) {
+  var t = String(title == null ? '' : title).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return '<div class="txt-banner"' + (style ? ' style="' + style + '"' : '') + '><span class="txt-banner-t">' + t + '</span></div>';
+}
+function fitTextBanners() {
+  document.querySelectorAll('.txt-banner').forEach(function(b) {
+    var t = b.querySelector('.txt-banner-t'); if (!t || !b.clientWidth) return;
+    var cs = getComputedStyle(b), aw = b.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), ah = b.clientHeight * 0.8;
+    t.style.fontSize = '100px'; var r = t.getBoundingClientRect(); if (!r.width) return;
+    t.style.fontSize = Math.max(8, Math.min(100 * aw / r.width, 100 * ah / r.height, 150)) + 'px';
+  });
+}
+function syncBannerToggle() { var b = document.getElementById('banner-toggle-btn'); if (!b) return; b.classList.toggle('banner-on', TEXT_BANNERS); b.textContent = TEXT_BANNERS ? 'Banners: Text' : 'Banners: Images'; }
+function toggleTextBanners() {
+  TEXT_BANNERS = !TEXT_BANNERS;
+  try { localStorage.setItem('bella_text_banners', TEXT_BANNERS ? '1' : '0'); } catch (e) {}
+  syncBannerToggle(); renderGrid();
+  try { renderHostSched(); } catch (e) {}
+}
+window.addEventListener('resize', fitTextBanners);
+document.addEventListener('DOMContentLoaded', syncBannerToggle);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTextBanners);
 function renderGrid() {
   var q = document.getElementById('search-input').value.toLowerCase();
   var grid = document.getElementById('cat-grid');
   var filtered = categories.filter(function(c) {
+    if (c.unified !== true) return false; // only categories that have been through category-unification.html show publicly
     var genres = getGenres(c);
     var ms = !q || c.title.toLowerCase().includes(q) || genres.join(' ').toLowerCase().includes(q);
     var mf = activeFilter === 'all' || genres.map(function(g){return g.toLowerCase();}).indexOf(activeFilter.toLowerCase()) !== -1;
@@ -958,7 +968,7 @@ function renderGrid() {
     var isLive = c.status !== 'coming';
     var genres = getGenres(c);
     var appUrl = bingoLaunchUrl(c.id);
-    var imgHTML = c.image
+    var imgHTML = TEXT_BANNERS ? textBannerHTML(c.title) : c.image
       ? '<img class="cat-banner" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="cat-banner-placeholder" style="display:none"><span>' + c.title + '</span></div>'
       : '<div class="cat-banner-placeholder"><span>' + c.title + '</span></div>';
     var scheduledHTML = scheduledIds.indexOf(c.id) !== -1 ? '<span class="cat-genre" style="background:rgba(58,170,106,.18);border-color:rgba(58,170,106,.4);color:#3aaa6a">Tonight</span>' : '';
@@ -969,6 +979,7 @@ function renderGrid() {
     html += '<a class="cat-card' + (!isLive ? ' coming-soon' : '') + '" href="' + href + '" target="' + (isLive ? '_blank' : '_self') + '">' + imgHTML + '<div class="cat-body"><div class="cat-title">' + c.title + '</div><div class="cat-meta">' + scheduledHTML + genreHTML + comingHTML + '</div></div>' + arrowHTML + '</a>';
   });
   grid.innerHTML = html;
+  fitTextBanners();
 }
 function buildFilterPills() {
   var allGenres = [];
@@ -1011,8 +1022,7 @@ function renderAdminList() {
   // (created there, or matched/merged there) show here — a category that
   // predates the unification project just doesn't show until it's been
   // through that tool. Nothing here touches Firebase.
-  var visible = categories;   // every category shows, whether or not it went through the unification tool
-  var titleCount = {}; categories.forEach(function(c){ var k=(c.title||'').trim().toLowerCase(); titleCount[k]=(titleCount[k]||0)+1; });
+  var visible = categories.filter(function(c) { return c.unified === true; });
   if (!visible.length) {
     list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0;font-style:italic">' + (categories.length ? 'No unified categories yet — run category-unification.html to bring your existing categories in.' : 'No categories yet. Add one above.') + '</div>';
     return;
@@ -1021,7 +1031,7 @@ function renderAdminList() {
   visible.forEach(function(c) {
     var thumb = c.image ? '<img class="admin-item-thumb" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.background=\'var(--surface3)\'">' : '<div class="admin-item-thumb"></div>';
     var genres = getGenres(c);
-    var meta = (genres.length ? genres.join(', ') : 'No genre') + ' · ' + (c.status === 'coming' ? 'Coming soon' : 'Live') + (titleCount[(c.title||'').trim().toLowerCase()]>1 ? ' · <span style="color:#E0A44F">⚠ duplicate title</span>' : '') + (c.unified===true ? '' : ' · <span style="color:var(--text3)">older record</span>');
+    var meta = (genres.length ? genres.join(', ') : 'No genre') + ' · ' + (c.status === 'coming' ? 'Coming soon' : 'Live');
     html += '<div class="admin-item">' + thumb + '<div class="admin-item-info"><div class="admin-item-title">' + c.title + '</div><div class="admin-item-meta">' + meta + '</div></div><div class="admin-item-actions"><button class="btn-accent" onclick="editCategory(\'' + c.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="promptDelete(\'' + c.id + '\',\'' + c.title.replace(/'/g, "\\'") + '\')">✕</button></div></div>';
   });
   list.innerHTML = html;
@@ -1034,9 +1044,9 @@ function updateSongCount() {
   el.style.color = lines.length >= 25 ? '#4a9' : '#e05050';
 }
 function resetForm() {
-  ['edit-id','f-title','f-genre','f-image','f-square-image','f-p45-image','f-l54-image','f-songs','f-spotify','f-spotify-qr','f-vm-description','f-vm-banner'].forEach(function(id){ document.getElementById(id).value = ''; });
+  ['edit-id','f-title','f-genre','f-image','f-square-image','f-songs','f-spotify','f-spotify-qr','f-vm-description','f-vm-banner'].forEach(function(id){ document.getElementById(id).value = ''; });
   document.getElementById('f-classic-bingo').checked = false;
-  document.getElementById('f-vm-show').checked = true;   // new categories show on the Venue Menu unless you untick it
+  document.getElementById('f-vm-show').checked = false;
   document.getElementById('f-status').value = 'live';
   document.getElementById('banner-preview-img').style.display = 'none';
   document.getElementById('square-preview-img').style.display = 'none';
@@ -1053,7 +1063,6 @@ function editCategory(id) {
   document.getElementById('f-genre').value = getGenres(c).join(', ');
   document.getElementById('f-image').value = c.image || '';
   document.getElementById('f-square-image').value = c.squareImage || '';
-  { var im = c.images || {}; document.getElementById('f-p45-image').value = im.p45 || (c.venueMenu && c.venueMenu.miniGameImage) || ''; document.getElementById('f-l54-image').value = im.l54 || ''; }
   document.getElementById('f-songs').value = c.songs || '';
   document.getElementById('f-spotify').value = c.spotifyUrl || '';
   document.getElementById('f-spotify-qr').value = c.spotifyQrUrl || '';
@@ -1102,8 +1111,6 @@ function saveCategory() {
     bannerUrl: document.getElementById('f-vm-banner').value.trim()
   };
   var catData = {id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), squareImage:document.getElementById('f-square-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic, venueMenu:venueMenu};
-  catData.images = { banner: catData.image || null, p45: document.getElementById('f-p45-image').value.trim() || null, l54: document.getElementById('f-l54-image').value.trim() || null, square: catData.squareImage || null };
-  if (catData.images.p45) venueMenu.miniGameImage = catData.images.p45; else if (venueMenu.miniGameImage) delete venueMenu.miniGameImage;
   // unified:true on brand-new categories so they show up in this same
   // library view immediately — that view only shows categories that have
   // been through the unification process, and a category made fresh here
@@ -1464,7 +1471,7 @@ function renderHostSched() {
       var c = categories.find(function(x){return x.id===catId;});
       if (!c) return;
       var appUrl = bingoLaunchUrl(c.id, entry);
-      var imgHTML = c.image ? '<img src="' + c.image + '" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;border-radius:6px 6px 0 0" onerror="this.style.display=\'none\'">' : '';
+      var imgHTML = TEXT_BANNERS ? textBannerHTML(c.title, 'border-radius:6px 6px 0 0') : c.image ? '<img src="' + c.image + '" style="width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;border-radius:6px 6px 0 0" onerror="this.style.display=\'none\'">' : '';
       var roundLabel = roundLabels[i] || ('Round ' + (i+1));
       html += '<div style="margin-bottom:12px">'
         + '<div style="font-family:var(--cinzel);font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:4px">' + roundLabel + '</div>'
@@ -1474,7 +1481,7 @@ function renderHostSched() {
         + '</div></div>';
     });
   });
-  res.innerHTML = html || '<div style="font-size:14px;color:var(--text3);font-style:italic;text-align:center;padding:1rem">Nothing scheduled for this date and venue.</div>';
+  res.innerHTML = html || '<div style="font-size:14px;color:var(--text3);font-style:italic;text-align:center;padding:1rem">Nothing scheduled for this date and venue.</div>';  fitTextBanners();
 }
 
 // ── BULK SCHEDULE IMPORT ──────────────────────────────────────────────────────
