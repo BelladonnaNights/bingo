@@ -64,12 +64,12 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 }
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-thumb{background:rgba(201,168,76,.25);border-radius:3px}
-.nav{position:sticky;top:0;z-index:200;background:rgba(10,10,10,.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav{min-height:64px;position:sticky;top:0;z-index:200;background:rgba(10,10,10,.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:6px 2rem;display:flex;align-items:center;justify-content:space-between}
 .nav-left{display:flex;align-items:center;gap:14px}
 .nav-logo-img{height:40px;width:auto;object-fit:contain;display:none}
 .nav-title{font-family:var(--display);font-size:22px;letter-spacing:.06em;color:var(--text);line-height:1}
 .nav-title span{background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-right{display:flex;flex-direction:row;align-items:center;gap:10px;justify-content:flex-end}
+.nav-right{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px 10px;justify-content:flex-end}
 .nav-btn{background:none;border:1px solid var(--gold-border);border-radius:var(--radius);padding:7px 16px;font-size:11px;font-weight:500;font-family:var(--cinzel);letter-spacing:.1em;text-transform:uppercase;color:var(--gold);cursor:pointer;transition:all .2s;white-space:nowrap}
 .nav-btn:hover{background:var(--gold);color:#000;border-color:var(--gold)}
 .nav-btn-sched{font-size:12px;padding:5px 14px;letter-spacing:.06em}
@@ -105,6 +105,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 .cat-card.coming-soon{opacity:.45;cursor:default;pointer-events:none}
 .txt-banner{width:100%;aspect-ratio:1554/319;background:#fff;display:flex;align-items:center;justify-content:center;padding:0 6%;overflow:hidden;line-height:1}
 .txt-banner-t{display:inline-block;white-space:nowrap;font-family:'Bebas Neue',Impact,'Arial Narrow',sans-serif;font-weight:400;line-height:1;color:#000;letter-spacing:.02em;font-size:100px}
+.btn.banner-on{background:var(--gold-dim);border-color:var(--gold-border2);color:var(--gold2)}
 .nav-btn.banner-on{background:var(--gold-dim);border-color:var(--gold-border2);color:var(--gold2)}
 .cat-banner{width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;background:var(--surface2)}
 .cat-banner-placeholder{width:100%;aspect-ratio:1554/319;background:var(--surface2);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border)}
@@ -199,7 +200,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <select id="bingo-location-select" onchange="setBingoLocation(this.value)" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:999px;color:var(--gold);padding:4px 10px;font-size:11px;margin-right:6px;"></select>
     <a href="https://belladonnanights.github.io/belladonna-gateway/accounts.html?view=account" class="nav-btn nav-btn-ghost" style="font-size:9px;text-decoration:none;">My Account</a>
     <button class="nav-btn nav-btn-ghost" onclick="bingoGatewaySignOut()" style="font-size:9px;">Sign Out</button>
-    <button class="nav-btn" id="banner-toggle-btn" onclick="toggleTextBanners()" title="Switch between the colour banner images and a plain white banner showing just the category name">Banners: Images</button>
+    <button class="nav-btn banner-toggle-btn" id="banner-toggle-btn" onclick="toggleTextBanners()" title="Switch between the colour banner images and a plain white banner showing just the category name">Banners: Images</button>
     <button class="nav-btn" onclick="openAdmin()">Admin ⚙</button>
     <button class="nav-btn nav-btn-sched" onclick="openScheduleBtn()">Schedule</button>
     <button class="nav-btn nav-btn-sched" id="likes-nav-btn" onclick="openLikes()" style="display:none">&#9829; Venue Likes</button>
@@ -273,6 +274,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <div class="modal-header">
       <div class="modal-title">Manage Categories</div>
       <div style="display:flex;align-items:center;gap:0.6rem;">
+        <button class="btn btn-ghost btn-sm banner-toggle-btn" onclick="toggleTextBanners()" title="Switch between the colour banner images and a plain white banner showing just the category name">Banners: Images</button>
         <button class="btn btn-ghost btn-sm" onclick="bingoGatewaySignOut()">Sign Out</button>
         <button class="modal-close" onclick="closeAdmin()">✕</button>
       </div>
@@ -929,7 +931,7 @@ function fitTextBanners() {
     t.style.fontSize = Math.max(8, Math.min(100 * aw / r.width, 100 * ah / r.height, 150)) + 'px';
   });
 }
-function syncBannerToggle() { var b = document.getElementById('banner-toggle-btn'); if (!b) return; b.classList.toggle('banner-on', TEXT_BANNERS); b.textContent = TEXT_BANNERS ? 'Banners: Text' : 'Banners: Images'; }
+function syncBannerToggle() { document.querySelectorAll('.banner-toggle-btn').forEach(function(b) { b.classList.toggle('banner-on', TEXT_BANNERS); b.textContent = TEXT_BANNERS ? 'Banners: Text' : 'Banners: Images'; }); }
 function toggleTextBanners() {
   TEXT_BANNERS = !TEXT_BANNERS;
   try { localStorage.setItem('bella_text_banners', TEXT_BANNERS ? '1' : '0'); } catch (e) {}
