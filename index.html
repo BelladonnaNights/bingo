@@ -304,7 +304,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
         <input type="hidden" id="edit-id">
         <div class="form-group">
           <label class="form-label">Category title</label>
-          <input class="form-input" type="text" id="f-title" placeholder="e.g. 90s Hip Hop">
+          <input class="form-input" type="text" id="f-title" placeholder="e.g. 90s Hip Hop" oninput="vaultTitleTyped()">
         </div>
         <div class="form-group">
           <label class="form-label">Genre tags <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(comma separated)</span></label>
@@ -346,10 +346,12 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
           <div class="form-hint">A square (1:1) crop — this is what the Planner app shows for this category, since the banner's wide shape doesn't work as a small thumbnail.</div>
           <img class="banner-preview" id="square-preview-img" src="" alt="" style="display:none;width:80px;height:80px;object-fit:cover;">
         </div>
-        <div class="form-group">
-          <label class="form-label">Song list</label>
-          <textarea class="form-input" id="f-songs" rows="8" placeholder="Song Name – Artist&#10;Song Name – Artist&#10;(one per line, minimum 25)" style="resize:vertical;font-family:var(--mono,monospace);font-size:12px;line-height:1.5" oninput="updateSongCount()"></textarea>
+        <div class="form-group" id="song-source-group">
+          <label class="form-label">Song list <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(from the Vault)</span></label>
+          <select class="form-input" id="f-vault-list" onchange="vaultSelectChanged()"></select>
+          <textarea id="f-songs" style="display:none"></textarea>
           <div id="song-count-label" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+          <div class="form-hint">Songs come from the Bingo list you pick in the Vault, and update here whenever that list changes. Choose &ldquo;Create a new Vault list&rdquo; if there isn&rsquo;t a matching one yet.</div>
         </div>
         <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1rem">
           <div style="font-size:11px;font-weight:600;color:var(--gold);margin-bottom:.75rem;font-family:var(--cinzel);letter-spacing:.1em;text-transform:uppercase">Venue Menu</div>
@@ -379,7 +381,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
           <button class="btn btn-ghost btn-sm" onclick="resetForm()" id="cancel-edit-btn" style="display:none">Cancel Edit</button>
         </div>
       </div>
-      <div class="form-label">Your categories</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px"><div class="form-label" style="margin:0">Your categories</div><button class="btn btn-ghost btn-sm" onclick="autoLinkByName()" title="Link every unlinked category to the Vault list with the same name">Link all by name</button></div>
       <div class="admin-list" id="admin-list"></div>
     </div>
     <div class="modal-footer">
@@ -724,12 +726,14 @@ function bingoLocationMatches(recordLocId){
   return !recordLocId || recordLocId === bingoLocationId;
 }
 function startBingoDataListeners(){
+      startVaultListListener();
       db.ref('bingo/landing/categories').on('value', function(snap) {
         var data = snap.val() || {};
         categories = Object.entries(data).map(function(e) { return Object.assign({id: e[0]}, e[1]); });
         categories.sort(function(a,b) { if (a.classicBingo && !b.classicBingo) return -1; if (!a.classicBingo && b.classicBingo) return 1; return (a.order||0)-(b.order||0); });
         renderGrid(); buildFilterPills();
         if (adminUnlocked) renderAdminList();
+        reconcileLinkedCategories();
       });
       db.ref('bingo/landing/venues').on('value', function(snap) {
         var data = snap.val() || {};
@@ -838,6 +842,119 @@ function previewLogo() {
   var img = document.getElementById('logo-preview-img');
   if (url) { img.src=url; img.classList.add('show'); img.onerror=function(){img.classList.remove('show');}; }
   else img.classList.remove('show');
+}
+
+
+// ── VAULT LINK ────────────────────────────────────────────────────────────────
+// A category's songs come from a Bingo list in the Vault (Firestore: bingoLists). The category stores vaultListId, and the
+// song text the game reads (category.songs) is rebuilt from that list whenever it changes.
+var vaultLists = [], vaultListsFrom = '';
+function vaultSongsToText(songs) {
+  return (songs || []).map(function(x) {
+    var t = String(x.t || '').replace(/\s[–—-]\s/g, ', ').trim();
+    var b = String(x.m || x.a || '').trim();
+    return t ? (b ? t + ' – ' + b : t) : '';
+  }).filter(Boolean).join('\n');
+}
+function normVaultName(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
+function vaultListByName(name) { var k = normVaultName(name); if (!k) return null; return vaultLists.find(function(l) { return normVaultName(l.name) === k; }) || null; }
+function vaultLinkLabel(c) {
+  if (c.classicBingo) return 'Classic';
+  if (!c.vaultListId) return 'Not linked to a Vault list';
+  var l = vaultLists.find(function(x) { return x.id === c.vaultListId; });
+  return l ? 'Vault: ' + l.name : (vaultListsFrom ? 'Vault list missing' : 'Vault linked');
+}
+function setVaultLists(arr, from) {
+  vaultLists = arr.sort(function(a, b) { return String(a.name).localeCompare(String(b.name)); });
+  vaultListsFrom = from;
+  var cur = document.getElementById('f-vault-list');
+  if (cur) populateVaultSelect(cur.value);
+  if (adminUnlocked) renderAdminList();
+  reconcileLinkedCategories();
+}
+function startVaultListListener() {
+  var fallback = function() {
+    db.ref('bingo/vaultLists').on('value', function(snap) {
+      var v = snap.val() || {};
+      setVaultLists(Object.keys(v).map(function(id) { var d = v[id] || {}; return { id: id, name: d.name || '', archived: !!d.archived, order: d.order || 0, songs: Array.isArray(d.songs) ? d.songs : [] }; }), 'rtdb');
+    }, function() {});
+  };
+  try {
+    bingoDbFs.collection('bingoLists').onSnapshot(function(snap) {
+      setVaultLists(snap.docs.map(function(d) { var x = d.data() || {}; return { id: d.id, name: x.name || '', archived: !!x.archived, order: x.order || 0, songs: Array.isArray(x.songs) ? x.songs : [] }; }), 'firestore');
+    }, function(err) { console.warn('Vault lists (Firestore) unavailable, using the Media Player copy', err); fallback(); });
+  } catch (e) { fallback(); }
+}
+var vaultSyncBusy = {};
+// Keep every linked category's song text equal to its Vault list.
+function reconcileLinkedCategories() {
+  if (!db || !vaultLists.length) return;
+  categories.forEach(function(c) {
+    if (!c.vaultListId || c.classicBingo || vaultSyncBusy[c.id]) return;
+    var l = vaultLists.find(function(x) { return x.id === c.vaultListId; });
+    if (!l) return;
+    var text = vaultSongsToText(l.songs);
+    if ((c.songs || '') === text) return;
+    vaultSyncBusy[c.id] = true;
+    db.ref('bingo/landing/categories/' + c.id + '/songs').set(text).catch(function(e) { console.warn('Could not refresh songs for', c.title, e); }).then(function() { delete vaultSyncBusy[c.id]; });
+  });
+}
+function populateVaultSelect(selected) {
+  var el = document.getElementById('f-vault-list'); if (!el) return;
+  var title = (document.getElementById('f-title') || {}).value || '';
+  var opts = '<option value="">— choose a Vault list —</option>';
+  vaultLists.forEach(function(l) {
+    if (l.archived && l.id !== selected) return;
+    opts += '<option value="' + l.id + '">' + String(l.name).replace(/&/g,'&amp;').replace(/</g,'&lt;') + ' (' + l.songs.length + ' songs' + (l.archived ? ', archived' : '') + ')</option>';
+  });
+  opts += '<option value="__new__">➕ Create a new Vault list' + (title.trim() ? ' named “' + title.trim().replace(/&/g,'&amp;').replace(/</g,'&lt;') + '”' : '') + '</option>';
+  el.innerHTML = opts;
+  el.value = selected || '';
+  if (el.value !== (selected || '')) el.value = '';
+  vaultSelectChanged();
+}
+function vaultSelectChanged() {
+  var el = document.getElementById('f-vault-list'), lab = document.getElementById('song-count-label'); if (!el || !lab) return;
+  var legacy = (document.getElementById('f-songs').value || '').split('\n').map(function(x){return x.trim();}).filter(Boolean).length;
+  var v = el.value, msg = '', color = 'var(--text3)';
+  if (v === '__new__') {
+    msg = legacy ? 'A new Vault list will be created from this category’s ' + legacy + ' typed-in songs, and linked.' : 'A new, empty Vault list will be created and linked — add its songs in the Vault.'; 
+  } else if (v) {
+    var l = vaultLists.find(function(x) { return x.id === v; });
+    if (l) { msg = l.songs.length + ' song' + (l.songs.length === 1 ? '' : 's') + (l.songs.length < 25 ? ' — need at least 25 to play' : ''); color = l.songs.length >= 25 ? '#4a9' : '#e05050'; }
+  } else if (legacy) {
+    msg = 'Not linked — this category still has ' + legacy + ' typed-in songs. Choose a Vault list (or create one) to link it.'; color = '#e0a050';
+  }
+  lab.textContent = msg; lab.style.color = color;
+}
+function vaultTitleTyped() {
+  var el = document.getElementById('f-vault-list'); if (!el) return;
+  var editing = !!document.getElementById('edit-id').value;
+  var cur = el.value;
+  if (!editing && (!cur || cur === '__new__')) {
+    var m = vaultListByName(document.getElementById('f-title').value);
+    populateVaultSelect(m ? m.id : (cur === '__new__' ? '__new__' : ''));
+  } else if (cur === '__new__') populateVaultSelect('__new__');
+}
+function createVaultList(name, songsText) {
+  var songs = String(songsText || '').split('\n').map(function(x){return x.trim();}).filter(Boolean).map(function(line) {
+    var m = line.match(/^(.*?)\s[–—-]\s(.*)$/);
+    return m ? { t: m[1].trim(), a: m[2].trim() } : { t: line, a: '' };
+  });
+  var order = Math.max(0, vaultLists.reduce(function(mx, l) { return Math.max(mx, Number(l.order) || 0); }, 0)) + 1;
+  var ts = firebase.firestore.FieldValue.serverTimestamp();
+  return bingoDbFs.collection('bingoLists').add({ name: name, songs: songs, order: order, archived: false, createdAt: ts, updatedAt: ts }).then(function(ref) { return ref.id; });
+}
+function autoLinkByName() {
+  if (!vaultLists.length) { showToast('Vault lists haven’t loaded yet'); return; }
+  var n = 0;
+  categories.forEach(function(c) {
+    if (c.classicBingo || c.vaultListId) return;
+    var l = vaultListByName(c.title); if (!l) return;
+    n++;
+    db.ref('bingo/landing/categories/' + c.id).update({ vaultListId: l.id, songs: vaultSongsToText(l.songs) });
+  });
+  showToast(n ? 'Linked ' + n + ' categor' + (n === 1 ? 'y' : 'ies') + ' by name' : 'No unlinked categories have a Vault list with the same name');
 }
 
 // ── FIREBASE HELPERS ──────────────────────────────────────────────────────────
@@ -1068,18 +1185,13 @@ function renderAdminList() {
   visible.forEach(function(c) {
     var thumb = c.image ? '<img class="admin-item-thumb" src="' + c.image + '" alt="' + c.title + '" onerror="this.style.background=\'var(--surface3)\'">' : '<div class="admin-item-thumb"></div>';
     var genres = getGenres(c);
-    var meta = (genres.length ? genres.join(', ') : 'No genre') + ' · ' + (c.status === 'coming' ? 'Coming soon' : 'Live');
+    var meta = (genres.length ? genres.join(', ') : 'No genre') + ' · ' + (c.status === 'coming' ? 'Coming soon' : 'Live') + ' · ' + vaultLinkLabel(c);
     html += '<div class="admin-item">' + thumb + '<div class="admin-item-info"><div class="admin-item-title">' + c.title + '</div><div class="admin-item-meta">' + meta + '</div></div><div class="admin-item-actions"><button class="btn-accent" onclick="editCategory(\'' + c.id + '\')">Edit</button><button class="btn btn-danger btn-sm" onclick="promptDelete(\'' + c.id + '\',\'' + c.title.replace(/'/g, "\\'") + '\')">✕</button></div></div>';
   });
   list.innerHTML = html;
 }
 
-function updateSongCount() {
-  var lines = document.getElementById('f-songs').value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
-  var el = document.getElementById('song-count-label');
-  el.textContent = lines.length + ' song' + (lines.length === 1 ? '' : 's') + (lines.length < 25 ? ' — need at least 25' : '');
-  el.style.color = lines.length >= 25 ? '#4a9' : '#e05050';
-}
+function updateSongCount() { vaultSelectChanged(); }
 function resetForm() {
   ['edit-id','f-title','f-genre','f-image','f-square-image','f-songs','f-spotify','f-spotify-qr','f-vm-description','f-vm-banner'].forEach(function(id){ document.getElementById(id).value = ''; });
   document.getElementById('f-classic-bingo').checked = false;
@@ -1091,6 +1203,7 @@ function resetForm() {
   document.getElementById('cancel-edit-btn').style.display = 'none';
   var wsBox = document.getElementById('where-shows-box'); if (wsBox) wsBox.style.display = 'none';
   document.getElementById('song-count-label').textContent = '';
+  populateVaultSelect('');
 }
 function editCategory(id) {
   var c = categories.find(function(x){return x.id===id;});
@@ -1101,6 +1214,8 @@ function editCategory(id) {
   document.getElementById('f-image').value = c.image || '';
   document.getElementById('f-square-image').value = c.squareImage || '';
   document.getElementById('f-songs').value = c.songs || '';
+  var matched = !c.vaultListId && !c.classicBingo ? vaultListByName(c.title) : null;
+  populateVaultSelect(c.vaultListId || (matched ? matched.id : ''));
   document.getElementById('f-spotify').value = c.spotifyUrl || '';
   document.getElementById('f-spotify-qr').value = c.spotifyQrUrl || '';
   document.getElementById('f-status').value = c.status || 'live';
@@ -1135,8 +1250,21 @@ function saveCategory() {
   var title = document.getElementById('f-title').value.trim();
   if (!title) { showToast('Title required'); return; }
   var isClassic = document.getElementById('f-classic-bingo').checked;
-  var songs = document.getElementById('f-songs').value.trim();
-  if (!isClassic) { var songCount = songs.split('\n').map(function(s){return s.trim();}).filter(Boolean).length; if (songCount < 25) { showToast('Need at least 25 songs (have ' + songCount + ')'); return; } }
+  var songs = document.getElementById('f-songs').value.trim();   // only the older typed-in songs, if this category had any
+  var sel = document.getElementById('f-vault-list').value;
+  var vaultListId = null;
+  if (!isClassic) {
+    if (sel === '__new__') { vaultListId = '__new__'; }
+    else if (sel) {
+      var vl = vaultLists.find(function(x){return x.id===sel;});
+      if (!vl) { showToast('That Vault list could not be found'); return; }
+      vaultListId = sel; songs = vaultSongsToText(vl.songs);
+      if (vl.songs.length < 25) showToast('Saved — but that Vault list has only ' + vl.songs.length + ' songs; 25 are needed to play.');
+    } else if (songs) {
+      var oldCount = songs.split('\n').map(function(s){return s.trim();}).filter(Boolean).length;
+      if (oldCount < 25) { showToast('Pick a Vault list for the songs (or create one)'); return; }
+    } else { showToast('Pick a Vault list for the songs (or create one)'); return; }
+  } else { songs = ''; }
   var genreRaw = document.getElementById('f-genre').value.trim();
   var genres = genreRaw ? genreRaw.split(',').map(function(g){return g.trim();}).filter(Boolean) : [];
   var editId = document.getElementById('edit-id').value;
@@ -1147,15 +1275,19 @@ function saveCategory() {
     description: document.getElementById('f-vm-description').value.trim(),
     bannerUrl: document.getElementById('f-vm-banner').value.trim()
   };
-  var catData = {id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), squareImage:document.getElementById('f-square-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic, venueMenu:venueMenu};
+  var catData = {id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), squareImage:document.getElementById('f-square-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic, venueMenu:venueMenu, vaultListId:(vaultListId && vaultListId!=='__new__') ? vaultListId : null};
   // unified:true on brand-new categories so they show up in this same
   // library view immediately — that view only shows categories that have
   // been through the unification process, and a category made fresh here
   // counts as one. Left untouched on edits (saveToFirebase merges, so an
   // existing category's unified flag, whatever it is, survives an edit).
   if (!editId) catData.unified = true;
-  saveToFirebase(catData);
-  resetForm(); showToast(editId ? 'Updated!' : 'Category added!');
+  var finish = function(){ saveToFirebase(catData); resetForm(); showToast(editId ? 'Updated!' : 'Category added!'); };
+  if (vaultListId === '__new__') {
+    createVaultList(title, songs).then(function(newId){ catData.vaultListId = newId; if (!songs) catData.songs = ''; finish(); }).catch(function(err){ showToast('Could not create the Vault list: ' + (err && err.message || err)); });
+    return;
+  }
+  finish();
 }
 function previewBanner() {
   var url = document.getElementById('f-image').value.trim();
