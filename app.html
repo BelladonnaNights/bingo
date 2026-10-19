@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
 <title>Music Bingo</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -105,17 +105,6 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
 .cell-label{font-size:12px;font-weight:500;line-height:1.4}
 .banner-wrap{width:100%;margin-bottom:1.25rem;border-radius:var(--radius-lg);overflow:hidden;line-height:0}
 .banner-wrap img{width:100%;height:auto;display:block;aspect-ratio:1554/319;object-fit:cover}
-
-.banner-menu{position:fixed;z-index:9999;min-width:230px;background:#141414;border:1px solid rgba(201,168,76,.45);border-radius:8px;padding:6px;box-shadow:0 12px 36px rgba(0,0,0,.6)}
-.banner-menu button{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-radius:6px;padding:8px 10px;color:#ddd;font:500 12px 'DM Sans',sans-serif;cursor:pointer;text-align:left}
-.banner-menu button:hover{background:rgba(201,168,76,.14)}
-.banner-menu button.sel{color:#c9a84c}
-.banner-menu button.sel::after{content:'✓';margin-left:auto}
-.banner-menu .sw{width:34px;height:18px;border-radius:4px;border:1px solid rgba(255,255,255,.25);display:inline-flex;align-items:center;justify-content:center;font:400 13px 'Bebas Neue',Impact,sans-serif;letter-spacing:.03em;flex:none}
-.txtban{width:100%;aspect-ratio:1554/319;background:#fff;display:flex;align-items:center;justify-content:center;padding:0 6%;overflow:hidden;line-height:1}
-.txtban-t{display:inline-block;white-space:nowrap;font-family:'Bebas Neue',Impact,'Arial Narrow',sans-serif;font-weight:400;line-height:1;color:#000;letter-spacing:.02em;font-size:100px}
-.banner-wrap .txtban,.banner-wrap.txt{border-radius:var(--radius-lg)}
-.banner-toggle.on{background:var(--gold)!important;color:#000!important}
 .banner-wrap.broken{aspect-ratio:1554/319;background:var(--bg);border:1.5px dashed var(--border2);display:flex;align-items:center;justify-content:center;border-radius:var(--radius-lg)}
 .top-bar{display:flex;gap:8px;margin-bottom:1rem;align-items:center;flex-wrap:wrap}
 .search-wrap{flex:1;min-width:140px;position:relative;display:flex;align-items:center;gap:8px}
@@ -215,7 +204,6 @@ button{cursor:pointer;font-family:var(--font);font-size:13px}
     <span class="nav-brand-text" id="nav-brand">Music Bingo</span>
   </div>
   <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
-    <button id="banner-toggle" class="banner-toggle" onclick="openBannerMenu(this,event)" style="background:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:5px 12px;font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--gold);cursor:pointer;transition:all .15s" title="Switch between the colour banner images and a plain white banner with just the category name">Banners: Images ▾</button>
     <button onclick="openMediaPlayer()" style="background:none;border:.5px solid var(--gold-border);border-radius:var(--radius);padding:5px 12px;font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--gold);cursor:pointer;transition:all .15s" title="Open Belladonna Media Player">♪ Media Player</button>
     <button onclick="location.reload()" style="background:none;border:.5px solid var(--border2);border-radius:var(--radius);padding:5px 12px;font-size:11px;font-family:var(--cinzel);letter-spacing:.08em;text-transform:uppercase;color:var(--text3);cursor:pointer;transition:all .15s" title="Reload to get latest category data">↺ Reload</button>
   </div>
@@ -621,7 +609,12 @@ function loadCategory(data){
   if(EVENT_IMAGE){
     const logo=document.getElementById('nav-brand-logo');
     if(!logo.src||logo.src===window.location.href){logo.src=EVENT_IMAGE;logo.style.display='block';}
-    applyTopBanners();
+    const hb=document.getElementById('host-banner');
+    hb.style.display='';
+    hb.innerHTML=`<img src="${EVENT_IMAGE}" alt="Banner" onerror="this.parentNode.classList.add('broken');this.parentNode.innerHTML='<span>${EVENT_TITLE}</span>'">`;
+    const bw=document.getElementById('player-entry-banner-wrap');
+    bw.style.display='';
+    bw.innerHTML=`<img class="player-entry-banner" src="${EVENT_IMAGE}" alt="${EVENT_TITLE}" onerror="this.parentNode.style.display='none'">`;
   }
 
   // Spotify link on player card
@@ -1147,64 +1140,8 @@ function generateCard(num){
 function buildFreeCell(){
   return`<div class="bingo-cell free"><div class="free-space-inner"><div class="free-rays-top"><div class="free-ray" style="transform:rotate(-35deg)"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray" style="transform:rotate(35deg)"></div></div><div class="free-words"><span class="free-word">FREE</span><span class="free-word">SPACE</span></div><div class="free-rays-bottom"><div class="free-ray" style="transform:rotate(35deg)"></div><div class="free-ray" style="transform:rotate(12deg)"></div><div class="free-ray"></div><div class="free-ray" style="transform:rotate(-12deg)"></div><div class="free-ray" style="transform:rotate(-35deg)"></div></div></div></div>`;
 }
-// ── Banner mode: colour images, or a plain white banner with the category name (same Bebas Neue look as the "title only" print) ──
-var TEXT_BANNERS=false;
-var BANNER_MODE = 'img';
-try { var _bm = localStorage.getItem('bella_banner_mode'); BANNER_MODE = _bm || (localStorage.getItem('bella_text_banners') === '1' ? 'bw' : 'img'); } catch (e) {}
-var BANNER_STYLES = { bw: { bg: '#fff', fg: '#000', label: 'Black on white' }, wb: { bg: '#000', fg: '#fff', label: 'White on black' }, gb: { bg: '#000', fg: '#c9a84c', label: 'Gold on black' } };
-function bannerStyleAttr() { var st = BANNER_STYLES[BANNER_MODE]; return st ? 'background:' + st.bg + ';' : ''; }
-function bannerTextAttr() { var st = BANNER_STYLES[BANNER_MODE]; return st ? 'color:' + st.fg + ';' : ''; }
-function setBannerMode(m) {
-  BANNER_MODE = m; TEXT_BANNERS = m !== 'img';
-  try { localStorage.setItem('bella_banner_mode', m); localStorage.setItem('bella_text_banners', TEXT_BANNERS ? '1' : '0'); } catch (e) {}
-  syncBannerToggle(); applyTopBanners(); if(generatedCards.length){document.getElementById('cards-preview').innerHTML=generatedCards.map((cells,idx)=>renderCardHTML(cells,idx+1)).join('');sizeCellText(document.getElementById('cards-preview'));} if(playerCells&&playerCells.length&&document.getElementById('player-bingo-card'))renderPlayerCard(); fitTextBanners();
-}
-function openBannerMenu(btn, ev) {
-  if (ev) ev.stopPropagation();
-  var old = document.querySelector('.banner-menu'); if (old) { old.remove(); return; }
-  var m = document.createElement('div'); m.className = 'banner-menu';
-  var items = [['img', 'Banner images', null]].concat(Object.keys(BANNER_STYLES).map(function(k) { return [k, BANNER_STYLES[k].label, BANNER_STYLES[k]]; }));
-  m.innerHTML = items.map(function(it) {
-    var sw = it[2] ? '<span class="sw" style="background:' + it[2].bg + ';color:' + it[2].fg + '">Aa</span>' : '<span class="sw" style="font:600 9px sans-serif;color:#aaa">IMG</span>';
-    return '<button data-m="' + it[0] + '" class="' + (BANNER_MODE === it[0] ? 'sel' : '') + '">' + sw + '<span>' + it[1] + '</span></button>';
-  }).join('');
-  document.body.appendChild(m);
-  var r = btn.getBoundingClientRect();
-  m.style.top = (r.bottom + 6) + 'px'; m.style.left = Math.max(8, Math.min(r.left, window.innerWidth - m.offsetWidth - 8)) + 'px';
-  m.addEventListener('click', function(e) { var b = e.target.closest('[data-m]'); if (!b) return; m.remove(); setBannerMode(b.dataset.m); });
-  setTimeout(function() { document.addEventListener('click', function h() { var x = document.querySelector('.banner-menu'); if (x) x.remove(); document.removeEventListener('click', h); }); }, 0);
-}
-TEXT_BANNERS=BANNER_MODE!=='img';
-const escTxt=x=>String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-function textBannerHTML(extra){return`<div class="txtban ${extra||''}" style="${bannerStyleAttr()}"><span class="txtban-t" style="${bannerTextAttr()}">${escTxt(EVENT_TITLE)}</span></div>`;}
-function fitTextBanners(){
-  document.querySelectorAll('.txtban').forEach(b=>{
-    const t=b.querySelector('.txtban-t'); if(!t||!b.clientWidth)return;
-    const cs=getComputedStyle(b), availW=b.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight), availH=b.clientHeight*0.8;
-    t.style.fontSize='100px'; const r=t.getBoundingClientRect(); if(!r.width)return;
-    t.style.fontSize=Math.max(8,Math.min(100*availW/r.width,100*availH/r.height,150))+'px';
-  });
-}
-function applyTopBanners(){
-  if(!EVENT_IMAGE&&!TEXT_BANNERS)return;
-  const hb=document.getElementById('host-banner'), bw=document.getElementById('player-entry-banner-wrap');
-  hb.style.display=''; bw.style.display='';
-  if(TEXT_BANNERS){
-    hb.classList.remove('broken'); hb.classList.add('txt'); hb.innerHTML=textBannerHTML();
-    bw.innerHTML=textBannerHTML('player-entry-banner');
-  } else {
-    hb.classList.remove('txt');
-    hb.innerHTML=`<img src="${EVENT_IMAGE}" alt="Banner" onerror="this.parentNode.classList.add('broken');this.parentNode.innerHTML='<span>${EVENT_TITLE}</span>'">`;
-    bw.innerHTML=`<img class="player-entry-banner" src="${EVENT_IMAGE}" alt="${EVENT_TITLE}" onerror="this.parentNode.style.display='none'">`;
-  }
-  fitTextBanners();
-}
-function syncBannerToggle(){document.querySelectorAll('.banner-toggle').forEach(function(b){b.classList.toggle('on',TEXT_BANNERS);b.textContent = TEXT_BANNERS ? 'Banners: ' + BANNER_STYLES[BANNER_MODE].label + ' ▾' : 'Banners: Images ▾';});}
-window.addEventListener('resize',fitTextBanners);
-document.addEventListener('DOMContentLoaded',syncBannerToggle);
-if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitTextBanners);
 function renderCardHTML(cells,cardNum){
-  const imgHTML=TEXT_BANNERS?textBannerHTML('bingo-card-banner'):EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" onerror="this.style.display='none'">`: '';
+  const imgHTML=EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" onerror="this.style.display='none'">`: '';
   const cellsHTML=cells.map(s=>{
     if(s.free)return buildFreeCell();
     const artistHTML=s.artist?`<span class="cell-artist">${s.artist}</span>`:'';
@@ -1219,7 +1156,7 @@ function generateCards(){
   document.getElementById('cards-preview').innerHTML=generatedCards.map((cells,idx)=>renderCardHTML(cells,idx+1)).join('');
   document.getElementById('cards-count-label').textContent=`${count} generated cards`;
   document.getElementById('cards-output').style.display='';
-  requestAnimationFrame(()=>{sizeAllCardGrids();fitTextBanners();});
+  requestAnimationFrame(()=>sizeAllCardGrids());
   const playerURL=playerLinkUrl();
   document.getElementById('qr-url-display').textContent=playerURL;
   generateQR(playerURL);
@@ -1317,7 +1254,7 @@ function loadPlayerCard(){
 }
 function renderPlayerCard(){
   const wrap=document.getElementById('player-bingo-card');
-  const bannerHTML=TEXT_BANNERS?textBannerHTML('bingo-card-banner'):EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" onerror="this.style.display='none'">`: '';
+  const bannerHTML=EVENT_IMAGE?`<img class="bingo-card-banner" src="${EVENT_IMAGE}" alt="Banner" onerror="this.style.display='none'">`: '';
   const cellsHTML=playerCells.map((s,idx)=>{
     if(s.free){
       const isDaubed=playerDaubed.has('free');
@@ -1328,7 +1265,7 @@ function renderPlayerCard(){
     return`<div class="bingo-cell${isDaubed?' daubed':''}" onclick="playerDaub(${s.id})"><div class="cell-text"><span class="cell-title">${s.title}</span>${artistHTML}</div></div>`;
   }).join('');
   wrap.innerHTML=`${bannerHTML}<div class="bingo-grid" id="player-grid">${cellsHTML}</div>`;
-  requestAnimationFrame(()=>{sizeCellText(wrap);fitTextBanners();});
+  requestAnimationFrame(()=>sizeCellText(wrap));
   updatePlayerStatus();
 }
 function playerDaub(id){
