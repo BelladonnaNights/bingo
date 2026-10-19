@@ -64,12 +64,12 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 }
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-thumb{background:rgba(201,168,76,.25);border-radius:3px}
-.nav{position:sticky;top:0;z-index:200;background:rgba(10,10,10,.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav{min-height:64px;position:sticky;top:0;z-index:200;background:rgba(10,10,10,.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:6px 2rem;display:flex;align-items:center;justify-content:space-between}
 .nav-left{display:flex;align-items:center;gap:14px}
 .nav-logo-img{height:40px;width:auto;object-fit:contain;display:none}
 .nav-title{font-family:var(--display);font-size:22px;letter-spacing:.06em;color:var(--text);line-height:1}
 .nav-title span{background:var(--gold-shine);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-right{display:flex;flex-direction:row;align-items:center;gap:10px;justify-content:flex-end}
+.nav-right{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px 10px;justify-content:flex-end}
 .nav-btn{background:none;border:1px solid var(--gold-border);border-radius:var(--radius);padding:7px 16px;font-size:11px;font-weight:500;font-family:var(--cinzel);letter-spacing:.1em;text-transform:uppercase;color:var(--gold);cursor:pointer;transition:all .2s;white-space:nowrap}
 .nav-btn:hover{background:var(--gold);color:#000;border-color:var(--gold)}
 .nav-btn-sched{font-size:12px;padding:5px 14px;letter-spacing:.06em}
@@ -103,8 +103,16 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
 .cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;transition:border-color .25s,transform .2s,box-shadow .25s;text-decoration:none;display:block;position:relative}
 .cat-card:hover{border-color:var(--gold-border2);transform:translateY(-3px);box-shadow:0 10px 36px rgba(201,168,76,.1),0 2px 10px rgba(0,0,0,.5)}
 .cat-card.coming-soon{opacity:.45;cursor:default;pointer-events:none}
+
+.banner-menu{position:fixed;z-index:9999;min-width:230px;background:#141414;border:1px solid rgba(201,168,76,.45);border-radius:8px;padding:6px;box-shadow:0 12px 36px rgba(0,0,0,.6)}
+.banner-menu button{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-radius:6px;padding:8px 10px;color:#ddd;font:500 12px 'DM Sans',sans-serif;cursor:pointer;text-align:left}
+.banner-menu button:hover{background:rgba(201,168,76,.14)}
+.banner-menu button.sel{color:#c9a84c}
+.banner-menu button.sel::after{content:'✓';margin-left:auto}
+.banner-menu .sw{width:34px;height:18px;border-radius:4px;border:1px solid rgba(255,255,255,.25);display:inline-flex;align-items:center;justify-content:center;font:400 13px 'Bebas Neue',Impact,sans-serif;letter-spacing:.03em;flex:none}
 .txt-banner{width:100%;aspect-ratio:1554/319;background:#fff;display:flex;align-items:center;justify-content:center;padding:0 6%;overflow:hidden;line-height:1}
 .txt-banner-t{display:inline-block;white-space:nowrap;font-family:'Bebas Neue',Impact,'Arial Narrow',sans-serif;font-weight:400;line-height:1;color:#000;letter-spacing:.02em;font-size:100px}
+.btn.banner-on{background:var(--gold-dim);border-color:var(--gold-border2);color:var(--gold2)}
 .nav-btn.banner-on{background:var(--gold-dim);border-color:var(--gold-border2);color:var(--gold2)}
 .cat-banner{width:100%;aspect-ratio:1554/319;object-fit:cover;display:block;background:var(--surface2)}
 .cat-banner-placeholder{width:100%;aspect-ratio:1554/319;background:var(--surface2);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border)}
@@ -199,7 +207,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <select id="bingo-location-select" onchange="setBingoLocation(this.value)" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:999px;color:var(--gold);padding:4px 10px;font-size:11px;margin-right:6px;"></select>
     <a href="https://belladonnanights.github.io/belladonna-gateway/accounts.html?view=account" class="nav-btn nav-btn-ghost" style="font-size:9px;text-decoration:none;">My Account</a>
     <button class="nav-btn nav-btn-ghost" onclick="bingoGatewaySignOut()" style="font-size:9px;">Sign Out</button>
-    <button class="nav-btn" id="banner-toggle-btn" onclick="toggleTextBanners()" title="Switch between the colour banner images and a plain white banner showing just the category name">Banners: Images</button>
+    <button class="nav-btn banner-toggle-btn" id="banner-toggle-btn" onclick="openBannerMenu(this,event)" title="Switch between the colour banner images and a plain white banner showing just the category name">Banners: Images</button>
     <button class="nav-btn" onclick="openAdmin()">Admin ⚙</button>
     <button class="nav-btn nav-btn-sched" onclick="openScheduleBtn()">Schedule</button>
     <button class="nav-btn nav-btn-sched" id="likes-nav-btn" onclick="openLikes()" style="display:none">&#9829; Venue Likes</button>
@@ -273,6 +281,7 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
     <div class="modal-header">
       <div class="modal-title">Manage Categories</div>
       <div style="display:flex;align-items:center;gap:0.6rem;">
+        <button class="btn btn-ghost btn-sm banner-toggle-btn" onclick="openBannerMenu(this,event)" title="Switch between the colour banner images and a plain white banner showing just the category name">Banners: Images</button>
         <button class="btn btn-ghost btn-sm" onclick="bingoGatewaySignOut()">Sign Out</button>
         <button class="modal-close" onclick="closeAdmin()">✕</button>
       </div>
@@ -916,10 +925,35 @@ function getTonightScheduledCatIds() {
 }
 // ── Banner mode: colour images, or a plain white banner with just the category name (Bebas Neue, like the "title only" print) ──
 var TEXT_BANNERS = false;
-try { TEXT_BANNERS = localStorage.getItem('bella_text_banners') === '1'; } catch (e) {}
+var BANNER_MODE = 'img';
+try { var _bm = localStorage.getItem('bella_banner_mode'); BANNER_MODE = _bm || (localStorage.getItem('bella_text_banners') === '1' ? 'bw' : 'img'); } catch (e) {}
+var BANNER_STYLES = { bw: { bg: '#fff', fg: '#000', label: 'Black on white' }, wb: { bg: '#000', fg: '#fff', label: 'White on black' }, gb: { bg: '#000', fg: '#c9a84c', label: 'Gold on black' } };
+function bannerStyleAttr() { var st = BANNER_STYLES[BANNER_MODE]; return st ? 'background:' + st.bg + ';' : ''; }
+function bannerTextAttr() { var st = BANNER_STYLES[BANNER_MODE]; return st ? 'color:' + st.fg + ';' : ''; }
+function setBannerMode(m) {
+  BANNER_MODE = m; TEXT_BANNERS = m !== 'img';
+  try { localStorage.setItem('bella_banner_mode', m); localStorage.setItem('bella_text_banners', TEXT_BANNERS ? '1' : '0'); } catch (e) {}
+  syncBannerToggle(); renderGrid(); try { renderHostSched(); } catch (e) {}
+}
+function openBannerMenu(btn, ev) {
+  if (ev) ev.stopPropagation();
+  var old = document.querySelector('.banner-menu'); if (old) { old.remove(); return; }
+  var m = document.createElement('div'); m.className = 'banner-menu';
+  var items = [['img', 'Banner images', null]].concat(Object.keys(BANNER_STYLES).map(function(k) { return [k, BANNER_STYLES[k].label, BANNER_STYLES[k]]; }));
+  m.innerHTML = items.map(function(it) {
+    var sw = it[2] ? '<span class="sw" style="background:' + it[2].bg + ';color:' + it[2].fg + '">Aa</span>' : '<span class="sw" style="font:600 9px sans-serif;color:#aaa">IMG</span>';
+    return '<button data-m="' + it[0] + '" class="' + (BANNER_MODE === it[0] ? 'sel' : '') + '">' + sw + '<span>' + it[1] + '</span></button>';
+  }).join('');
+  document.body.appendChild(m);
+  var r = btn.getBoundingClientRect();
+  m.style.top = (r.bottom + 6) + 'px'; m.style.left = Math.max(8, Math.min(r.left, window.innerWidth - m.offsetWidth - 8)) + 'px';
+  m.addEventListener('click', function(e) { var b = e.target.closest('[data-m]'); if (!b) return; m.remove(); setBannerMode(b.dataset.m); });
+  setTimeout(function() { document.addEventListener('click', function h() { var x = document.querySelector('.banner-menu'); if (x) x.remove(); document.removeEventListener('click', h); }); }, 0);
+}
+TEXT_BANNERS = BANNER_MODE !== 'img';
 function textBannerHTML(title, style) {
   var t = String(title == null ? '' : title).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  return '<div class="txt-banner"' + (style ? ' style="' + style + '"' : '') + '><span class="txt-banner-t">' + t + '</span></div>';
+  return '<div class="txt-banner" style="' + bannerStyleAttr() + (style || '') + '"><span class="txt-banner-t" style="' + bannerTextAttr() + '">' + t + '</span></div>';
 }
 function fitTextBanners() {
   document.querySelectorAll('.txt-banner').forEach(function(b) {
@@ -929,13 +963,7 @@ function fitTextBanners() {
     t.style.fontSize = Math.max(8, Math.min(100 * aw / r.width, 100 * ah / r.height, 150)) + 'px';
   });
 }
-function syncBannerToggle() { var b = document.getElementById('banner-toggle-btn'); if (!b) return; b.classList.toggle('banner-on', TEXT_BANNERS); b.textContent = TEXT_BANNERS ? 'Banners: Text' : 'Banners: Images'; }
-function toggleTextBanners() {
-  TEXT_BANNERS = !TEXT_BANNERS;
-  try { localStorage.setItem('bella_text_banners', TEXT_BANNERS ? '1' : '0'); } catch (e) {}
-  syncBannerToggle(); renderGrid();
-  try { renderHostSched(); } catch (e) {}
-}
+function syncBannerToggle() { document.querySelectorAll('.banner-toggle-btn').forEach(function(b) { b.classList.toggle('banner-on', TEXT_BANNERS); b.textContent = TEXT_BANNERS ? 'Banners: ' + BANNER_STYLES[BANNER_MODE].label + ' ▾' : 'Banners: Images ▾'; }); }
 window.addEventListener('resize', fitTextBanners);
 document.addEventListener('DOMContentLoaded', syncBannerToggle);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTextBanners);
