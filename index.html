@@ -349,6 +349,9 @@ html,body{min-height:100%;font-family:var(--font);background:var(--bg);color:var
         <div class="form-group" id="song-source-group">
           <label class="form-label">Song list <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(from the Vault)</span></label>
           <select class="form-input" id="f-vault-list" onchange="vaultSelectChanged()"></select>
+          <div style="margin-top:8px"><label class="form-label" style="margin-bottom:4px">Show songs as</label>
+            <select class="form-input" id="f-song-format" onchange="vaultSelectChanged()"><option value="show">Song – Movie / Show</option><option value="artist">Song – Artist</option></select>
+            <div class="form-hint">Pick how each song reads on the bingo app. If a song has no movie/show, its artist is shown instead.</div></div>
           <textarea id="f-songs" style="display:none"></textarea>
           <div id="song-count-label" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
           <div class="form-hint">Songs come from the Bingo list you pick in the Vault, and update here whenever that list changes. Choose &ldquo;Create a new Vault list&rdquo; if there isn&rsquo;t a matching one yet.</div>
@@ -849,10 +852,12 @@ function previewLogo() {
 // A category's songs come from a Bingo list in the Vault (Firestore: bingoLists). The category stores vaultListId, and the
 // song text the game reads (category.songs) is rebuilt from that list whenever it changes.
 var vaultLists = [], vaultListsFrom = '';
-function vaultSongsToText(songs) {
+function vaultSongsToText(songs, fmt) {
+  // fmt 'show' (default) = Song – Movie/Show (falls back to the artist); 'artist' = Song – Artist (falls back to the movie/show)
   return (songs || []).map(function(x) {
     var t = String(x.t || '').replace(/\s[–—-]\s/g, ', ').trim();
-    var b = String(x.m || x.a || '').trim();
+    var a = String(x.a || '').trim(), m = String(x.m || '').trim();
+    var b = fmt === 'artist' ? (a || m) : (m || a);
     return t ? (b ? t + ' – ' + b : t) : '';
   }).filter(Boolean).join('\n');
 }
@@ -893,7 +898,7 @@ function reconcileLinkedCategories() {
     if (!c.vaultListId || c.classicBingo || vaultSyncBusy[c.id]) return;
     var l = vaultLists.find(function(x) { return x.id === c.vaultListId; });
     if (!l) return;
-    var text = vaultSongsToText(l.songs);
+    var text = vaultSongsToText(l.songs, c.songFormat);
     if ((c.songs || '') === text) return;
     vaultSyncBusy[c.id] = true;
     db.ref('bingo/landing/categories/' + c.id + '/songs').set(text).catch(function(e) { console.warn('Could not refresh songs for', c.title, e); }).then(function() { delete vaultSyncBusy[c.id]; });
@@ -1203,6 +1208,7 @@ function resetForm() {
   document.getElementById('cancel-edit-btn').style.display = 'none';
   var wsBox = document.getElementById('where-shows-box'); if (wsBox) wsBox.style.display = 'none';
   document.getElementById('song-count-label').textContent = '';
+  document.getElementById('f-song-format').value = 'show';
   populateVaultSelect('');
 }
 function editCategory(id) {
@@ -1216,6 +1222,7 @@ function editCategory(id) {
   document.getElementById('f-songs').value = c.songs || '';
   var matched = !c.vaultListId && !c.classicBingo ? vaultListByName(c.title) : null;
   populateVaultSelect(c.vaultListId || (matched ? matched.id : ''));
+  document.getElementById('f-song-format').value = c.songFormat === 'artist' ? 'artist' : 'show';
   document.getElementById('f-spotify').value = c.spotifyUrl || '';
   document.getElementById('f-spotify-qr').value = c.spotifyQrUrl || '';
   document.getElementById('f-status').value = c.status || 'live';
@@ -1252,13 +1259,14 @@ function saveCategory() {
   var isClassic = document.getElementById('f-classic-bingo').checked;
   var songs = document.getElementById('f-songs').value.trim();   // only the older typed-in songs, if this category had any
   var sel = document.getElementById('f-vault-list').value;
+  var songFormat = document.getElementById('f-song-format').value === 'artist' ? 'artist' : 'show';
   var vaultListId = null;
   if (!isClassic) {
     if (sel === '__new__') { vaultListId = '__new__'; }
     else if (sel) {
       var vl = vaultLists.find(function(x){return x.id===sel;});
       if (!vl) { showToast('That Vault list could not be found'); return; }
-      vaultListId = sel; songs = vaultSongsToText(vl.songs);
+      vaultListId = sel; songs = vaultSongsToText(vl.songs, songFormat);
       if (vl.songs.length < 25) showToast('Saved — but that Vault list has only ' + vl.songs.length + ' songs; 25 are needed to play.');
     } else if (songs) {
       var oldCount = songs.split('\n').map(function(s){return s.trim();}).filter(Boolean).length;
@@ -1275,7 +1283,7 @@ function saveCategory() {
     description: document.getElementById('f-vm-description').value.trim(),
     bannerUrl: document.getElementById('f-vm-banner').value.trim()
   };
-  var catData = {id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), squareImage:document.getElementById('f-square-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic, venueMenu:venueMenu, vaultListId:(vaultListId && vaultListId!=='__new__') ? vaultListId : null};
+  var catData = {id:id, title:title, genres:genres, genre:genres[0]||'', image:document.getElementById('f-image').value.trim(), squareImage:document.getElementById('f-square-image').value.trim(), songs:songs, spotifyUrl:document.getElementById('f-spotify').value.trim(), spotifyQrUrl:document.getElementById('f-spotify-qr').value.trim(), status:document.getElementById('f-status').value, order:order, classicBingo:isClassic, venueMenu:venueMenu, vaultListId:(vaultListId && vaultListId!=='__new__') ? vaultListId : null, songFormat:songFormat};
   // unified:true on brand-new categories so they show up in this same
   // library view immediately — that view only shows categories that have
   // been through the unification process, and a category made fresh here
