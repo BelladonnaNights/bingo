@@ -858,6 +858,8 @@ function vaultSongsToText(songs, fmt) {
     var t = String(x.t || '').replace(/\s[–—-]\s/g, ', ').trim();
     var a = String(x.a || '').trim(), m = String(x.m || '').trim();
     var b = fmt === 'artist' ? (a || m) : (m || a);
+    var nz = function(z) { return String(z || '').toLowerCase().replace(/[^a-z0-9]+/g, ''); };
+    if (b && b === m && nz(m) && nz(t).indexOf(nz(m)) !== -1) b = '';   // the show/movie name is already in the song title — don't repeat it
     return t ? (b ? t + ' – ' + b : t) : '';
   }).filter(Boolean).join('\n');
 }
