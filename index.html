@@ -1084,16 +1084,30 @@ function fitTextBanners() {
   document.querySelectorAll('.txt-banner').forEach(function(b) {
     var t = b.querySelector('.txt-banner-t'); if (!t || !b.clientWidth) return;
     var cs = getComputedStyle(b), aw = b.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), ah = b.clientHeight * 0.8;
-    t.style.fontSize = '100px'; var r = t.getBoundingClientRect(); if (!r.width) return;
-    var fs = Math.max(8, Math.min(100 * aw / r.width, 100 * ah / r.height, 150));
+    // one line: the biggest size that fits across and up
+    t.style.whiteSpace = 'nowrap'; t.style.width = ''; t.style.textWrap = ''; t.style.textAlign = ''; t.style.fontSize = '100px';
+    var r = t.getBoundingClientRect(); if (!r.width) return;
+    var one = Math.max(8, Math.min(100 * aw / r.width, 100 * ah / r.height, 150));
+    // two lines (long titles only break between words): the biggest size that fits in two lines
+    t.style.whiteSpace = 'normal'; t.style.width = aw + 'px'; t.style.textWrap = 'balance'; t.style.textAlign = 'center';
+    var lo = 8, hi = Math.min(150, ah);
+    for (var i = 0; i < 14; i++) {
+      var mid = (lo + hi) / 2; t.style.fontSize = mid + 'px';
+      if (t.getBoundingClientRect().height <= Math.min(ah, mid * 2.05) && t.scrollWidth <= aw + 1) lo = mid; else hi = mid;
+    }
+    var two = lo;
     var key = b.closest('.grid') || b.closest('.modal') || document.body;
     if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push({ t: t, fs: fs });
+    groups.get(key).push({ t: t, one: one, fs: Math.max(one, two), aw: aw });
   });
-  // every title fits its own banner first; then they all drop to the smallest size so they match
+  // every title fits its own banner first (on two lines if that lets it be bigger); then they all use the smallest size so they match
   groups.forEach(function(list) {
     var min = Math.min.apply(null, list.map(function(x) { return x.fs; }));
-    list.forEach(function(x) { x.t.style.fontSize = min + 'px'; });
+    list.forEach(function(x) {
+      if (min <= x.one) { x.t.style.whiteSpace = 'nowrap'; x.t.style.width = ''; x.t.style.textWrap = ''; }
+      else { x.t.style.whiteSpace = 'normal'; x.t.style.width = x.aw + 'px'; x.t.style.textWrap = 'balance'; x.t.style.textAlign = 'center'; }
+      x.t.style.fontSize = min + 'px';
+    });
   });
 }
 function syncBannerToggle() { document.querySelectorAll('.banner-toggle-btn').forEach(function(b) { b.classList.toggle('banner-on', TEXT_BANNERS); b.textContent = TEXT_BANNERS ? 'Banners: ' + BANNER_STYLES[BANNER_MODE].label + ' ▾' : 'Banners: Images ▾'; }); }
